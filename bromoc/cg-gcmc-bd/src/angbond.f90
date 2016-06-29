@@ -22,18 +22,19 @@ implicit none
 real  vecR(3,3)
 !Local variables
 real  R(2), prod, cosphi
-integer i
-
-do i = 1, 2
-  R(i) = sqrt(vecR(1,i)**2+vecR(2,i)**2+vecR(3,i)**2)
-enddo
-prod = 0.0
-do i = 1, 3
-  prod = prod + vecR(i,1)*vecR(i,2)
-enddo
-cosphi = prod/(R(1)*R(2))
+!integer i
+!do i = 1, 2
+  !R(i) = sqrt(vecR(1,i)**2+vecR(2,i)**2+vecR(3,i)**2)
+!enddo
+!prod = 0.0
+!do i = 1, 3
+!  prod = prod + vecR(i,1)*vecR(i,2)
+!enddo
+R(1) = dot_product(vecR(:,1),vecR(:,1))
+R(2) = dot_product(vecR(:,2),vecR(:,2))
+prod=dot_product(vecR(:,1),vecR(:,2))
+cosphi = prod/sqrt(R(1)*R(2))
 angbond = acos(cosphi)
-
 return
 end function
 
