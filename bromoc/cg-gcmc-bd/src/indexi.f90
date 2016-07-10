@@ -18,8 +18,10 @@
 
 function indexi(itype,jtype)
 implicit none
-integer itype,jtype,indexi
+integer itype,jtype,indexi,maxi,mini
 
-indexi=MAX(itype,jtype)*(MAX(itype,jtype)-1)/2+MIN(itype,jtype)
+maxi=MAX(itype,jtype)
+mini=MIN(itype,jtype)
+indexi=maxi*(maxi-1)/2+mini
 end function
 

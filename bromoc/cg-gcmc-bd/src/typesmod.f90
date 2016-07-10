@@ -20,24 +20,79 @@
 ! Dimension of arrays
 module typesmod
 implicit none
+
+! TYPES DEFINITIONS
 ! Position Type
 type :: pos
     real :: x
     real :: y
     real :: z
 end type pos
+
 ! Particle Properties
 type :: parpro
-    integer :: typidx                          !! Identifies the Particle Type with an Index number
-    integer :: ne                              !! Number of element components of the particle
-    type(pos), dimension(:), pointer :: r      !! Pointer to Position Vector of each element
-    integer, dimension(:), pointer :: eleidx   !! Pointer to Elements Type Index Vector
+    integer :: ptyp                            !! Identifies the Particle Type with an Index number
+    integer :: ne                              !! Number of element in the particle
+    integer :: sr                              !! Starting in the position vector
 end type parpro
 
-integer                   :: npar
-type(parpro), allocatable :: par(:)
-type(pos), allocatable, target :: rt(:)
+! Particle Types
+type :: partype
+    integer :: ne                              !! Number of Elements in Particle
+    integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
+    type(pos),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
+end type partype
 
-! allocate rt(parpro%ne)
-! parpro => rt(
+! Particle Type Vectors
+type :: parvec
+    integer,allocatable,dimension(:)   :: etyp     !! Element Types Vector :: Size of Estimated Maximum number of particles of each Type
+    type(pos),allocatable,dimension(:) :: r        !! Position Vector :: Size of Estimated Maximum number of particles of each Type
+    type(pos),allocatable,dimension(:) :: f        !! Force Vector :: Size of Estimated Maximum number of particles of each Type
+end type parvec
+
+
+!! Particles
+integer                                 :: npar       !! Number of Particles 
+type(parpro), allocatable, dimension(:) :: par        !! Particles List Description :: Size of Number of Particles (npar)
+type(parvec), allocatable, dimension(:) :: pvec       !! Particle Vectors :: Size of Number of Particles Types (ntyp)
+
+!! Types
+integer                                  :: ntyp      !! Number of Types
+type(partype), allocatable, dimension(:) :: partyp    !! Type of Particle list :: Size of ntyp
+
+
+contains
+
+subroutine addpar()
+implicit none
+end subroutine
+
+subroutine delpar()
+implicit none
+npar=npar-1
+end subroutine
+
+subroutine addptype(nelem)
+implicit none
+integer nelem
+type(partype) ptyp
+type(partype), allocatable, dimension(:) :: partyptmp
+
+! Create New Particle Type
+ptyp%ne = nelem
+allocate (ptyp%etyp(nelem),ptyp%r(nelem))
+
+! Add new Particle Type to partyp
+ntyp=ntyp+1
+! Increase vector is needed
+if (size(partyp) < ntyp) then
+   allocate(partyptmp(ntyp))
+   partyptmp(1:size(partyp)) = partyp
+   deallocate(partyp)
+   call move_alloc(partyptmp, partyp)
+end if
+
+partyp(ntyp) = ptyp
+end subroutine
+
 end module

@@ -31,6 +31,7 @@ use extramod
 use splinemod
 use explatmod
 use charmmmod
+use typesmod
 
 !Command parser and file name
 implicit none
