@@ -110,7 +110,7 @@ opt    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-no
 # Object files
 
 OBJECTS = extramod.o apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o errormod.o\
-	nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o explatmod.o charmmmod.o typesmod.o\
+	nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o explatmod.o charmmmod.o typesmod.o listmod.o\
 	alpol2.o dalpol2.o splinemod.o sevalmod.o charman.o cputime.o error.o fatnam.o discretize.o\
 	splinepot.o cosmphi2.o sinmphi2.o getopt.o ioinit.o lualloc.o lunalloc.o m3.o dm3.o rpowerl2.o\
 	rect_norm.o sphe_norm.o sphe_svpol.o cross_product.o indexi.o factori.o angles.o bbonds.o count.o\
