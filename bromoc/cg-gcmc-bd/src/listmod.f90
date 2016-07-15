@@ -105,9 +105,9 @@ if (ptype .gt. 0 .and. ptype .le. ntyp) then
   if (nele .gt. size(r)) call increasecvec(nele)
   if (npar .gt. size(parl)) call increaseparl(npar)
   parl(npar)%ptyp=ptype     ! Save Particle Type Idx in Particle List
-  parl(npar)%sr=lastnele+1  ! Save Starting Position of Added Particle in Cartesian Vectors to Particle List
+  parl(npar)%sr=lastnele    ! Save Previous Position of last Added Element in Cartesian Vectors to Particle List
   parl(npar)%ne=ptypl(ptype)%ne  ! Save Number of Elements of this particle in the Particle List
-  ! Copy 
+  ! Copy Coordinates from Particle Type Template 
   do i=1,parl(npar)%ne
     r(lastnele+i)=ptypl(ptype)%r(i)
   enddo
@@ -116,23 +116,77 @@ end subroutine
 
 subroutine movepar(parn,rcent)
 implicit none
-type(car) :: rcent  ! Particle Centroid
-integer parn ! Particle Number 
+type(car) :: rcent,arcent  ! Particle Centroid
+integer i,parn ! Particle Number 
 ! Compute Actual Centroid
-   ! to do
+   call getcentroid(arcent,parn)
 ! Compute Displacement: Substract Actual Centroid to New Centroid
    ! to do
 ! Add Displacement to all elements position
    ! to do
 end subroutine
 
-! Add Cartesian Types
-! Subtract Cartesian Types
-! Dot Product of Cartesian Types
-! Scalar Multiplication of Cartesian Types
-
-subroutine delpar()
+subroutine getcentroid(rc,parn)
 implicit none
+type(car) :: rc  ! Particle Centroid
+integer i,ne,sr,parn ! Particle Number 
+real ine
+! Compute Actual Centroid
+   call zero(rc)
+   ne=parl(parn)%ne
+   ine=1.0/ne
+   sr=parl(parn)%sr
+   do i=1,ne
+      call addcar(rc,r(sr+i))
+   enddo
+   mulcar(rc,ine)
+end subroutine
+
+subroutine zero(r)
+implicit none
+type(car) :: r
+r%x=0.0
+r%y=0.0
+r%z=0.0
+end subroutine
+
+! Add Second Cartesian Type to first
+subroutine addcar(r1,r2)
+implicit none
+type(car) :: r1,r2
+r1%x=r1%x+r2%x
+r1%y=r1%y+r2%y
+r1%z=r1%z+r2%z
+end subroutine
+
+! Subtract Cartesian Type
+subroutine subcar(r1,r2)
+implicit none
+type(car) :: r1,r2
+r1%x=r1%x-r2%x
+r1%y=r1%y-r2%y
+r1%z=r1%z-r2%z
+end subroutine
+
+! Dot Product of Cartesian Types
+function dotcar(r1,r2)
+real dotcar
+dotcar=r1%x*r2%x+r1%y*r2%y+r1%z*r2%z
+end function
+
+! Scalar Multiplication of Cartesian Types
+subroutine mulcar(r,sc)
+type(car) :: r
+real sc
+r%x=sc*r%x
+r%y=sc*r%y
+r%z=sc*r%z
+end subroutine
+
+subroutine delpar(parn)
+implicit none
+integer ptype
+! Look for 
 npar=npar-1
 end subroutine
 
