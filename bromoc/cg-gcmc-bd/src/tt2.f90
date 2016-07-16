@@ -2,16 +2,25 @@ program tt2
 use listmod
 implicit none
 integer n,i,j,k,ne
+character*4,allocatable,dimension(:) :: enam,pnam
+
 ! Allocate Particle Type List for 3 types
 ntyp=3
 call resizeptypl(ntyp)
+allocate (enam(9),pnam(3))
 ! etyp
-! 1: K
-! 2: H
-! 3: C
-! 4: O
-! 5: N
-! 6: Cl
+enam(1)='K'
+enam(2)='H'
+enam(3)='C'
+enam(4)='O'
+enam(5)='N'
+enam(6)='Cl'
+enam(7)='S'
+enam(8)='P'
+enam(9)='Na'
+pnam(1)='POT'
+pnam(2)='GLU'
+pnam(3)='CLA'
 ! Define Particle 1: POT
 n=1
 ne=1 ! number of elements per particle
@@ -62,6 +71,21 @@ do i=1,npar
    call uranrot(i)
 enddo
 
+call printlists()
+
+contains
+
+subroutine printxyz()
+! Print Particle Data
+call updatetypel()
+write(*,*) nele
+write(*,*)
+do i=1,nele
+    write(*,*) enam(etypl(i)),r(i)%x,r(i)%y,r(i)%z
+enddo
+end subroutine
+
+subroutine printlists()
 ! Print Particle Data
 do i=1,npar
    write(*,*) i,parl(i)%ptyp,parl(i)%sr,parl(i)%ne
@@ -70,4 +94,6 @@ do i=1,npar
       write(*,*) '      ',ptypl(parl(i)%ptyp)%etyp(j),r(k)%x,r(k)%y,r(k)%z
    enddo
 enddo
+end subroutine
+
 end program
