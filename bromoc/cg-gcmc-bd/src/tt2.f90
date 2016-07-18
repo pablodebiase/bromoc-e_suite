@@ -71,11 +71,30 @@ do i=1,npar
    call uranrot(i)
 enddo
 
+write(*,*) '>>>>>>>>>> LISTS'
 call printlists()
+
+write(*,*) '>>>>>>>>>> XYZ'
+call printxyz()
+
+write(*,*) '>>>>>>>>>> PDB'
+call printpdb()
 
 contains
 
+subroutine printpdb()
+implicit none
+integer i
+call updatetypel()
+do i=1,nele
+  write (*,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,enam(etypl(i)),pnam(petypl(i)),pel(i),r(i)%x,r(i)%y,r(i)%z
+enddo
+write (*,'(A)') 'END'
+end subroutine
+
 subroutine printxyz()
+implicit none
+integer i
 ! Print Particle Data
 call updatetypel()
 write(*,*) nele
@@ -86,6 +105,8 @@ enddo
 end subroutine
 
 subroutine printlists()
+implicit none
+integer i
 ! Print Particle Data
 do i=1,npar
    write(*,*) i,parl(i)%ptyp,parl(i)%sr,parl(i)%ne

@@ -58,6 +58,7 @@ type(car), allocatable, dimension(:) :: r  !! Elements Position Vector
 type(car), allocatable, dimension(:) :: f  !! Elements Force Vector
 integer, allocatable, dimension(:) :: etypl !! Elements Type List of nele size
 integer, allocatable, dimension(:) :: petypl !! Particle Type List nele size
+integer, allocatable, dimension(:) :: pel !! Particle List of nele size
 
 contains
 
@@ -66,8 +67,9 @@ implicit none
 integer newsize,i,j,ne,sr,ptype
 if (allocated(etypl)) deallocate (etypl)
 if (allocated(petypl)) deallocate (petypl)
+if (allocated(pel)) deallocate (pel)
 newsize=size(r)
-allocate (etypl(newsize),petypl(newsize))
+allocate (etypl(newsize),petypl(newsize),pel(newsize))
 do i=1,npar
   sr=parl(i)%sr
   ne=parl(i)%ne
@@ -75,6 +77,7 @@ do i=1,npar
   do j=1,ne
     petypl(sr+j)=ptype
     etypl(sr+j)=ptypl(ptype)%etyp(j)
+    pel(sr+j)=i
   enddo
 enddo
 end subroutine
