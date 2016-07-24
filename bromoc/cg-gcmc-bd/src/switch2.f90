@@ -18,7 +18,8 @@
 
 subroutine switch2(sw,dsw,r2,radius,p2,ip2,r)
 implicit none
-real sw, dsw, r, radius, p2, r2
+real sw, dsw, radius, p2, r2
+real, optional :: r
 real delr,delrp2,ip2
 
 if (r2.le.radius**2) then  ! inside pore

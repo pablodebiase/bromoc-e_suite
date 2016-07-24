@@ -43,7 +43,6 @@ type :: partype
     integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
     type(car),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
 end type partype
-
 ! LIST DEFINITIONS
 !! Particles List
 integer                                 :: npar       !! Number of Particles 
@@ -52,6 +51,9 @@ type(parpro), allocatable, dimension(:) :: parl       !! Particles List Descript
 !! Element-Type List
 integer                                  :: netyp     !! Number of Element Types
 character*4,allocatable,dimension(:)     :: enam      !! Element Name List 
+
+!! Element-Type Pairs List
+integer                                  :: netp
 
 !! Particle-Type List
 integer                                  :: nptyp      !! Number of Particle Types
@@ -180,6 +182,7 @@ subroutine addenam(ename)
 implicit none
 character*(*) ename
 netyp=netyp+1
+netp=netyp*(netyp+1)/2
 if (netyp .gt. size(enam)) call resizeenam(netyp)
 enam(netyp)=ename
 end subroutine
@@ -312,7 +315,7 @@ ine=1.0/ne
 sr=parl(parn)%sr
 ! Compute Actual Centroid
 ! Zero vector
-call zero(rc)
+call setcarzero(rc)
 ! Add each position vector to rc
 do i=1,ne
    call addcar(rc,r(sr+i))
@@ -367,7 +370,7 @@ r%y=y
 r%z=z
 end subroutine
 
-subroutine zero(r)
+subroutine setcarzero(r)
 implicit none
 type(car) :: r
 call setcar(r,0.0,0.0,0.0)
@@ -472,5 +475,14 @@ implicit none
 nptyp=0 ! number of particle types
 netyp=0 ! number of element types
 end subroutine
+
+function etpidx(itype,jtype)
+implicit none
+integer itype,jtype,etpidx,maxi,mini
+
+maxi=MAX(itype,jtype)
+mini=MIN(itype,jtype)
+etpidx=maxi*(maxi-1)/2+mini
+end function
 
 end module

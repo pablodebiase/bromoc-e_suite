@@ -26,7 +26,7 @@ use errormod
 !LOCAL VARIABLES
 implicit none
 real sw1, dsw1, sw2, dsw2
-real r, r2, charge
+real r,r2, charge
 integer iat, itype, itype2
 real  ir
 logical*1 lgiat

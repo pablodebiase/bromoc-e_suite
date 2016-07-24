@@ -27,13 +27,12 @@ use stdiomod
 use errormod 
 use grandmod
 use nucleotmod
+use listmod
 implicit none
 !     Local variables      
 integer i, i1, i2, strand1, strand2, strand3 
 character*2 namesite1, namesite2, namesite3
 character*5 namepr
-!     Function to generate the index for a supervector
-integer indexi
 
 !     Initializations      
 nbond = 0 
@@ -56,7 +55,7 @@ do i = 1, nsites-1
     typbond(nbond) = 0 ! intranucleotide bond
     sitebond(nbond,1) = i
     sitebond(nbond,2) = i + 1
-    bond(indexi(i,i+1)) = .true.
+    bond(etpidx(i,i+1)) = .true.
     if (namesite2.eq.'S ') then 
       if (namesite1.eq.'Ab') then ! S-Ab
         distbond(nbond) = dSAb
@@ -76,7 +75,7 @@ do i = 1, nsites-1
       if (nbond.gt.maxbond) call error ('bonds', 'The number of bonds exceeds the maximum value', faterr)
       sitebond(nbond,1) = i
       sitebond(nbond,2) = i + 1
-      bond(indexi(i,i+1)) = .true.      
+      bond(etpidx(i,i+1)) = .true.      
       if (namesite2.eq.'P ') then ! S(5')-P
         if (Qinvstr) then
           distbond(nbond) = dPS5
@@ -95,7 +94,7 @@ do i = 1, nsites-1
       if (nbond.gt.maxbond) call error ('bonds', 'The number of bonds exceeds the maximum value', faterr)
       sitebond(nbond,1) = i
       sitebond(nbond,2) = i + 2
-      bond(indexi(i,i+2)) = .true. 
+      bond(etpidx(i,i+2)) = .true. 
       if (namesite3.eq.'S ') then ! S(3')-P    
         if (Qinvstr) then  
           distbond(nbond) = dPS3

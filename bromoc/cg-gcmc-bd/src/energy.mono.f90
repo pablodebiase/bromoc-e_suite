@@ -25,6 +25,7 @@ use constamod
 use nucleotmod
 use extramod
 use efpmod
+use listmod
 implicit none
 
 integer i, j, itype, itype2, jtype, jtype2, is
@@ -40,7 +41,6 @@ real  dihe, dihe0, vardihe,didstmp
 real  epsln,sgex2,f1(3),f2(3),f3(3),f4(3),v1(3),v2(3),v3(3),m1,m2,m3,modval
 real  dist12,esolve,n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
 logical*1 ok,ok2
-integer nindex
 
 ! Initializations
 ener     = 0.0
@@ -123,7 +123,7 @@ if (Qenergy) then
         do i = nsites+1, j-1
           itype = abs(typei(i))
           itype2=nwtype(itype) ! convert atnam to atnam2
-          is=nindex(itype2,jtype2)
+          is=etpidx(itype2,jtype2)
           dist2 = ((x(i)-x(j))**2+(y(i)-y(j))**2+(z(i)-z(j))**2)
           if (Qefpot(is)) then
             if (Qforces) then
@@ -588,7 +588,7 @@ if (Qenergy) then
       do i = nsites+1, ntot
         itype = abs(typei(i))
         itype2 = nwtype(itype)
-        is=nindex(itype2,jtype2)
+        is=etpidx(itype2,jtype2)
   ! Compute distances dna fragment-ion
         dist2 = (x(i)-x(j))**2 + (y(i)-y(j))**2 + (z(i)-z(j))**2
         ok=.false.

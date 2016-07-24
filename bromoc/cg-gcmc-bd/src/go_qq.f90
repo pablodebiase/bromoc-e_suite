@@ -25,6 +25,7 @@ use stdiomod
 use errormod 
 use grandmod
 use nucleotmod
+use listmod
 implicit none
 !Local variables    
 real tol
@@ -32,8 +33,6 @@ parameter (tol=1.0e-4)
 integer i, j, i1, i2 
 real  dij
 logical*1 logvab1, logvab2
-!Function to generate the index for a supervector
-integer indexi
 
 !Initializations      
 nstack = 0
@@ -46,7 +45,7 @@ do i = 2, nsites
   do j = 1, i-1
 !    Two sites are excluded form all non-bonded interactions if they
 !    constitute a bonb
-    if (.not.bond(indexi(i,j))) then
+    if (.not.bond(etpidx(i,j))) then
 !      Native contact's length        
       dij = sqrt((xnat(j)-xnat(i))**2 + (ynat(j)-ynat(i))**2 + (znat(j)-znat(i))**2)
 !      Interaction between nucleotides that form a native contact in
@@ -92,7 +91,7 @@ do i = 2, nsites
         endif
       endif   
     !  Coulomb interaction between interaction sites
-      if (.not.angle(indexi(i,j)) .and. namsite(i).eq.'P '.and.namsite(j).eq.'P ') then
+      if (.not.angle(etpidx(i,j)) .and. namsite(i).eq.'P '.and.namsite(j).eq.'P ') then
         nqq = nqq + 1    
         if (nqq.gt.maxpar) then
           call error ('go_qq', 'The number of coulomb interactions terms exceeds the maximum value', faterr)

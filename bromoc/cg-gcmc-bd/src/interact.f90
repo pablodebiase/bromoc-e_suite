@@ -27,6 +27,7 @@ use nucleotmod
 use stdiomod
 use errormod
 use extramod
+use listmod
 implicit none
 
 !real*16 dener
@@ -35,7 +36,7 @@ real xj, yj, zj
 integer i, j, itype, jtype, itype2, jtype2, is
 real dist, dist2, dist6, idist, idist2
 real sw1, dsw1, sw2, dsw2
-real r,r2
+real r2
 real charge,eefp
 logical*1 Qalert, Beion
 integer isite1, isite2, isite3, isite4
@@ -44,7 +45,6 @@ real  ang, ang0, varang, vecR(3,3)
 real  dihe, dihe0, vardihe
 real  cte1, epsln, sgex2
 real  angbond, angdih    
-integer nindex
 
 dener = 0.0 ! Initialization
 
@@ -82,7 +82,7 @@ if (Qenergy) then ! total energy
       if (sw1.ne.0.0) then ! particle is not in the bulk
         if (Qpore) then ! Cylindrical channel
           r2 = xj**2+yj**2
-          call switch2(sw2,dsw2,r2,rcylinder(jtype2),p2(1,jtype2),p2(2,jtype2),r)
+          call switch2(sw2,dsw2,r2,rcylinder(jtype2),p2(1,jtype2),p2(2,jtype2))
           if (sw2.ne.0.0) then ! particle is not inside pore
             if (sw1.eq.1.0) then ! particle is inside membrane or in pore wall
               if (sw2.eq.1.0) then ! particle is in membrane
@@ -176,7 +176,7 @@ if (Qenergy) then ! total energy
         if (i.ne.j) then
           itype = abs(typei(i))
           itype2=nwtype(itype)
-          is=nindex(itype2,jtype2)
+          is=etpidx(itype2,jtype2)
           dist2 = (x(i)-xj)**2+(y(i)-yj)**2+(z(i)-zj)**2
           if (Qefpot(is)) then
             call gety(is,dist2,eefp,dist)
@@ -351,7 +351,7 @@ if (Qenergy) then ! total energy
     if (Beion) then
       do i = 1, nsites
         itype2 = typtyp(i)
-        is=nindex(itype2,jtype2)
+        is=etpidx(itype2,jtype2)
         dist2 = (x(i)-xj)**2 + (y(i)-yj)**2 + (z(i)-zj)**2    
         if (Qefpot(is)) then
           call gety(is,dist2,eefp,dist)
@@ -383,7 +383,7 @@ if (Qenergy) then ! total energy
       do i = nsites+1, ntot
         itype = abs(typei(i))
         itype2 = nwtype(itype)
-        is=nindex(itype2,jtype2)
+        is=etpidx(itype2,jtype2)
         dist2 = (x(i)-xj)**2 + (y(i)-yj)**2 + (z(i)-zj)**2
         if (Qefpot(is)) then
           call gety(is,dist2,eefp,dist)

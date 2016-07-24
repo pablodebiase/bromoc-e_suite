@@ -28,35 +28,35 @@ call addenam('Na')  ! 9
 ! Define Particle 1: POT
 call addptyp(1,'POT')
 ptypl(nptyp)%etyp(1) = 1
-call setcar(ptypl(nptyp)%r(1),0.0,0.0,0.0)
+call setcarzero(ptypl(nptyp)%r(1))
 ! Define Particle 2: GLU
 call addptyp(4,'GLU')
 ptypl(nptyp)%etyp(1) = 2
 ptypl(nptyp)%etyp(2) = 3
 ptypl(nptyp)%etyp(3) = 4
 ptypl(nptyp)%etyp(4) = 5
-call setcar(ptypl(nptyp)%r(1),0.0,0.0,0.0)
+call setcarzero(ptypl(nptyp)%r(1))
 call setcar(ptypl(nptyp)%r(2),1.0,0.0,0.0)
 call setcar(ptypl(nptyp)%r(3),0.0,1.0,0.0)
 call setcar(ptypl(nptyp)%r(4),0.0,0.0,1.0)
 ! Define Particle 3: CLA
 call addptyp(1,'CLA')
 ptypl(nptyp)%etyp(1) = 6
-call setcar(ptypl(nptyp)%r(1),0.0,0.0,0.0)
+call setcarzero(ptypl(nptyp)%r(1))
 ! Define Particle 4: CCC
 call addptyp(4,'CSCP')
 ptypl(nptyp)%etyp(1) = 3
 ptypl(nptyp)%etyp(2) = 7
 ptypl(nptyp)%etyp(3) = 3
 ptypl(nptyp)%etyp(4) = 8
-call setcar(ptypl(nptyp)%r(1),0.0,0.0,0.0)
+call setcarzero(ptypl(nptyp)%r(1))
 call setcar(ptypl(nptyp)%r(2),1.0,0.0,0.0)
 call setcar(ptypl(nptyp)%r(3),0.0,1.0,0.0)
 call setcar(ptypl(nptyp)%r(4),0.0,0.0,1.0)
 ! Define Particle 5: SOD
 call addptyp(1,'SOD')
 ptypl(nptyp)%etyp(1) = 9
-call setcar(ptypl(nptyp)%r(1),0.0,0.0,0.0)
+call setcarzero(ptypl(nptyp)%r(1))
 
 ! Add the following particle types to list
 do i=1,20

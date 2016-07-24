@@ -25,6 +25,7 @@ use constamod
 use nucleotmod
 use extramod
 use efpmod
+use listmod
 implicit none
 
 integer i, j, itype, itype2, jtype, jtype2, is
@@ -40,7 +41,6 @@ real  dihe, dihe0, vardihe,didstmp
 real  epsln,sgex2,f1(3),f2(3),f3(3),f4(3),v1(3),v2(3),v3(3),m1,m2,m3,modval
 real  dist12,esolve,n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
 logical*1 ok,ok2
-integer nindex
 real bb
 integer ini,fin,aa,nth,tid,omp_get_thread_num,omp_get_num_threads
 real eefpotloc,eelecloc,evdwloc,esrpmfloc,fxloc(ntot),fyloc(ntot),fzloc(ntot)
@@ -119,7 +119,7 @@ if (Qenergy) then
 
   dids(1:5,nsites+1:ntot)=0.0
   aa=(ntot-nsites-nfix)*(ntot-nsites+nfix-1)/2
-  !$omp parallel private(ang,ang0,av,bb,bv,cofo,cte1,dc,dd,de,didstmp,dihe,dihe0,dist,dist12,dist2,dist6,eangloc,ebondloc,ebploc,ediheloc,eefp,eefpotloc,eefpotmxloc,eelecloc,eexloc,epsln,eqqloc,eqqmxloc,esolv,esrpmf0,esrpmf1,esrpmf2,esrpmf3,esrpmfloc,esrpmfmxloc,estackloc,evdwloc,evdwmxloc,f1,f2,f3,f4,fdf,fdv,fin,fxloc,fyloc,fzloc,i,idist,idist2,idistkd,ini,is,isite1,isite2,isite3,isite4,itype,itype2,iv22,j,jtype,jtype2,m1,m2,m3,modval,n1,n1v,n2,n2v,nth,ok,ok2,Qdeby,sgex2,tid,v1,v12,v2,v22,v23,v2v,v3,varang,vard,vard2,vardihe)
+  !$omp parallel private(ang,ang0,av,bb,bv,cofo,cte1,dc,dd,de,didstmp,dihe,dihe0,dist,dist12,dist2,dist6,eangloc,ebondloc,ebploc,ediheloc,eefp,eefpotloc,eefpotmxloc,eelecloc,eexloc,epsln,eqqloc,eqqmxloc,esolvloc,esrpmf0,esrpmf1,esrpmf2,esrpmf3,esrpmfloc,esrpmfmxloc,estackloc,evdwloc,evdwmxloc,f1,f2,f3,f4,fdf,fdv,fin,fxloc,fyloc,fzloc,i,idist,idist2,idistkd,ini,is,isite1,isite2,isite3,isite4,itype,itype2,iv22,j,jtype,jtype2,m1,m2,m3,modval,n1,n1v,n2,n2v,nth,ok,ok2,Qdeby,sgex2,tid,v1,v12,v2,v22,v23,v2v,v3,varang,vard,vard2,vardihe)
   ebploc=0.0
   eexloc=0.0
   eqqloc=0.0
@@ -163,7 +163,7 @@ if (Qenergy) then
         do i = nsites+1, j-1
           itype = abs(typei(i))
           itype2=nwtype(itype) ! convert atnam to atnam2
-          is=nindex(itype2,jtype2)
+          is=etpidx(itype2,jtype2)
           dist2 = ((x(i)-x(j))**2+(y(i)-y(j))**2+(z(i)-z(j))**2)
           if (Qefpot(is)) then
             if (Qforces) then
@@ -653,7 +653,7 @@ if (Qenergy) then
       itype2 = nwtype(itype)
       do j = 1, nsites
         jtype2 = typtyp(j)
-        is=nindex(itype2,jtype2)
+        is=etpidx(itype2,jtype2)
   ! Compute distances dna fragment-ion
         dist2 = (x(i)-x(j))**2 + (y(i)-y(j))**2 + (z(i)-z(j))**2
         ok=.false.

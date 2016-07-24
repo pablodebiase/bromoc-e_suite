@@ -28,13 +28,12 @@ use stdiomod
 use errormod
 use grandmod
 use nucleotmod
+use listmod
 implicit none 
 !Local variables   
 real  cte, valueang   
 integer i, i1, i2, i3, strand1, strand2, strand3, strand4
 character*2 namesite1, namesite2, namesite3, namesite4
-!Function to generate the index for a supervector
-integer indexi
 
 !Initializations
 cte = pi/180.0      
@@ -61,9 +60,9 @@ do i = 1, nsites-2
       siteangle(nangle,1) = i
       siteangle(nangle,2) = i + 1 ! sugar central site 
       siteangle(nangle,3) = i + 2
-      angle(indexi(i,i+1)) = .true.
-      angle(indexi(i,i+2)) = .true.
-      angle(indexi(i+1,i+2)) = .true.
+      angle(etpidx(i,i+1)) = .true.
+      angle(etpidx(i,i+2)) = .true.
+      angle(etpidx(i+1,i+2)) = .true.
       if (namesite2.eq.'S ' .and. namesite3.eq.'P ') then  
         if (Qinvstr) then 
           if (namsite(i).eq.'Ab') then ! P-(5')S-Ab
@@ -97,9 +96,9 @@ do i = 1, nsites-2
       siteangle(nangle,1) = i
       siteangle(nangle,2) = i + 1 ! phosphate central site
       siteangle(nangle,3) = i + 3
-      angle(indexi(i,i+1)) = .true.
-      angle(indexi(i,i+3)) = .true.
-      angle(indexi(i+1,i+3)) = .true.
+      angle(etpidx(i,i+1)) = .true.
+      angle(etpidx(i,i+3)) = .true.
+      angle(etpidx(i+1,i+3)) = .true.
       if (namesite2.eq.'P ' .and. namesite4.eq.'S ') then ! S(5')-P-(3')S
         valangle(nangle) = phSPS
       else  
@@ -113,9 +112,9 @@ do i = 1, nsites-2
       siteangle(nangle,1) = i 
       siteangle(nangle,2) = i + 2 ! sugar central site
       siteangle(nangle,3) = i + 1     
-      angle(indexi(i,i+2)) = .true.
-      angle(indexi(i,i+1)) = .true.
-      angle(indexi(i+1,i+2)) = .true.
+      angle(etpidx(i,i+2)) = .true.
+      angle(etpidx(i,i+1)) = .true.
+      angle(etpidx(i+1,i+2)) = .true.
       if (Qinvstr) then
         if (namesite2.eq.'Ab') then !  P-(3')S-Ab
           valangle(nangle) = phPSAb2
@@ -146,9 +145,9 @@ do i = 1, nsites-2
       siteangle(nangle,1) = i
       siteangle(nangle,2) = i + 2 ! sugar central site
       siteangle(nangle,3) = i + 3
-      angle(indexi(i,i+2)) = .true.
-      angle(indexi(i+2,i+3)) = .true.
-      angle(indexi(i,i+3)) = .true.
+      angle(etpidx(i,i+2)) = .true.
+      angle(etpidx(i+2,i+3)) = .true.
+      angle(etpidx(i,i+3)) = .true.
       if (namesite3.eq.'S ' .and. namesite4.eq.'P ') then ! P-(3')S(5')-P
         valangle(nangle) = phPSP    
       else

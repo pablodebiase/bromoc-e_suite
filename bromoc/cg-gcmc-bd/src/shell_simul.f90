@@ -31,7 +31,7 @@ use extramod
 use splinemod
 use explatmod
 use charmmmod
-use typesmod
+use listmod
 
 !Command parser and file name
 implicit none
@@ -72,9 +72,6 @@ integer    ntras
 real       vfbs,scald,scaldd
 !for security outputfile
 integer    nsec,ntc
-
-!for short-range ion-ion interactions
-integer nindex
 
 !for TEST order
 real       tol, delta, maxl,minl,maxlg,minlg
@@ -177,13 +174,21 @@ ikbtdna      = 0.0
 setframes    = 0
 dnaparams    = 0
 scalepairing = 1.0
-do is = 1, dspline
-  xs(is)=0.0
-  ys(is)=0.0
-  b(is)=0.0
-  c(is)=0.0
-  d(is)=0.0
-enddo
+xs           = 0.0
+ys           = 0.0
+b            = 0.0
+c            = 0.0
+d            = 0.0
+
+! initialize lists
+call deltypall()
+call delparall()
+
+! allocate space for lists
+call resizeenam(4000)  ! Resize Element-Type Vectors
+call resizeptypl(1000) ! Resize Particle-Type Vectors
+call resizeparl(23000) ! Resize Particle Lists
+call resizecvec(23000) ! Resize Element Lists
 
 call header(outu)
 start = timer()
@@ -677,7 +682,7 @@ do while (.not. logfinal)
       do j=i,nttyp
         if (j.gt.ndna) then
           if (cg2(i).ne.0.0.and.cg2(j).ne.0.0) then
-            is=nindex(i,j)
+            is=etpidx(i,j)
             fct(is)=celec*cg2(i)*cg2(j)/cdie
             Qchr(is)=.true.
           endif
@@ -987,7 +992,7 @@ do while (.not. logfinal)
         do j=i,nttyp
           if (j.gt.ndna) then
             if (cg2(i).ne.0.0.and.cg2(j).ne.0.0) then
-              is=nindex(i,j)
+              is=etpidx(i,j)
               fct(is)=celec*cg2(i)*cg2(j)/cdie
               Qchr(is)=.true.
             endif
@@ -1182,7 +1187,7 @@ do while (.not. logfinal)
       do j=i,nttyp
         if (j.gt.ndna) then
           if (eps(i).gt.0.0.and.sigma(i).gt.0.0.and.eps(j).gt.0.0.and.sigma(j).gt.0.0) then
-              is=nindex(i,j)
+              is=etpidx(i,j)
               epp4(is)=4.0*sqrt(eps(i)*eps(j))
               sgp2(is)=(0.5*(sigma(i)+sigma(j)))**2
               Qlj(is)=.true.
@@ -1213,7 +1218,7 @@ do while (.not. logfinal)
         ! Obtention of ion type atnam(jtype)
         call getfirst(com,wrd4)
         call fatnam(atnam2,nttyp,wrd4,jtype)
-        is=nindex(itype,jtype)
+        is=etpidx(itype,jtype)
         call gtdpar(com,'epsilon',epsLJ(is),0.0)
         call gtdpar(com,'sigma',sgLJ(is),0.0)
       endif
@@ -1234,7 +1239,7 @@ do while (.not. logfinal)
     do  i = 1, nttyp
       do j = i, nttyp
         if (j.gt.ndna) then 
-          is=nindex(i,j)
+          is=etpidx(i,j)
           if (epsLJ(is).gt.0.0 .and. sgLJ(is).gt.0.0) then
             write(outu,'(6x,a,a,2f12.4,$)') atnam2(i),atnam2(j),epsLJ(is),sgLJ(is) 
             if (Qlj(is)) then
@@ -1761,7 +1766,7 @@ do while (.not. logfinal)
          call getfirst(com,wrd4)
          call fatnam(atnam2,nttyp,wrd4,jtype)
          if (itype.eq.0.or.jtype.eq.0) call error ('shell_simul', 'A ion pair is necessary in SRPMF order', faterr)
-         is=nindex(itype,jtype)
+         is=etpidx(itype,jtype)
          ! c_0 parameter [real*8,default=0]
          call gtdpar(com,'c0',c0(is),0.0)
          ! c_1 parameter [real*8,default=0]
@@ -1783,7 +1788,7 @@ do while (.not. logfinal)
            if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
            if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in SRPMF order', faterr)
            iunit = unvec(iunit)
-           is=nindex(itype,jtype)
+           is=etpidx(itype,jtype)
            ! Parameters of the Lennard-Jones 6-12 potential 
            cc0 = c0(is)
            cc1 = c1(is)
@@ -1816,7 +1821,7 @@ do while (.not. logfinal)
      do i = 1,nttyp
        do j=i,nttyp
          if(j.gt.ndna) then
-           is=nindex(i,j)
+           is=etpidx(i,j)
            if (c2(is).ne.0.0) then
              write(outu,'(6x,a,1x,a,5f8.3)') atnam2(i),atnam2(j),c0(is),c1(is),c2(is),c3(is),c4(is)
              c2(is)=1.0/c2(is)
@@ -1874,7 +1879,7 @@ do while (.not. logfinal)
         call getfirst(com,wrd4)
         call fatnam(atnam2,nttyp,wrd4,jtype)
         if (itype.eq.0.or.jtype.eq.0) call error ('shell_simul','A ion pair is necessary in EFPOT order', faterr)
-        is=nindex(itype,jtype)
+        is=etpidx(itype,jtype)
         if (check(com,'read')) then
           Qefpot(is) = .true.
           Qefpotread(is) = .true.
@@ -1929,7 +1934,7 @@ do while (.not. logfinal)
     do i = 1,nttyp
       do j=i,nttyp
         if(j.gt.ndna) then
-          is=nindex(i,j)
+          is=etpidx(i,j)
           if (Qefpot(is).and.Qefpotread(is)) then
             write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')atnam2(i),atnam2(j),'  Number of Points:',1-nxi(is)+nxf(is),'  From-To: ',xy(1,nxi(is)),' - ',xy(1,nxf(is))
             call splinepot(is,1-nxi(is)+nxf(is),xy(1,nxi(is):nxf(is)),xy(2,nxi(is):nxf(is)),nxf(is))
@@ -1951,7 +1956,7 @@ do while (.not. logfinal)
       do i=1,nttyp
         do j=i,nttyp
           if (j.gt.ndna) then
-            is=nindex(i,j)
+            is=etpidx(i,j)
             if (Qefpot(is)) then
               write(wunit,*) atnam2(i),' - ',atnam2(j)
               do k=int((dmi(is)-1.0)*ires*10.0),int((sqrt(dm2(2,is))+10.0)*ires*10.0)
