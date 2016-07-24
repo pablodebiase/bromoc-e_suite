@@ -39,6 +39,7 @@ end type parpro
 ! Particle Type
 type :: partype
     integer :: ne                              !! Number of Elements in Particle
+    character*4                      :: pnam   !! Particle Name
     integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
     type(car),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
 end type partype
@@ -46,11 +47,15 @@ end type partype
 ! LIST DEFINITIONS
 !! Particles List
 integer                                 :: npar       !! Number of Particles 
-type(parpro), allocatable, dimension(:) :: parl        !! Particles List Description :: Size of Number of Particles (npar)
+type(parpro), allocatable, dimension(:) :: parl       !! Particles List Description :: Size of Number of Particles (npar)
+
+!! Element-Type List
+integer                                  :: netyp     !! Number of Element Types
+character*4,allocatable,dimension(:)     :: enam      !! Element Name List 
 
 !! Particle-Type List
-integer                                  :: ntyp      !! Number of Types
-type(partype), allocatable, dimension(:) :: ptypl    !! Type of Particle list :: Size of ntyp
+integer                                  :: nptyp      !! Number of Particle Types
+type(partype), allocatable, dimension(:) :: ptypl    !! Type of Particle list :: Size of nptyp
 
 !! Force and position vectors
 integer nele                                !! Total Number of elements
@@ -82,11 +87,35 @@ do i=1,npar
 enddo
 end subroutine
 
+subroutine resizeenam(newsize)
+implicit none
+integer vdim,newsize
+character*4,allocatable,dimension(:)     :: enamtmp      !! Element Name List 
+! if 0
+if (newsize .lt. 1) then
+    if (allocated(enam)) deallocate (enam)
+endif
+! Measure Vector Size
+vdim=size(enam)
+! Allocate double of original size in temp vectors
+allocate (enamtmp(newsize))
+! Copy Vectors
+if (vdim .gt. newsize) vdim = newsize
+if (allocated(enam) .and. vdim .gt. 0) enamtmp(1:vdim)=enam(1:vdim)
+! Deallocate original Vector
+if (allocated(enam)) deallocate (enam)
+! Move allocations
+call move_alloc(enamtmp,enam)
+end subroutine
+
 subroutine resizeptypl(newsize)
 implicit none
 integer vdim,newsize
-type(partype), allocatable, dimension(:) :: ptypltmp    !! Type of Particle list :: Size of ntyp
-if (newsize .lt. 1) newsize = 1
+type(partype), allocatable, dimension(:) :: ptypltmp    !! Type of Particle list :: Size of nptyp
+! if 0
+if (newsize .lt. 1) then
+    if (allocated(ptypl)) deallocate (ptypl)
+endif
 ! Measure Vector Size
 vdim=size(ptypl)
 ! Allocate double of original size in temp vectors
@@ -104,7 +133,10 @@ subroutine resizeparl(newsize)
 implicit none
 integer vdim,newsize
 type(parpro), allocatable, dimension(:) :: parltmp        !! Particles List Description :: Size of Number of Particles (npar)
-if (newsize .lt. 1) newsize = 1
+! if 0
+if (newsize .lt. 1) then
+    if (allocated(parl)) deallocate (parl)
+endif
 ! Measure Vector Size
 vdim=size(parl)
 ! Allocate double of original size in temp vectors
@@ -123,7 +155,11 @@ implicit none
 integer vdim,newsize
 type(car), allocatable, dimension(:) :: rtmp  !! Elements Position Vector
 type(car), allocatable, dimension(:) :: ftmp  !! Elements Force Vector
-if (newsize .lt. 1) newsize = 1
+! if 0
+if (newsize .lt. 1) then
+    if (allocated(r)) deallocate (r)
+    if (allocated(f)) deallocate (f)
+endif
 ! Measure Vector Size
 vdim=size(r)
 ! Allocate double of original size in temp vectors
@@ -140,10 +176,30 @@ call move_alloc(rtmp,r)
 call move_alloc(ftmp,f)
 end subroutine
 
+subroutine addenam(ename)
+implicit none
+character*(*) ename
+netyp=netyp+1
+if (netyp .gt. size(enam)) call resizeenam(netyp)
+enam(netyp)=ename
+end subroutine
+
+subroutine addptyp(ne,pnam)
+implicit none
+integer ne
+character*(*) pnam
+if (ne .lt. 1) return
+nptyp=nptyp+1
+if (nptyp .gt. size(ptypl)) call resizeptypl(nptyp)
+ptypl(nptyp)%ne = ne
+ptypl(nptyp)%pnam = pnam
+allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne))
+end subroutine
+
 subroutine addpar(ptype)
 implicit none
 integer ptype,lastnele,i
-if (ptype .gt. 0 .and. ptype .le. ntyp) then
+if (ptype .gt. 0 .and. ptype .le. nptyp) then
   npar=npar+1
   lastnele=nele
   nele=nele+ptypl(ptype)%ne
@@ -362,26 +418,28 @@ end subroutine
 
 subroutine delpar(parn)
 implicit none
-integer ptype,i,n,ne,sr,parn
-! If parn is the last particle just remove
-if (parn .eq. npar) then
-    if (npar .eq. 1) then
-        nele=0
-        npar=0
-    else
-        nele=nele-parl(parn)%ne
-        npar=npar-1
-    endif 
+integer i,n,ne,sr,parn
+if (npar .le. 1) then
+    nele=0
+    npar=0
     return
 endif
-! Look for last particle of same type
-ptype=parl(parn)%ptyp
+! If no more particles or parn is out of range exit
+if (parn.gt.npar.or.parn.lt.1) return
+! If parn is the last particle just remove
+if (parn .eq. npar) then
+    nele=nele-parl(parn)%ne
+    npar=npar-1
+    return
+endif
+! Look for last particle of same number of elements
 ne=parl(parn)%ne
 n=npar
-do while (parl(n)%ptyp .ne. ptype .and. n.gt.parn)
+do while (parl(n)%ne .ne. ne .and. n.gt.parn)
     n=n-1
 enddo
-! If there is another of the same type closer to the end copy that one to parn's place
+! If there is another of particle with the same ne closer to the end copy that one to parn's place
+    ! Copy coordinates
 if (n .gt. parn) r(parl(parn)%sr+1:parl(parn)%sr+parl(parn)%ne)=r(parl(n)%sr+1:parl(n)%sr+parl(n)%ne)
 ! Move all coordinates backwards and remove that n particle from the coordinate vector
 sr=parl(n)%sr
@@ -389,6 +447,11 @@ do i=sr+1,nele-ne
     r(i)=r(i+ne)
 enddo
 nele=nele-ne
+
+! If there is another of particle with the same ne closer to the end copy that one to parn's place
+! Copy particle 
+if (n .gt. parn) parl(parn)%ptyp=parl(n)%ptyp
+
 ! Move all particles backwards and remove one particle from particle list
 do i=n,npar-1
    parl(i)%ptyp=parl(i+1)%ptyp
@@ -396,6 +459,18 @@ do i=n,npar-1
    parl(i)%ne=parl(i+1)%ne
 enddo
 npar=npar-1
+end subroutine
+
+subroutine delparall()
+implicit none
+npar=0
+nele=0
+end subroutine
+
+subroutine deltypall()
+implicit none
+nptyp=0 ! number of particle types
+netyp=0 ! number of element types
 end subroutine
 
 end module
