@@ -1,7 +1,7 @@
-program tt2
+program listmodtester
 use listmod
 implicit none
-integer i,j,k,npnp
+integer i,k,npnp
 real,external :: rndm
 
 ! initialize lists
@@ -70,25 +70,25 @@ do i=1,npar
 enddo
 
 write(*,*) '>>>>>>>>>> LISTS'
-call printlists()
+call printlists(6)
 
 write(*,*) '>>>>>>>>>> XYZ'
-call printxyz()
+call printxyz(6)
 
 write(*,*) '>>>>>>>>>> PDB'
-call printpdb()
+call printpdb(6)
 
 write(*,*) '>>>>>>>>>>>>',0,3,npar
 call delpar(3)
-call printpdb()
+call printpdb(6)
 
 npnp=npar+1
 do i=1,npnp
   k=getrand(npar)
   write(*,*) '>>>>>>>>>>>>',i,k,npar
   call delpar(k)
-  call printpdb()
-  !call printlists()
+  call printpdb(6)
+  !call printlists(6)
 enddo
 
 contains
@@ -98,40 +98,5 @@ implicit none
 integer getrand,imax
 getrand=int(imax*rndm()+1)
 end function
-
-subroutine printpdb()
-implicit none
-integer i
-call updatetypel()
-do i=1,nele
-  write (*,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,enam(etypl(i)),ptypl(petypl(i))%pnam,pel(i),r(i)%x,r(i)%y,r(i)%z
-enddo
-write (*,'(A)') 'END'
-end subroutine
-
-subroutine printxyz()
-implicit none
-integer i
-! Print Particle Data
-call updatetypel()
-write(*,*) nele
-write(*,*)
-do i=1,nele
-    write(*,*) enam(etypl(i)),r(i)%x,r(i)%y,r(i)%z
-enddo
-end subroutine
-
-subroutine printlists()
-implicit none
-integer i
-! Print Particle Data
-do i=1,npar
-   write(*,*) i,parl(i)%ptyp,parl(i)%sr,parl(i)%ne
-   do j=1,parl(i)%ne
-      k=j+parl(i)%sr
-      write(*,*) '      ',ptypl(parl(i)%ptyp)%etyp(j),r(k)%x,r(k)%y,r(k)%z
-   enddo
-enddo
-end subroutine
 
 end program

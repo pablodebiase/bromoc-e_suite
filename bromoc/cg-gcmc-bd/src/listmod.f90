@@ -178,6 +178,15 @@ call move_alloc(rtmp,r)
 call move_alloc(ftmp,f)
 end subroutine
 
+subroutine addmonopar(pename)
+implicit none
+character*(*) pename
+call addenam(pename)
+call addptyp(1,pename)
+ptypl(nptyp)%etyp(1)=netyp
+call setcarzero(ptypl(nptyp)%r(1))
+end subroutine
+
 subroutine addenam(ename)
 implicit none
 character*(*) ename
@@ -221,11 +230,7 @@ end subroutine
 subroutine movepar(parn,rcent)
 implicit none
 type(car) :: rcent,arcent  ! Particle Centroid
-integer ne,sr,parn ! Particle Number 
-real ine
-ne=parl(parn)%ne
-ine=1.0/ne
-sr=parl(parn)%sr
+integer parn ! Particle Number 
 ! Compute Actual Centroid
 call getcentroid(arcent,parn)
 ! Compute Displacement: Substract Actual Centroid to New Centroid
@@ -283,9 +288,8 @@ end subroutine
 subroutine rotatepar(parn,rot)
 implicit none
 integer i,ne,sr,parn ! Particle Number 
-real ine,rot(3,3)
+real rot(3,3)
 ne=parl(parn)%ne
-ine=1.0/ne
 sr=parl(parn)%sr
 ! Add each position vector to rc
 do i=1,ne
@@ -324,13 +328,18 @@ enddo
 call mulcar(rc,ine)
 end subroutine
 
+subroutine putmonopar(parn,x,y,z)
+implicit none
+integer parn
+real x,y,z
+call setcar(r(parl(parn)%sr+1),x,y,z)
+end subroutine
+
 subroutine addcar2par(parn,rc)
 implicit none
 type(car) :: rc  ! Cartesian coordinates
 integer i,ne,sr,parn ! Particle Number 
-real ine
 ne=parl(parn)%ne
-ine=1.0/ne
 sr=parl(parn)%sr
 ! Add each position vector to rc
 do i=1,ne
@@ -342,9 +351,7 @@ subroutine subcar2par(parn,rc)
 implicit none
 type(car) :: rc  ! Cartesian coordinates
 integer i,ne,sr,parn ! Particle Number 
-real ine
 ne=parl(parn)%ne
-ine=1.0/ne
 sr=parl(parn)%sr
 ! Add each position vector to rc
 do i=1,ne
@@ -484,5 +491,46 @@ maxi=MAX(itype,jtype)
 mini=MIN(itype,jtype)
 etpidx=maxi*(maxi-1)/2+mini
 end function
+
+subroutine printpdb(nunit)
+implicit none
+integer i
+integer :: nunit
+
+call updatetypel()
+do i=1,nele
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,enam(etypl(i)),ptypl(petypl(i))%pnam,pel(i),r(i)%x,r(i)%y,r(i)%z
+enddo
+write (nunit,'(A)') 'END'
+end subroutine
+
+subroutine printxyz(nunit)
+implicit none
+integer i
+integer :: nunit
+
+! Print Particle Data
+call updatetypel()
+write(nunit,*) nele
+write(nunit,*)
+do i=1,nele
+    write(nunit,*) enam(etypl(i)),r(i)%x,r(i)%y,r(i)%z
+enddo
+end subroutine
+
+subroutine printlists(nunit)
+implicit none
+integer i,j,k
+integer :: nunit
+
+! Print Particle Data
+do i=1,npar
+   write(nunit,*) i,parl(i)%ptyp,parl(i)%sr,parl(i)%ne
+   do j=1,parl(i)%ne
+      k=j+parl(i)%sr
+      write(nunit,*) '      ',ptypl(parl(i)%ptyp)%etyp(j),r(k)%x,r(k)%y,r(k)%z
+   enddo
+enddo
+end subroutine
 
 end module
