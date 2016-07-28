@@ -86,8 +86,9 @@ if (Qpar) then
     atnam2(itype) = atnam(i)
   enddo
 endif ! Qpar
-nttyp=itype
-nion=nttyp-ndna
+nion=itype-ndna
+nttyp=nion
+if (Qnucl) nttyp=nttyp+6
 ndnaxnion=ndna*nion
 return
 end subroutine

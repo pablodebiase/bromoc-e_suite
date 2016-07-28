@@ -28,6 +28,7 @@ use stdiomod
 use grandmod
 use nucleotmod
 use errormod
+use listmod
 !Local variables
 implicit none
 integer isite, nuc, i,j,k
@@ -356,6 +357,15 @@ if (istrs.eq.2) then
   enddo
 endif
 
+! Save coordinates to lists
+! First Strand
+do i = 1, nsites1st
+   call putcoorinptyp(1,i,xnat(i),ynat(i),znat(i))
+enddo
+do i = nsites1st+1,nsites
+   call putcoorinptyp(2,i-nsites1st,xnat(i),ynat(i),znat(i))
+enddo
+
 !OUTPUT
 phPSAbd = phPSAb*icte
 phPSTbd = phPSTb*icte
@@ -377,6 +387,7 @@ dhSPSCbd = dhSPSCb*icte
 dhSPSGbd = dhSPSGb*icte
 dhSPSPd  = dhSPSP*icte
 dhPSPSd  = dhPSPS*icte
+
 if (Qninfo) then
   write(outu,'(/6x,a)') 'Natural bond lenghts, bond angles and dihedral angles'
   write(outu,'(6x,a)') 'NOTE: distances in Ang. and angles in'//' degrees'

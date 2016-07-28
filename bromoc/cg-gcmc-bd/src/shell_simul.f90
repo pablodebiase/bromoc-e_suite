@@ -276,17 +276,17 @@ do while (.not. logfinal)
        deallocate (sgstack,sgbp,sgex,sitenam)
      else
        ! Add Mono-element Particle Types
-       call addmonopar('S')   ! 1
-       call addmonopar('P')   ! 2
-       call addmonopar('Ab')  ! 3
-       call addmonopar('Tb')  ! 4
-       call addmonopar('Cb')  ! 5
-       call addmonopar('Gb')  ! 6
+       call addenam('S')   ! 1
+       call addenam('P')   ! 2
+       call addenam('Ab')  ! 3
+       call addenam('Tb')  ! 4
+       call addenam('Cb')  ! 5
+       call addenam('Gb')  ! 6
      endif
      maxsite = istrs*inuc*3
      maxbond = maxsite-1
-     maxang  = maxsite-2
-     maxdihe = maxsite-3
+     maxang  = 2*maxsite-2
+     maxdihe = 2*maxsite-3
      maxpar  = maxsite*(maxsite-1)/2
      allocate (strand(maxsite),typenuc(maxsite),stfx(maxsite),stfree(maxsite),namnucl(maxsite),namsite(maxsite))
      allocate (xnat(maxsite),ynat(maxsite),znat(maxsite),rnat(maxsite),phinat(maxsite))
@@ -354,7 +354,11 @@ do while (.not. logfinal)
      endif
      if (Qexpl2nd.and.istrs.ne.2) call error('shell_simul','explicit2nd ignored, 2nd strand was not specified',warning)
      Qninfo=check(com,'printinfo')
-     if (istrs.gt.0) then 
+     nsites=0
+     if (istrs.gt.0) then
+       j=inuc*3
+       if (.not.QfirstP) j=j-1
+       call addptyp(j,'DNA1')
        if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of date in NUCLEOTIDE order', faterr)
        do j = 1, inuc
          ntype = ntype + 1
@@ -375,7 +379,7 @@ do while (.not. logfinal)
            typenuc(nsites) = ntype
            namnucl(nsites) = atnam(ntype)(1:1)
            namsite(nsites) = 'P'
-           call addpar(2)
+           call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
          endif
          ! Base
          nsites = nsites + 1
@@ -385,16 +389,16 @@ do while (.not. logfinal)
          namnucl(nsites) = atnam(ntype)(1:1)
          if (namnucl(nsites).eq.'A') then
            namsite(nsites) = 'Ab' 
-           call addpar(3)
+           call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'T') then
            namsite(nsites) = 'Tb'
-           call addpar(4)
+           call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'C') then
            namsite(nsites) = 'Cb'
-           call addpar(5)
+           call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'G') then
            namsite(nsites) = 'Gb'
-           call addpar(6)
+           call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
          else      
            call error ('shell_simul', 'nucleotide name is not correct', faterr)
          endif  
@@ -405,7 +409,7 @@ do while (.not. logfinal)
          typenuc(nsites) = ntype
          namnucl(nsites) = atnam(ntype)(1:1) 
          namsite(nsites) = 'S'
-         call addpar(1)
+         call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
        enddo
      endif 
      ! read explicit second strand
@@ -497,6 +501,9 @@ do while (.not. logfinal)
      ! complementary strand
      nsites1st = nsites
      if (istrs.eq.2) then
+       j=inuc*3
+       if (.not.QfirstP) j=j-1
+       call addptyp(j,'DNA2')
        ntypold = ntype      
        do j = 0, inuc-1
          ntype = ntype + 1
@@ -527,7 +534,7 @@ do while (.not. logfinal)
            typenuc(nsites) = ntype
            namnucl(nsites) = atnam(ntype)(1:1)
            namsite(nsites) = 'P'
-           call addpar(2)
+           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
          endif
          ! Base
          nsites = nsites + 1
@@ -537,16 +544,16 @@ do while (.not. logfinal)
          namnucl(nsites) = atnam(ntype)(1:1)           
          if (namnucl(nsites).eq.'A') then
            namsite(nsites) = 'Ab'
-           call addpar(3)
+           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'T') then
            namsite(nsites) = 'Tb'
-           call addpar(4)
+           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'C') then
            namsite(nsites) = 'Cb'
-           call addpar(5)
+           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'G') then
            namsite(nsites) = 'Gb'
-           call addpar(6)
+           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
          else
            call error ('shell_simul', 'nucleotide name is not correct', faterr)
          endif
@@ -557,7 +564,7 @@ do while (.not. logfinal)
          typenuc(nsites) = ntype
          namnucl(nsites) = atnam(ntype)(1:1)
          namsite(nsites) = 'S'            
-         call addpar(1)
+         call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
        enddo
        if (Qexpl2nd) deallocate (secstr)
      endif
@@ -601,6 +608,9 @@ do while (.not. logfinal)
      call go_qq
      Qnucl = .true.
      call reasig
+     ! Add Particle
+     if (istrs.gt.0) call addpar(1)
+     if (istrs.eq.2) call addpar(2)
      call printpdb(outu) 
      write(outu,*)  
   ! **********************************************************************
@@ -680,7 +690,7 @@ do while (.not. logfinal)
     enddo
     Qpar = .true.
     call reasig
-    ntc=(nttyp+ndna+1)*nion/2
+    ntc=nttyp*(nttyp+1)/2
     allocate (Qcol(ntc),Qchr(ntc),Qefpot(ntc),Qlj(ntc),Qsrpmfi(ntc),cg2(nttyp))
     Qchr=.false.
     Qcol=.true.
@@ -1197,7 +1207,7 @@ do while (.not. logfinal)
         write(outu,'(6x,a,2f12.4)') atnam2(i),eps(i),sigma(i)
       endif
     enddo
-    ntc=(nttyp+ndna+1)*nion/2
+    ntc=nttyp*(nttyp+1)/2
     allocate (epp4(ntc),sgp2(ntc),epsLJ(ntc),sgLJ(ntc))
     epsLJ=0.0
     sgLJ=0.0
@@ -1251,7 +1261,7 @@ do while (.not. logfinal)
     write(outu,'(6x,a)') 'type1---type2---epsilon(kcal/mol)---sigma(Ang)'
     write(outu,'(6x,a)') '-----------------------------------------'
     if (.not.allocated(epp4)) then
-      ntc=(nttyp+ndna+1)*nion/2
+      ntc=nttyp*(nttyp+1)/2
       allocate (epp4(ntc),sgp2(ntc))
       epp4=0.0
       sgp2=0.0
@@ -1760,7 +1770,7 @@ do while (.not. logfinal)
   !        ---------------
      if (.not.Qpar) call error ('shell_simul', 'SRPMF order is defined before PARTICLE order', faterr)
      if (Qefpott) call error ('shell_simul', 'SRPMF must be defined before EFPOT', faterr)
-     ntc=(nttyp+ndna+1)*nion/2
+     ntc=nttyp*(nttyp+1)/2
      allocate (c0(ntc),c1(is),c2(ntc),c3(is),c4(ntc))
      c0=0.0
      c1=0.0
@@ -1858,7 +1868,7 @@ do while (.not. logfinal)
   !       ---------------
     if (.not.(Qpar.or.Qnucl)) call error ('shell_simul','EFPOT order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
     cnt=0
-    ntc=(nttyp+ndna+1)*nion/2 
+    ntc=nttyp*(nttyp+1)/2
     Qepwrt=check(com,'write')
     ! Assume 0 charge for all particles
     if (check(com,'ignoreq')) then
@@ -2468,7 +2478,6 @@ do while (.not. logfinal)
            call gtdpar(com,'ycor',y(i),0.0)
            ! Z-coordinate for fixed ion
            call gtdpar(com,'zcor',z(i),0.0)
-           call putmonopar(i,x(i),y(i),z(i))
          enddo
          if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of date in COOR order', faterr)
          if (.not.setword(word,com)) call error ('shell_simul', 'premature end of date in COOR order', faterr)
@@ -2547,7 +2556,7 @@ do while (.not. logfinal)
            x(i) = xnat(i)
            y(i) = ynat(i)
            z(i) = znat(i)
-           call putmonopar(i,x(i),y(i),z(i))
+           call setcar(r(i),x(i),y(i),z(i))
          enddo
          ntot = nsites
          if (ntot.gt.datom) call error ('shell_simul', 'ntot is greater than datom', faterr)
@@ -2645,7 +2654,7 @@ do while (.not. logfinal)
          x(i) = xold*rot(1,1) + yold*rot(1,2) + zold*rot(1,3)
          y(i) = xold*rot(2,1) + yold*rot(2,2) + zold*rot(2,3)
          z(i) = xold*rot(3,1) + yold*rot(3,2) + zold*rot(3,3)
-         call putmonopar(i,x(i),y(i),z(i))
+         call setcar(r(i),x(i),y(i),z(i))
        enddo
        write(outu,'(6x,a)') 'Coordinates for DNA sites have been rotated. Rotation matrix:'
        do i = 1, 3
@@ -2664,7 +2673,7 @@ do while (.not. logfinal)
          x(i) = x(i) + xtras
          y(i) = y(i) + ytras
          z(i) = z(i) + ztras
-         call putmonopar(i,x(i),y(i),z(i))
+         call setcar(r(i),x(i),y(i),z(i))
        enddo
        write(outu,'(6x,a,1x,a,3(f12.6,a))')'Coordinates for DNA sites have been moved by','(',xtras,',',ytras,',',ztras,')'
      elseif (check(com,'setori').and.Qnucl) then
@@ -2683,7 +2692,7 @@ do while (.not. logfinal)
          x(i) = x(i) - xm
          y(i) = y(i) - ym
          z(i) = z(i) - zm
-         call putmonopar(i,x(i),y(i),z(i))
+         call setcar(r(i),x(i),y(i),z(i))
        enddo
        call gtdpar(com,'x',xm,xm)
        call gtdpar(com,'y',ym,ym)
@@ -2692,7 +2701,7 @@ do while (.not. logfinal)
          x(i) = x(i) + xm
          y(i) = y(i) + ym
          z(i) = z(i) + zm
-         call putmonopar(i,x(i),y(i),z(i))
+         call setcar(r(i),x(i),y(i),z(i))
        enddo
        write(outu,'(6x,a,3(f12.6,a))')'DNA geometric center is now at  (',xm,',',ym,',',zm,')'
      endif

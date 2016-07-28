@@ -91,7 +91,7 @@ do i = 1, nsites-2
     endif   
   else if (namesite1.eq.'S ') then  
     if ((i+3).le.nsites .and. strand1.eq.strand4) then
-      nangle = nangle + 1     
+      nangle = nangle + 1
       if (nangle.gt.maxang) call error ('angles', 'The number of bond angles exceeds the maximum value', faterr)
       siteangle(nangle,1) = i
       siteangle(nangle,2) = i + 1 ! phosphate central site
@@ -154,7 +154,7 @@ do i = 1, nsites-2
          call error ('angles', 'INCORRECT ORDER FOR SITES',faterr)
       endif
     endif            
-  endif    
+  endif
 enddo
 
 !OUTPUT

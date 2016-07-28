@@ -178,15 +178,37 @@ call move_alloc(rtmp,r)
 call move_alloc(ftmp,f)
 end subroutine
 
-subroutine addmonopar(pename)
+! Add Mono Particle (Particle with Single Element)
+subroutine addmonopar(pename,pname)
 implicit none
 character*(*) pename
+character*(*),optional :: pname
+if (.not. present(pname)) pname = pename
 call addenam(pename)
-call addptyp(1,pename)
+call addptyp(1,pname)
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
 end subroutine
 
+! get etyp from ename
+function getetyp(ename)
+implicit none
+integer getetyp,i
+character*(*) ename
+logical doloop
+doloop=.true.
+i=1
+do while (doloop.and.i.le.netyp)
+   if (ename.eq.enam(i)) then
+      doloop=.false.
+   else
+      i=i+1
+   endif
+enddo
+getetyp=i
+end function
+
+! Add Element Name to list
 subroutine addenam(ename)
 implicit none
 character*(*) ename
@@ -196,6 +218,14 @@ if (netyp .gt. size(enam)) call resizeenam(netyp)
 enam(netyp)=ename
 end subroutine
 
+! Set Element Type in Particle Type
+subroutine seteleinptyp(ptypn,nen,etyp)
+implicit none
+integer ptypn, nen, etyp
+ptypl(ptypn)%etyp(nen)=etyp
+end subroutine
+
+! Add Particle Type
 subroutine addptyp(ne,pnam)
 implicit none
 integer ne
@@ -208,6 +238,7 @@ ptypl(nptyp)%pnam = pnam
 allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne))
 end subroutine
 
+! Add Particle Type To Particle List
 subroutine addpar(ptype)
 implicit none
 integer ptype,lastnele,i
@@ -231,12 +262,16 @@ subroutine movepar(parn,rcent)
 implicit none
 type(car) :: rcent,arcent  ! Particle Centroid
 integer parn ! Particle Number 
-! Compute Actual Centroid
-call getcentroid(arcent,parn)
-! Compute Displacement: Substract Actual Centroid to New Centroid
-call subcar2par(parn,arcent)
-! Add Displacement to all elements position
-call addcar2par(parn,rcent)
+if (parl(parn)%ne .eq. 1) then
+  call setcarmonopar(parn,rcent)
+else
+  ! Compute Actual Centroid
+  call getcentroid(arcent,parn)
+  ! Compute Displacement: Substract Actual Centroid to New Centroid
+  call subcar2par(parn,arcent)
+  ! Add Displacement to all elements position
+  call addcar2par(parn,rcent)
+endif
 end subroutine
 
 ! Randomly rotates a particle
@@ -328,11 +363,32 @@ enddo
 call mulcar(rc,ine)
 end subroutine
 
+subroutine putcoorinptyp(ptypn,elen,x,y,z)
+implicit none
+integer ptypn,elen
+real x,y,z
+call setcar(ptypl(ptypn)%r(elen),x,y,z)
+end subroutine
+
+subroutine putcoorinpar(parn,elen,x,y,z)
+implicit none
+integer parn,elen
+real x,y,z
+call setcar(r(parl(parn)%sr+elen),x,y,z)
+end subroutine
+
 subroutine putmonopar(parn,x,y,z)
 implicit none
 integer parn
 real x,y,z
 call setcar(r(parl(parn)%sr+1),x,y,z)
+end subroutine
+
+subroutine setcarmonopar(parn,rcor)
+implicit none
+integer parn
+type(car) rcor
+r(parl(parn)%sr+1)=rcor
 end subroutine
 
 subroutine addcar2par(parn,rc)
