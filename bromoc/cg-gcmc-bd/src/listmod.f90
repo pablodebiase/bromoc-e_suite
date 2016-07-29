@@ -292,10 +292,13 @@ end subroutine
 subroutine addmonopar(pename,pname)
 implicit none
 character*(*) pename
-character*(*),optional :: pname
-if (.not. present(pname)) pname = pename
+character*(*),optional,intent(in) :: pname
 call addetyp(pename)
-call addptyp(1,pname)
+if (present(pname)) then
+  call addptyp(1,pname)
+else
+  call addptyp(1,pename)
+endif
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
 end subroutine
@@ -318,22 +321,22 @@ end function
 ! Add Element Name to list
 subroutine addetyp(nam,chg,dif,eps,sig)
 implicit none
-character*(*)        :: nam
-real,optional        :: chg    ! Element Charge
-real,optional        :: dif    ! Element Diffusivity
-real,optional        :: eps    ! Element Epsilon Lennard Jones
-real,optional        :: sig    ! Element Sigma Lennard Jones
-if (.not. present(chg)) chg = 0.0
-if (.not. present(dif)) dif = 0.0
-if (.not. present(eps)) eps = 0.0
-if (.not. present(sig)) sig = 0.0
+character*(*)             :: nam
+real,optional,intent(in)  :: chg    ! Element Charge
+real,optional,intent(in)  :: dif    ! Element Diffusivity
+real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
+real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
 netyp=netyp+1
 if (netyp .gt. size(etypl)) call resizeetypl(netyp)
 etypl(netyp)%nam=nam
-etypl(netyp)%chg=chg
-etypl(netyp)%dif=dif
-etypl(netyp)%eps=eps
-etypl(netyp)%sig=sig
+etypl(netyp)%chg=0.0
+etypl(netyp)%dif=0.0
+etypl(netyp)%eps=0.0
+etypl(netyp)%sig=0.0
+if (present(chg)) etypl(netyp)%chg=chg
+if (present(dif)) etypl(netyp)%dif=dif
+if (present(eps)) etypl(netyp)%eps=eps
+if (present(sig)) etypl(netyp)%sig=sig
 end subroutine
 
 ! Set Element Type in Particle Type
