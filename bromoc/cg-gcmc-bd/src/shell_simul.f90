@@ -185,7 +185,7 @@ call deltypall()
 call delparall()
 
 ! allocate space for lists
-call resizeenam(4000)  ! Resize Element-Type Vectors
+call resizeetypl(4000)  ! Resize Element-Type Vectors
 call resizeptypl(1000) ! Resize Particle-Type Vectors
 call resizeparl(23000) ! Resize Particle Lists
 call resizecvec(23000) ! Resize Element Lists
@@ -276,12 +276,12 @@ do while (.not. logfinal)
        deallocate (sgstack,sgbp,sgex,sitenam)
      else
        ! Add Mono-element Particle Types
-       call addenam('S')   ! 1
-       call addenam('P')   ! 2
-       call addenam('Ab')  ! 3
-       call addenam('Tb')  ! 4
-       call addenam('Cb')  ! 5
-       call addenam('Gb')  ! 6
+       call addetyp('S')   ! 1
+       call addetyp('P')   ! 2
+       call addetyp('Ab')  ! 3
+       call addetyp('Tb')  ! 4
+       call addetyp('Cb')  ! 5
+       call addetyp('Gb')  ! 6
      endif
      maxsite = istrs*inuc*3
      maxbond = maxsite-1
@@ -1961,6 +1961,13 @@ do while (.not. logfinal)
     enddo
     allocate (ep(1:3,cnt))
     write(outu,'(6x,a)') 'Effective potential was activated for the following pairs:'
+    call updateuetl()
+    write(*,*) 'Used Element Type-Element Type pairs'
+    do i = 1,nuet
+      do j= i,nuet
+         write(*,*) i,uetl(i),etypl(uetl(i))%nam,j,uetl(j),etypl(uetl(j))%nam
+      enddo
+    enddo
     do i = 1,nttyp
       do j=i,nttyp
         if(j.gt.ndna) then

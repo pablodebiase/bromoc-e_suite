@@ -9,7 +9,7 @@ call deltypall()
 call delparall()
 
 ! empty lists
-call resizeenam(0)
+call resizeetypl(0)
 call resizeptypl(0)
 call resizeparl(0)
 call resizecvec(0)
@@ -20,12 +20,12 @@ call addmonopar('K','POT')  ! 1
 call addmonopar('Cl','CLA') ! 2
 call addmonopar('Na','SOD') ! 3
 ! Add element types
-call addenam('H')   ! 4
-call addenam('C')   ! 5
-call addenam('O')   ! 6
-call addenam('N')   ! 7
-call addenam('S')   ! 8 
-call addenam('P')   ! 9
+call addetyp('H')   ! 4
+call addetyp('C')   ! 5
+call addetyp('O')   ! 6
+call addetyp('N')   ! 7
+call addetyp('S')   ! 8 
+call addetyp('P')   ! 9
 ! Add particle types
 ! Define Particle 2: GLU
 call addptyp(4,'GLU')

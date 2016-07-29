@@ -9,21 +9,21 @@ call deltypall()
 call delparall()
 
 ! empty lists
-call resizeenam(0)
+call resizeetypl(0)
 call resizeptypl(0)
 call resizeparl(0)
 call resizecvec(0)
 
 ! Add element types
-call addenam('K')   ! 1
-call addenam('H')   ! 2
-call addenam('C')   ! 3
-call addenam('O')   ! 4
-call addenam('N')   ! 5
-call addenam('Cl')  ! 6
-call addenam('S')   ! 7 
-call addenam('P')   ! 8
-call addenam('Na')  ! 9
+call addetyp('K')   ! 1
+call addetyp('H')   ! 2
+call addetyp('C')   ! 3
+call addetyp('O')   ! 4
+call addetyp('N')   ! 5
+call addetyp('Cl')  ! 6
+call addetyp('S')   ! 7 
+call addetyp('P')   ! 8
+call addetyp('Na')  ! 9
 ! Add particle ypes
 ! Define Particle 1: POT
 call addptyp(1,'POT')

@@ -43,6 +43,16 @@ type :: partype
     integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
     type(car),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
 end type partype
+
+! Element Type
+type :: eletype
+    character*4 :: nam    ! Element Name
+    real        :: chg    ! Element Charge
+    real        :: dif    ! Element Diffusivity
+    real        :: eps    ! Element Epsilon Lennard Jones
+    real        :: sig    ! Element Sigma Lennard Jones
+end type eletype
+
 ! LIST DEFINITIONS
 !! Particles List
 integer                                 :: npar       !! Number of Particles 
@@ -50,7 +60,7 @@ type(parpro), allocatable, dimension(:) :: parl       !! Particles List Descript
 
 !! Element-Type List
 integer                                  :: netyp     !! Number of Element Types
-character*4,allocatable,dimension(:)     :: enam      !! Element Name List 
+type(eletype),allocatable,dimension(:)   :: etypl     !! Element Name List 
 
 !! Element-Type Pairs List
 integer                                  :: netp
@@ -63,51 +73,151 @@ type(partype), allocatable, dimension(:) :: ptypl    !! Type of Particle list ::
 integer nele                                !! Total Number of elements
 type(car), allocatable, dimension(:) :: r  !! Elements Position Vector
 type(car), allocatable, dimension(:) :: f  !! Elements Force Vector
-integer, allocatable, dimension(:) :: etypl !! Elements Type List of nele size
-integer, allocatable, dimension(:) :: petypl !! Particle Type List nele size
-integer, allocatable, dimension(:) :: pel !! Particle List of nele size
+integer, allocatable, dimension(:) :: etypls !! Elements Type List of nele size
+integer, allocatable, dimension(:) :: ptypls !! Particle Type List nele size
+integer, allocatable, dimension(:) :: pels !! Particle List of nele size
+
+!! Used Element Types List
+integer nuet                      !! Total Number of Used Element Types in etypls
+integer, allocatable, dimension(:) :: uetl
 
 contains
 
-subroutine updatetypel()
+subroutine Merge(A,NA,B,NB,C,NC)
+integer, intent(in) :: NA,NB,NC         ! Normal usage: NA+NB = NC
+integer, intent(in out) :: A(NA)        ! B overlays C(NA+1:NC)
+integer, intent(in)     :: B(NB)
+integer, intent(in out) :: C(NC)
+integer :: I,J,K
+I = 1; J = 1; K = 1;
+do while(I <= NA .and. J <= NB)
+   if (A(I) <= B(J)) then
+      C(K) = A(I)
+      I = I+1
+   else
+      C(K) = B(J)
+      J = J+1
+   endif
+   K = K + 1
+enddo
+do while (I <= NA)
+   C(K) = A(I)
+   I = I + 1
+   K = K + 1
+enddo
+return
+end subroutine merge
+ 
+recursive subroutine MergeSort(A,N,T)
+integer, intent(in) :: N
+integer, dimension(N), intent(in out) :: A
+integer, dimension((N+1)/2), intent (out) :: T
+integer :: NA,NB,V
+if (N < 2) return
+if (N == 2) then
+   if (A(1) > A(2)) then
+      V = A(1)
+      A(1) = A(2)
+      A(2) = V
+   endif
+   return
+endif      
+NA=(N+1)/2
+NB=N-NA
+
+call MergeSort(A,NA,T)
+call MergeSort(A(NA+1),NB,T)
+
+if (A(NA) > A(NA+1)) then
+   T(1:NA)=A(1:NA)
+   call Merge(T,NA,A(NA+1),NB,A,N)
+endif
+return
+end subroutine MergeSort
+
+subroutine msort(a,n)
+integer n
+integer, dimension(n) :: a       ! variable type to sort
+integer, dimension ((n+1)/2) :: t
+call MergeSort(a,n,t) ! order from lower to higher
+end subroutine
+
+subroutine updateuetl()
+implicit none
+integer i,j
+logical f
+! Allocate if needed
+if (allocated(uetl)) then
+   if (size(uetl).lt.netyp) then
+     deallocate (uetl)
+     allocate (uetl(netyp))
+   endif
+else
+   allocate (uetl(netyp))
+endif
+! Update Database
+call updatetypels()
+! Get Unused etyp
+nuet=1
+uetl(nuet)=etypls(1)
+do i = 2,nele
+   j=1
+   f=.false.
+   do while (j.le.nuet)
+     if (etypls(i).eq.uetl(j)) then
+       f=.true.
+       exit
+     endif
+     j=j+1
+   enddo
+   if (.not.f) then
+     nuet=nuet+1
+     uetl(nuet)=etypls(i)
+   endif
+enddo
+! Sort uetl
+call msort(uetl(1:nuet),nuet)
+end subroutine
+
+subroutine updatetypels()
 implicit none
 integer newsize,i,j,ne,sr,ptype
-if (allocated(etypl)) deallocate (etypl)
-if (allocated(petypl)) deallocate (petypl)
-if (allocated(pel)) deallocate (pel)
+if (allocated(etypls)) deallocate (etypls)
+if (allocated(ptypls)) deallocate (ptypls)
+if (allocated(pels)) deallocate (pels)
 newsize=size(r)
-allocate (etypl(newsize),petypl(newsize),pel(newsize))
+allocate (etypls(newsize),ptypls(newsize),pels(newsize))
 do i=1,npar
   sr=parl(i)%sr
   ne=parl(i)%ne
   ptype=parl(i)%ptyp
   do j=1,ne
-    petypl(sr+j)=ptype
-    etypl(sr+j)=ptypl(ptype)%etyp(j)
-    pel(sr+j)=i
+    ptypls(sr+j)=ptype
+    etypls(sr+j)=ptypl(ptype)%etyp(j)
+    pels(sr+j)=i
   enddo
 enddo
 end subroutine
 
-subroutine resizeenam(newsize)
+subroutine resizeetypl(newsize)
 implicit none
 integer vdim,newsize
-character*4,allocatable,dimension(:)     :: enamtmp      !! Element Name List 
+type(eletype),allocatable,dimension(:)     :: etypltmp      !! Element Name List 
 ! if 0
 if (newsize .lt. 1) then
-    if (allocated(enam)) deallocate (enam)
+    if (allocated(etypl)) deallocate (etypl)
 endif
 ! Measure Vector Size
-vdim=size(enam)
+vdim=size(etypl)
 ! Allocate double of original size in temp vectors
-allocate (enamtmp(newsize))
+allocate (etypltmp(newsize))
 ! Copy Vectors
 if (vdim .gt. newsize) vdim = newsize
-if (allocated(enam) .and. vdim .gt. 0) enamtmp(1:vdim)=enam(1:vdim)
+if (allocated(etypl) .and. vdim .gt. 0) etypltmp(1:vdim)=etypl(1:vdim)
 ! Deallocate original Vector
-if (allocated(enam)) deallocate (enam)
+if (allocated(etypl)) deallocate (etypl)
 ! Move allocations
-call move_alloc(enamtmp,enam)
+call move_alloc(etypltmp,etypl)
 end subroutine
 
 subroutine resizeptypl(newsize)
@@ -184,7 +294,7 @@ implicit none
 character*(*) pename
 character*(*),optional :: pname
 if (.not. present(pname)) pname = pename
-call addenam(pename)
+call addetyp(pename)
 call addptyp(1,pname)
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
@@ -198,24 +308,32 @@ character*(*) ename
 logical doloop
 doloop=.true.
 i=1
-do while (doloop.and.i.le.netyp)
-   if (ename.eq.enam(i)) then
-      doloop=.false.
-   else
-      i=i+1
-   endif
+do while (i.le.netyp)
+   if (etypl(i)%nam.eq.ename) exit
+   i=i+1
 enddo
 getetyp=i
 end function
 
 ! Add Element Name to list
-subroutine addenam(ename)
+subroutine addetyp(nam,chg,dif,eps,sig)
 implicit none
-character*(*) ename
+character*(*)        :: nam
+real,optional        :: chg    ! Element Charge
+real,optional        :: dif    ! Element Diffusivity
+real,optional        :: eps    ! Element Epsilon Lennard Jones
+real,optional        :: sig    ! Element Sigma Lennard Jones
+if (.not. present(chg)) chg = 0.0
+if (.not. present(dif)) dif = 0.0
+if (.not. present(eps)) eps = 0.0
+if (.not. present(sig)) sig = 0.0
 netyp=netyp+1
-netp=netyp*(netyp+1)/2
-if (netyp .gt. size(enam)) call resizeenam(netyp)
-enam(netyp)=ename
+if (netyp .gt. size(etypl)) call resizeetypl(netyp)
+etypl(netyp)%nam=nam
+etypl(netyp)%chg=chg
+etypl(netyp)%dif=dif
+etypl(netyp)%eps=eps
+etypl(netyp)%sig=sig
 end subroutine
 
 ! Set Element Type in Particle Type
@@ -553,9 +671,9 @@ implicit none
 integer i
 integer :: nunit
 
-call updatetypel()
+call updatetypels()
 do i=1,nele
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,enam(etypl(i)),ptypl(petypl(i))%pnam,pel(i),r(i)%x,r(i)%y,r(i)%z
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,etypl(etypls(i))%nam,ptypl(ptypls(i))%pnam,pels(i),r(i)%x,r(i)%y,r(i)%z
 enddo
 write (nunit,'(A)') 'END'
 end subroutine
@@ -566,11 +684,11 @@ integer i
 integer :: nunit
 
 ! Print Particle Data
-call updatetypel()
+call updatetypels()
 write(nunit,*) nele
 write(nunit,*)
 do i=1,nele
-    write(nunit,*) enam(etypl(i)),r(i)%x,r(i)%y,r(i)%z
+    write(nunit,*) etypl(etypls(i))%nam,r(i)%x,r(i)%y,r(i)%z
 enddo
 end subroutine
 
