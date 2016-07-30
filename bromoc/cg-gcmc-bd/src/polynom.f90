@@ -176,20 +176,20 @@ implicit none
 integer i,is
 real x,x2,y,ix2
 x=0.0
-if (x2.lt.dm2(1,is)) then
+if (x2.lt.efp(is)%xl2) then
   ix2=1.0/x2
-  y=sc(1,is)*ix2**6 + sc(2,is)
-elseif (x2.gt.dm2(2,is)) then
+  y=efp(is)%sc%a*ix2**6 + efp(is)%sc%b
+elseif (x2.gt.efp(is)%xu2) then
   ix2=1.0/x2
-  if (Qcol(is).and.Qchr(is)) then
-    y=sc(3,is)*ix2**3+fct(is)*sqrt(ix2) ! coulomb term for tail
+  if (Qcol(is).and.Qchr(is)) then ! coulomb term for tail
+    y=efp(is)%sc%c*ix2**3+fct(is)*sqrt(ix2) ! coulomb term for tail
   else
-    y=sc(3,is)*ix2**3 !+sc(4,is)*ix2**6
+    y=efp(is)%sc%c*ix2**3 !+sc(4,is)*ix2**6
   endif
 else
   x=sqrt(x2)
-  i=int((x-dmi(is))*ires)+nxi(is)
-  y=ep(1,i)+x*(ep(2,i)+x*ep(3,i))
+  i=int((x-efp(is)%xl)*ires)+1
+  y=efp(is)%ep(i)%a+x*(efp(is)%ep(i)%b+x*efp(is)%ep(i)%c)
 endif
 end subroutine
 
@@ -202,15 +202,14 @@ integer i,is
 real x2,x,y,yp,ix2,c,f
 
 x=0.0
-if (x2.lt.dm2(1,is)) then
+if (x2.lt.efp(is)%xl2) then
   ix2=1.0/x2
-  c=sc(1,is)*ix2**6
-  y=c + sc(2,is)
+  c=efp(is)%sc%a*ix2**6
+  y=c + efp(is)%sc%b
   yp=12.0*c*ix2
-elseif (x2.gt.dm2(2,is)) then
+elseif (x2.gt.efp(is)%xu2) then
   ix2=1.0/x2
-  c=sc(3,is)*ix2**3
-!  d=sc(4,is)*ix2**6
+  c=efp(is)%sc%c*ix2**3
   if (Qcol(is).and.Qchr(is)) then ! coulomb term for tail
     f=fct(is)*sqrt(ix2)
     y=c + f !+ d
@@ -219,13 +218,13 @@ elseif (x2.gt.dm2(2,is)) then
   else
     y=c !+ d
 !    yp=(6.0*c + 12.0*d)*ix2 
-    yp=6.0*c*ix2 
+    yp=6.0*c*ix2
   endif  
 else
-  x=sqrt(x2)
-  i=int((x-dmi(is))*ires)+nxi(is)
-  y=ep(1,i)+x*(ep(2,i)+x*ep(3,i))
-  yp=-ep(2,i)/x-2.0*ep(3,i)
+  x = sqrt(x2)
+  i = int((x-efp(is)%xl)*ires)+1
+  y = efp(is)%ep(i)%a + x * (efp(is)%ep(i)%b + x * efp(is)%ep(i)%c)
+  yp= -efp(is)%ep(i)%b / x - 2.0 * efp(is)%ep(i)%c
 endif
 end subroutine
 
@@ -237,19 +236,19 @@ implicit none
 integer i,is
 real x,x2,yp,ix2
 
-if (x2.lt.dm2(1,is)) then
-  yp=12.0*sc(1,is)/x2**7 
-elseif (x2.gt.dm2(2,is)) then
+if (x2.lt.efp(is)%xl2) then
+  yp=12.0*efp(is)%sc%a/x2**7 
+elseif (x2.gt.efp(is)%xu2) then
   ix2=1.0/x2
-  if (Qcol(is).and.Qchr(is)) then 
-    yp=6.0*sc(3,is)*ix2**4+fct(is)*sqrt(ix2)*ix2    ! coulomb term for tail
+  if (Qcol(is).and.Qchr(is)) then ! coulomb term for tail
+    yp=6.0*efp(is)%sc%c*ix2**4+fct(is)*sqrt(ix2)*ix2    ! coulomb term for tail
   else
-    yp=6.0*sc(3,is)*ix2**4 !+ 12.0*sc(4,is)*ix2**7
+    yp=6.0*efp(is)%sc%c*ix2**4 !+ 12.0*sc(4,is)*ix2**7
   endif
 else
   x=sqrt(x2)
-  i=int((x-dmi(is))*ires)+nxi(is)
-  yp=-ep(2,i)/x-2.0*ep(3,i)
+  i=int((x-efp(is)%xl)*ires)+1
+  yp=-efp(is)%ep(i)%b/x-2.0*efp(is)%ep(i)%c
 endif
 end subroutine
 

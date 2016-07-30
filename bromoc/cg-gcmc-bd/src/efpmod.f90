@@ -18,8 +18,20 @@
 
 module efpmod
 implicit none
-integer,allocatable    :: nxi(:)
-real res,ires
-real,allocatable       :: ep(:,:),sc(:,:),dmi(:),dm2(:,:)
+
+type :: coef3
+    real :: a,b,c
+end type coef3
+
+type :: efpot
+    real                                 :: xl           !! square of x lower limit of the potential after the head (ex dmi)
+    real                                 :: xl2,xu2      !! squere of x upper limit of the potential before the tail(ex dm2)
+    integer                              :: n            !! number of points for the cf
+    type(coef3)                          :: sc           !! Head and Tail Coefficients
+    type(coef3),allocatable,dimension(:) :: ep           !! Effective Potential Square Coefficients
+end type efpot
+
+type(efpot),allocatable,dimension(:)     :: efp          !! effective potentials
+real                                     :: res,ires     !! Resolution and inverse resolution
 end module
 

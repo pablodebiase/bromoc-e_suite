@@ -60,7 +60,8 @@ type(parpro), allocatable, dimension(:) :: parl       !! Particles List Descript
 
 !! Element-Type List
 integer                                  :: netyp     !! Number of Element Types
-type(eletype),allocatable,dimension(:)   :: etypl     !! Element Name List 
+type(eletype),allocatable,dimension(:)   :: etypl     !! Element Name List
+logical*1,allocatable,dimension(:)       :: etul      !! Element Types Used List
 
 !! Element-Type Pairs List
 integer                                  :: netp
@@ -147,6 +148,8 @@ implicit none
 integer i,j
 logical f
 ! Allocate if needed
+if (allocated(etul)) deallocate(etul)
+allocate (etul(netyp))
 if (allocated(uetl)) then
    if (size(uetl).lt.netyp) then
      deallocate (uetl)
@@ -157,6 +160,18 @@ else
 endif
 ! Update Database
 call updatetypels()
+! Make a logical list if the etyp is being used 
+do i = 1,netyp
+   j=1
+   etul(i)=.false.
+   do while (j.le.nele)
+      if (etypls(j).eq.i) then
+         etul(i)=.true.
+         exit
+      endif
+      j=j+1
+   enddo
+enddo
 ! Get Unused etyp
 nuet=1
 uetl(nuet)=etypls(1)

@@ -686,6 +686,7 @@ do while (.not. logfinal)
         ! diffusion constant [real*8,default=0.1]
         call gtdpar(com,'diffusion',diffusion(ntype),0.1)
         if (diffusion(ntype).lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
+        call addmonopar(atnam(ntype))
       endif
     enddo
     Qpar = .true.
@@ -1892,7 +1893,10 @@ do while (.not. logfinal)
     maxd=int(float(ntc)*maxlg*ires)
     call gtipar(com,'maxdata',maxd,maxd)     
     write(outu,'(6x,a,i0)') 'Max number of data points to be stored (temporary storage array): ',maxd 
-    allocate (nxi(ntc),nxf(ntc),xy(2,maxd),dmi(ntc),dm2(2,ntc),sc(3,ntc),Qefpotread(ntc))
+    if (allocated(efp)) deallocate(efp)
+    allocate(efp(ntc))
+    allocate (xy(2,maxd),Qefpotread(ntc),nxf(ntc))
+    call updateuetl()
     Qefpotread=.false.
     write(outu,'(6x,a)')
     endlog = .false.
@@ -1922,14 +1926,13 @@ do while (.not. logfinal)
           iunit = unvec(iunit)
           call gtdpar(com,'scal',scaldd,scald)
           write(outu,*) '     Scaling ',atnam2(itype),'-',atnam2(jtype),' potential by ',scaldd
-          cnt=cnt+1
+          cnt=1
           if (cnt.gt.maxd) call error ('shell_simul','Number of data is greater than expected. Increase maxdata.',faterr) ! Check if maxdata is correct
           read(iunit,*,IOSTAT=kode) xy(1,cnt),xy(2,cnt)
           xy(2,cnt)=xy(2,cnt)*scaldd
-          if (kode.eq.0) nxi(is)=cnt
           do while (kode.eq.0)
             ! Check if resolution is correct {
-            if (cnt.ge.1+nxi(is)) then
+            if (cnt.ge.2) then 
               if (xy(1,cnt)-xy(1,cnt-1).lt.0.99*res.or.xy(1,cnt)-xy(1,cnt-1).gt.1.01*res) call error ('shell_simul','Unexpected x spacing. Check that all x data spacing is separated by res.',faterr)
             endif
             ! }
@@ -1940,6 +1943,9 @@ do while (.not. logfinal)
           enddo
           cnt=cnt-1
           nxf(is)=cnt
+          if (allocated(efp(is)%ep)) deallocate (efp(is)%ep)
+          allocate (efp(is)%ep(cnt))
+          call splinepot(is,cnt,xy(1,1:cnt),xy(2,1:cnt))
         elseif (check(com,'build')) then
           if (Qlj(is)) then 
             Qefpot(is)=.true.
@@ -1947,41 +1953,34 @@ do while (.not. logfinal)
             mnp=int(maxl*ires)
             call gtdpar(com,'mindist',minl,minlg)
             nnp=int(minl*ires)
-            nxi(is)=cnt+1
-            cnt=cnt+1+mnp-nnp
+            cnt=1+mnp-nnp
             nxf(is)=cnt
-            dmi(is)=nnp*res
-            dm2(1,is)=(nnp*res)**2
-            dm2(2,is)=(mnp*res)**2
+            efp(is)%xl=nnp*res
+            efp(is)%xl2=(nnp*res)**2
+            efp(is)%xu2=(mnp*res)**2
+            if (allocated(efp(is)%ep)) deallocate (efp(is)%ep)
+            allocate (efp(is)%ep(cnt))
           else
             call error ('shell_simul','Cannot build potential, LJ parameters missing.',faterr)
           endif
         endif
       endif
     enddo
-    allocate (ep(1:3,cnt))
     write(outu,'(6x,a)') 'Effective potential was activated for the following pairs:'
-    call updateuetl()
     write(*,*) 'Used Element Type-Element Type pairs'
-    do i = 1,nuet
-      do j= i,nuet
-         write(*,*) i,uetl(i),etypl(uetl(i))%nam,j,uetl(j),etypl(uetl(j))%nam
-      enddo
-    enddo
     do i = 1,nttyp
       do j=i,nttyp
         if(j.gt.ndna) then
           is=etpidx(i,j)
           if (Qefpot(is).and.Qefpotread(is)) then
-            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')atnam2(i),atnam2(j),'  Number of Points:',1-nxi(is)+nxf(is),'  From-To: ',xy(1,nxi(is)),' - ',xy(1,nxf(is))
-            call splinepot(is,1-nxi(is)+nxf(is),xy(1,nxi(is):nxf(is)),xy(2,nxi(is):nxf(is)),nxf(is))
+            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')atnam2(i),atnam2(j),'  Number of Points:',nxf(is),'  From-To: ',efp(is)%xl,' - ',sqrt(efp(is)%xu2)
           elseif (Qefpot(is).and..not.Qefpotread(is)) then
             Qcol(is) = .true. ! if discretize is active, ignore this keyword for that pair 
-            nnp=int(dmi(is)*ires)
-            mnp=nxf(is)-nxi(is)+nnp
+            nnp=int(efp(is)%xl*ires)
+            mnp=int(sqrt(efp(is)%xu2)*ires)
             call discretize(is,nnp,mnp,nxf(is))
-            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')atnam2(i),atnam2(j),'  Number of Points:',1+mnp-nnp,'  From-To: ',dmi(is),' - ',mnp*res,'  (built from current parameters)'
-          else
+            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')atnam2(i),atnam2(j),'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
+          elseif (etul(i).and.etul(j)) then
             write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',atnam2(i),atnam2(j),' . Using '  &
                       //' Coulombic and Lennard Jones and/or SRPMF parameters on the fly'
           endif
@@ -1996,7 +1995,7 @@ do while (.not. logfinal)
             is=etpidx(i,j)
             if (Qefpot(is)) then
               write(wunit,*) atnam2(i),' - ',atnam2(j)
-              do k=int((dmi(is)-1.0)*ires*10.0),int((sqrt(dm2(2,is))+10.0)*ires*10.0)
+              do k=int((efp(is)%xl-1.0)*ires*10.0),int((sqrt(efp(is)%xu2)+10.0)*ires*10.0)
                 x1=k*res*0.1
                 call getyd(is,x1**2,x2,x3,r1)
                 write(wunit,*) x1,x2,x3

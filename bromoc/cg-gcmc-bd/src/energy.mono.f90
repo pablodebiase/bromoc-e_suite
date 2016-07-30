@@ -603,13 +603,13 @@ if (Qenergy) then
           if (Qproxdiff) then
             if (dist.gt.0.0) then
               if (j.eq.1) then 
-                dids(1,i)=dist-dmi(is) 
+                dids(1,i)=dist-efp(is)%xl
                 dids(2,i)=dist 
                 dids(3,i)=x(i)-x(j)
                 dids(4,i)=y(i)-y(j)
                 dids(5,i)=z(i)-z(j)
               else
-                didstmp=dist-dmi(is)
+                didstmp=dist-efp(is)%xl
                 if (didstmp.lt.dids(1,i)) then
                   dids(1,i)=didstmp
                   dids(2,i)=dist
