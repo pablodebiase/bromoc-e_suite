@@ -43,14 +43,14 @@ egsbpa = 0.0
 
 
 do i = 1, ntot
-  if (i.le.nsites .or. i.gt.(nsites+nfix)) then 
+  if (i.le.nsites .or. i.gt.nsites) then 
     ok = .false.
     if (i.le.nsites) then
       if (namsite(i).eq.'P ') then
         chi = cgnuc
         ok = .true.
       endif
-    else if (i.gt.(nsites+nfix)) then
+    else if (i.gt.nsites) then
       itype = abs(typei(i))
       chi = cg(itype)
       ok = .true.

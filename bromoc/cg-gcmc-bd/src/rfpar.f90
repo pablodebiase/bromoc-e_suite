@@ -158,8 +158,7 @@ do i=nsites+1,ntot
       reffdy(ik)=aux2dy
       reffdz(ik)=aux2dz            
     endif
-    if (ik.gt.nfix) then
-      tau = celec*cg(itype)
+    tau = celec*cg(itype)
   
   ! self reaction field energy minus Born energy
       aux = tau*cg(itype)*srfe(ik)

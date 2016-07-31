@@ -32,7 +32,7 @@ logical*1 endok
 endok = .true.  
 natom2 = float(natom - nsites)
 do while (endok)
-  iat = nsites + nfix + int(natom2*rndm()) + 1 ! [nsites+nfix+1,ntot]
+  iat = nsites + int(natom2*rndm()) + 1 ! [nsites+1,ntot]
   xnew = x(iat) + mcmax*(rndm()-0.5)
   ynew = y(iat) + mcmax*(rndm()-0.5)
   znew = z(iat) + mcmax*(rndm()-0.5)

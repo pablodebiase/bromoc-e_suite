@@ -117,7 +117,7 @@ if (Qenergy) then
   ! nonbonded interaction between ions
   if (Qpar) then                 
     if (Qnonbond) then
-      do j = nsites+nfix+1, ntot
+      do j = nsites+1, ntot
         jtype  = abs(typei(j))
         jtype2 = nwtype(jtype) ! convert atnam to atnam2
         do i = nsites+1, j-1
@@ -178,7 +178,7 @@ if (Qenergy) then
               endif
             endif
             if (de.ne.0.0) then 
-              if (i.gt.(nsites+nfix)) then
+              if (i.gt.nsites) then
                 fx(i) = fx(i) + de*(x(i)-x(j))
                 fy(i) = fy(i) + de*(y(i)-y(j))
                 fz(i) = fz(i) + de*(z(i)-z(j))
@@ -189,7 +189,7 @@ if (Qenergy) then
             endif
           endif
         enddo ! i = nsites+1,...,(j-1)
-      enddo ! j = nsites+nfix+1,...,ntot 
+      enddo ! j = nsites+1,...,ntot 
     endif !Qnonbond
   endif  ! Qpar
 
@@ -592,7 +592,7 @@ if (Qenergy) then
   ! Compute distances dna fragment-ion
         dist2 = (x(i)-x(j))**2 + (y(i)-y(j))**2 + (z(i)-z(j))**2
         ok=.false.
-        ok2=Qforces .and.(i.gt.(nsites+nfix).or.stfree(j))
+        ok2=Qforces .and.(i.gt.nsites.or.stfree(j))
         if (Qefpot(is)) then
           if (ok2) then
             call getyd(is,dist2,eefp,de,dist)
@@ -670,7 +670,7 @@ if (Qenergy) then
             endif
           endif
           if (de.ne.0.0) then 
-            if (i.gt.(nsites+nfix)) then
+            if (i.gt.nsites) then
               fx(i) = fx(i) + de*(x(i)-x(j))
               fy(i) = fy(i) + de*(y(i)-y(j))
               fz(i) = fz(i) + de*(z(i)-z(j))

@@ -42,7 +42,7 @@ enddo
 do i = nsites+1, ntot
 ! To which buffer does a particle of type (i) at this location belongs?
   ibuffer(i) = 0
-  if (i.gt.(nsites+nfix)) then
+  if (i.gt.nsites) then
     itype = abs(typei(i))
     endlog = .false.
     ib = 1

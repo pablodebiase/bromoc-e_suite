@@ -118,7 +118,7 @@ if (Qenergy) then
   endif
 
   dids(1:5,nsites+1:ntot)=0.0
-  aa=(ntot-nsites-nfix)*(ntot-nsites+nfix-1)/2
+  aa=(ntot-nsites)*(ntot-nsites-1)/2
   !$omp parallel private(ang,ang0,av,bb,bv,cofo,cte1,dc,dd,de,didstmp,dihe,dihe0,dist,dist12,dist2,dist6,eangloc,ebondloc,ebploc,ediheloc,eefp,eefpotloc,eefpotmxloc,eelecloc,eexloc,epsln,eqqloc,eqqmxloc,esolvloc,esrpmf0,esrpmf1,esrpmf2,esrpmf3,esrpmfloc,esrpmfmxloc,estackloc,evdwloc,evdwmxloc,f1,f2,f3,f4,fdf,fdv,fin,fxloc,fyloc,fzloc,i,idist,idist2,idistkd,ini,is,isite1,isite2,isite3,isite4,itype,itype2,iv22,j,jtype,jtype2,m1,m2,m3,modval,n1,n1v,n2,n2v,nth,ok,ok2,Qdeby,sgex2,tid,v1,v12,v2,v22,v23,v2v,v3,varang,vard,vard2,vardihe)
   ebploc=0.0
   eexloc=0.0
@@ -143,21 +143,21 @@ if (Qenergy) then
   nth = omp_get_num_threads()
   bb=float(aa)/float(nth)
   if (tid.eq.0) then
-    ini=1+nsites+nfix
+    ini=1+nsites
   else
-    ini=int(sqrt(0.25+2.0*bb*tid+nfix*(nfix-1))+0.5+1+nsites)
+    ini=int(sqrt(0.25+2.0*bb*tid)+0.5+1+nsites)
   endif
   if (tid+1.eq.nth) then
     fin=ntot
   else
-    fin=int(sqrt(0.25+2.0*bb*(tid+1)+nfix*(nfix-1))+0.5+nsites)
+    fin=int(sqrt(0.25+2.0*bb*(tid+1))+0.5+nsites)
   endif
 
   ! nonbonded interaction between ions
   if (Qpar) then                 
     if (Qnonbond) then
       do j=ini,fin
-!     do j = nsites+nfix+1, ntot
+!     do j = nsites+1, ntot
         jtype  = abs(typei(j))
         jtype2 = nwtype(jtype) ! convert atnam to atnam2
         do i = nsites+1, j-1
@@ -219,7 +219,7 @@ if (Qenergy) then
               endif
             endif
             if (de.ne.0.0) then 
-              if (i.gt.(nsites+nfix)) then
+              if (i.gt.nsites) then
                 fxloc(i) = fxloc(i) + de*(x(i)-x(j))
                 fyloc(i) = fyloc(i) + de*(y(i)-y(j))
                 fzloc(i) = fzloc(i) + de*(z(i)-z(j))
@@ -230,7 +230,7 @@ if (Qenergy) then
             endif
           endif
         enddo ! i = nsites+1,...,(j-1)
-      enddo ! j = nsites+nfix+1,...,ntot
+      enddo ! j = nsites+1,...,ntot
     endif !Qnonbond
   endif  ! Qpar
 
@@ -657,7 +657,7 @@ if (Qenergy) then
   ! Compute distances dna fragment-ion
         dist2 = (x(i)-x(j))**2 + (y(i)-y(j))**2 + (z(i)-z(j))**2
         ok=.false.
-        ok2=Qforces .and.(i.gt.(nsites+nfix).or.stfree(j))
+        ok2=Qforces .and.(i.gt.nsites.or.stfree(j))
         if (Qefpot(is)) then
           if (ok2) then
             call getyd(is,dist2,eefp,de,dist)
@@ -735,7 +735,7 @@ if (Qenergy) then
             endif
           endif
           if (de.ne.0.0) then 
-            if (i.gt.(nsites+nfix)) then
+            if (i.gt.nsites) then
               fx(i) = fx(i) + de*(x(i)-x(j))
               fy(i) = fy(i) + de*(y(i)-y(j))
               fz(i) = fz(i) + de*(z(i)-z(j))

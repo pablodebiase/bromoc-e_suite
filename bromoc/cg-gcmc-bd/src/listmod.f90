@@ -34,12 +34,13 @@ type :: parpro
     integer :: ptyp                            !! Identifies the Particle Type with an Index number
     integer :: sr                              !! Starting in the position vector
     integer :: ne                              !! Number of element in the particle
+    integer :: kind                            !! Kind of Particle (Nucleotide, Particles, Charmm)
 end type parpro
 
 ! Particle Type
 type :: partype
     integer :: ne                              !! Number of Elements in Particle
-    character*4                      :: pnam   !! Particle Name
+    character*4                      :: nam    !! Particle Name
     integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
     type(car),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
 end type partype
@@ -63,7 +64,7 @@ integer                                  :: netyp     !! Number of Element Types
 type(eletype),allocatable,dimension(:)   :: etypl     !! Element Name List
 logical*1,allocatable,dimension(:)       :: etul      !! Element Types Used List
 
-!! Element-Type Pairs List
+!! Number of Element-Type Pairs
 integer                                  :: netp
 
 !! Particle-Type List
@@ -304,15 +305,28 @@ call move_alloc(ftmp,f)
 end subroutine
 
 ! Add Mono Particle (Particle with Single Element)
-subroutine addmonopar(pename,pname)
+subroutine addmonopar(ename,pname,chg,dif,eps,sig)
 implicit none
-character*(*) pename
+character*(*) ename
 character*(*),optional,intent(in) :: pname
-call addetyp(pename)
+real,optional,intent(in)  :: chg    ! Element Charge
+real,optional,intent(in)  :: dif    ! Element Diffusivity
+real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
+real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
+real            :: lchg,ldif,leps,lsig
+lchg=0.0
+ldif=0.0
+leps=0.0
+lsig=0.0
+if (present(chg)) lchg=chg
+if (present(dif)) ldif=dif
+if (present(eps)) leps=eps
+if (present(sig)) lsig=sig
+call addetyp(ename,lchg,ldif,leps,lsig)
 if (present(pname)) then
   call addptyp(1,pname)
 else
-  call addptyp(1,pename)
+  call addptyp(1,ename)
 endif
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
@@ -321,17 +335,43 @@ end subroutine
 ! get etyp from ename
 function getetyp(ename)
 implicit none
-integer getetyp,i
+integer getetyp
 character*(*) ename
-logical doloop
-doloop=.true.
-i=1
-do while (i.le.netyp)
-   if (etypl(i)%nam.eq.ename) exit
-   i=i+1
+getetyp=1
+do while (getetyp.le.netyp)
+   if (etypl(getetyp)%nam.eq.ename) return
+   getetyp=getetyp+1
 enddo
-getetyp=i
+write(*,'(a,a,a)') ' * Error. Type name ',trim(adjustl(ename)),' not found'
+stop
 end function
+
+! get ptyp from pname
+function getptyp(pname)
+implicit none
+integer getptyp
+character*(*) pname
+getptyp=1
+do while (getptyp.le.nptyp)
+   if (ptypl(getptyp)%nam.eq.pname) return
+   getptyp=getptyp+1
+enddo
+write(*,'(a,a,a)') ' * Error. Type name ',trim(adjustl(pname)),' not found'
+stop
+end function
+
+! Edit Element Type
+subroutine editetyp(etype,chg,dif,eps,sig)
+integer,intent(in)        :: etype  ! Element Type Number
+real,optional,intent(in)  :: chg    ! Element Charge
+real,optional,intent(in)  :: dif    ! Element Diffusivity
+real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
+real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
+if (present(chg)) etypl(etype)%chg=chg
+if (present(dif)) etypl(etype)%dif=dif
+if (present(eps)) etypl(etype)%eps=eps
+if (present(sig)) etypl(etype)%sig=sig
+end subroutine
 
 ! Add Element Name to list
 subroutine addetyp(nam,chg,dif,eps,sig)
@@ -342,6 +382,7 @@ real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
 netyp=netyp+1
+netp=netyp*(netyp+1)/2
 if (netyp .gt. size(etypl)) call resizeetypl(netyp)
 etypl(netyp)%nam=nam
 etypl(netyp)%chg=0.0
@@ -370,14 +411,15 @@ if (ne .lt. 1) return
 nptyp=nptyp+1
 if (nptyp .gt. size(ptypl)) call resizeptypl(nptyp)
 ptypl(nptyp)%ne = ne
-ptypl(nptyp)%pnam = pnam
+ptypl(nptyp)%nam = pnam
 allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne))
 end subroutine
 
 ! Add Particle Type To Particle List
-subroutine addpar(ptype)
+subroutine addpar(ptype,kind)
 implicit none
 integer ptype,lastnele,i
+integer,optional,intent(in) :: kind
 if (ptype .gt. 0 .and. ptype .le. nptyp) then
   npar=npar+1
   lastnele=nele
@@ -387,6 +429,11 @@ if (ptype .gt. 0 .and. ptype .le. nptyp) then
   parl(npar)%ptyp=ptype     ! Save Particle Type Idx in Particle List
   parl(npar)%sr=lastnele    ! Save Previous Position of last Added Element in Cartesian Vectors to Particle List
   parl(npar)%ne=ptypl(ptype)%ne  ! Save Number of Elements of this particle in the Particle List
+  if (present(kind)) then 
+    parl(npar)%kind=kind
+  else
+    parl(npar)%kind=0
+  endif
   ! Copy Coordinates from Particle Type Template 
   do i=1,parl(npar)%ne
     r(lastnele+i)=ptypl(ptype)%r(i)
@@ -618,6 +665,16 @@ r%y=sc*r%y
 r%z=sc*r%z
 end subroutine
 
+subroutine delparofkind(kind)
+implicit none
+integer :: i,kind
+i=npar
+do while (i.ge.1)
+   if (parl(i)%kind.eq.kind) call delpar(i)
+   i=i-1
+enddo
+end subroutine
+
 subroutine delpar(parn)
 implicit none
 integer i,n,ne,sr,parn
@@ -659,6 +716,7 @@ do i=n,npar-1
    parl(i)%ptyp=parl(i+1)%ptyp
    parl(i)%sr=parl(i+1)%sr-ne
    parl(i)%ne=parl(i+1)%ne
+   parl(i)%kind=parl(i+1)%kind
 enddo
 npar=npar-1
 end subroutine
@@ -691,7 +749,7 @@ integer :: nunit
 
 call updatetypels()
 do i=1,nele
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,etypl(etypls(i))%nam,ptypl(ptypls(i))%pnam,pels(i),r(i)%x,r(i)%y,r(i)%z
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,etypl(etypls(i))%nam,ptypl(ptypls(i))%nam,pels(i),r(i)%x,r(i)%y,r(i)%z
 enddo
 write (nunit,'(A)') 'END'
 end subroutine

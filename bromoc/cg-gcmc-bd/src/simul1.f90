@@ -382,13 +382,13 @@ do icycle = 1, ncycle
       endif
       if (Qpar) then
         if (Qdiffuse) then
-          call dynamics1(nsites+nfix+1,ntot) ! using non-uniform diffusion constant
+          call dynamics1(nsites+1,ntot) ! using non-uniform diffusion constant
         elseif (Qprofile) then
-          call dynamics2(nsites+nfix+1,ntot) ! using diffusion constant profile 
+          call dynamics2(nsites+1,ntot) ! using diffusion constant profile 
         elseif (Qproxdiff) then
-          call dynamics3(nsites+nfix+1,ntot) ! using dna proximity diffusion constant
+          call dynamics3(nsites+1,ntot) ! using dna proximity diffusion constant
         else
-          call dynamics0(nsites+nfix+1,ntot)
+          call dynamics0(nsites+1,ntot)
         endif
       endif
       if (Qnucl) then
@@ -489,7 +489,7 @@ do icycle = 1, ncycle
 
   !average density profile along the Z-axis                  
   if (Qrho) then
-    do iat = nsites+nfix+1, ntot
+    do iat = nsites+1, ntot
       itype = abs(typei(iat))
       iz = int((z(iat)-zmini)*idelz) + 1
       if (iz.le.nzmax) then
@@ -509,7 +509,7 @@ do icycle = 1, ncycle
   endif ! Qrdna
   !radial distribution function 
   if (Qgr) then
-    do iat = nsites+nfix+1, ntot
+    do iat = nsites+1, ntot
       itype = abs(typei(iat))
       dist = (x(iat)-x(igr))**2+(y(iat)-y(igr))**2+(z(iat)-z(igr))**2
       dist = sqrt(dist) ! distance
@@ -527,7 +527,7 @@ do icycle = 1, ncycle
     ok = .not.Qmemb .and. czmin.eq.0.0.and.czmax.eq.0.0
     if (.not.ok) then
       ncount(1:ntype-nold) = 0 
-      do iat = nsites+nfix+1, ntot
+      do iat = nsites+1, ntot
         itype = abs(typei(iat))-nold
         if (Qmemb) then ! cylindrical channel
           r = sqrt(x(iat)**2+y(iat)**2)
@@ -544,7 +544,7 @@ do icycle = 1, ncycle
     endif
     !system
     ncount(1:ntype-nold) = 0 
-    do iat = nsites+nfix+1, ntot
+    do iat = nsites+1, ntot
       itype = abs(typei(iat))-nold
       ncount(itype) = ncount(itype) + 1
     enddo
@@ -556,14 +556,14 @@ do icycle = 1, ncycle
   if (Qionpair) then         
     if (mod(icycle,nanal).eq.0) then
       do itype = nold+1, ntype
-        do iat = nsites+nfix+1, ntot
+        do iat = nsites+1, ntot
           if (abs(typei(iat)).eq.itype) then 
             iz = int((z(iat)-zmini)*idelz) + 1
             if (iz.le.nzmax) then
               nion1(itype,iz) = nion1(itype,iz) + 1
               np1 = 0
               np2 = 0
-              do jat = nsites+nfix+1, ntot
+              do jat = nsites+1, ntot
                 if (abs(typei(jat)).ne.itype .and.abs(x(iat)-x(jat)).le.s2 .and.abs(y(iat)-y(jat)).le.s2 .and.abs(z(iat)-z(jat)).le.s2) then        
                   r = sqrt((x(iat)-x(jat))**2 + (y(iat)-y(jat))**2 + (z(iat)-z(jat))**2)
                   if (r.le.s1) then
@@ -592,7 +592,7 @@ do icycle = 1, ncycle
   if (Qenerprofile) then
     if (mod(icycle,nanal).eq.0) then      
       do itype = nold+1, ntype
-        do iat= nsites+nfix+1, ntot
+        do iat= nsites+1, ntot
           if (abs(typei(iat)).eq.itype) then
             iz = int((z(iat)-zmini)*idelz) + 1
             if (iz.le.nzmax) then
@@ -768,7 +768,7 @@ if (Qpar) then
   write (outu,'(6x,a)') 'Statistics: '
   write (outu,*) 
   ncount = 0
-  do ii = nsites+nfix+1, ntot
+  do ii = nsites+1, ntot
     itype = abs(typei(ii))-nold
     ncount(itype) = ncount(itype) + 1
   enddo

@@ -48,7 +48,7 @@ esvdw = svdw
 !Main loop by atoms
 
 do i = 1, ntot
-  if (i.le.nsites .or. i.gt.(nsites+nfix)) then
+  if (i.le.nsites .or. i.gt.nsites) then
     ok=x(i).le.xbcen2+tranx2-dcel2.and.x(i).ge.xbcen2-tranx2+dcel2.and. &
        y(i).le.ybcen2+trany2-dcel2.and.y(i).ge.ybcen2-trany2+dcel2.and. &
        z(i).le.vzmax.and.z(i).ge.vzmin
@@ -73,11 +73,11 @@ do i = 1, ntot
           else ! namsite(i).eq.'Gb'
             ifir = 5*ncel3
           endif
-        else if (Qnucl .and. Qpar .and. i.gt.(nsites+nfix)) then
+        else if (Qnucl .and. Qpar .and. i.gt.nsites) then
           if (istrs.eq.1) numb = abs(typei(i)) - (inuc+1)
           if (istrs.eq.2) numb = abs(typei(i)) - (2*inuc+1)
           ifir = (6 + numb)*ncel3
-        else if (.not.Qnucl .and. Qpar .and. i.gt.nfix) then
+        else if (.not.Qnucl .and. Qpar) then
           ifir = (abs(typei(i))-1)*ncel3
         endif
       else

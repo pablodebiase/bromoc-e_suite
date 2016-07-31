@@ -1,4 +1,4 @@
-!    BROMOC  -  CG-GCMC-BD
+!p    BROMOC  -  CG-GCMC-BD
 !    Electrodiffusion, Gran Canonical Monte Carlo, Brownian,Dynamics 
 !    and Coarse Grain Model DNA Simulation Program.
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)
@@ -36,7 +36,7 @@ use listmod
 !Command parser and file name
 implicit none
 ! allocatables
-real,allocatable       :: xy(:,:),cg2(:) 
+real,allocatable       :: xy(:,:) 
 real,allocatable ::    epsLJ(:),sgLJ(:)
 real*4,allocatable :: efield(:,:)
 integer, allocatable :: nxf(:)  
@@ -71,7 +71,7 @@ integer*1 walls,dnaparams
 integer    ntras 
 real       vfbs,scald,scaldd
 !for security outputfile
-integer    nsec,ntc
+integer    nsec
 
 !for TEST order
 real       tol, delta, maxl,minl,maxlg,minlg
@@ -148,7 +148,6 @@ ntype        = 0
 nold         = 0
 ndna         = 0
 nbuffer      = 0
-nfix         = 0
 nsites       = 0
 istrs        = 0
 inuc         = 0
@@ -157,8 +156,6 @@ diffnuc      = 0.1
 epsnuc       = 0.184
 ionstr       = 0.0
 temp         = 300.0
-eps          = 0.0
-sigma        = 0.0
 lx           = 0.0
 ly           = 0.0
 lz           = 0.0
@@ -274,14 +271,6 @@ do while (.not. logfinal)
        deallocate (sitebond,siteangle,sitedihe,distbond,valangle,valdihe,bond,angle,typbond)
        deallocate (valdihe,bond,angle,typbond,sitestack,sitebp,siteex,siteqq,siteslv)
        deallocate (sgstack,sgbp,sgex,sitenam)
-     else
-       ! Add Mono-element Particle Types
-       call addetyp('S')   ! 1
-       call addetyp('P')   ! 2
-       call addetyp('Ab')  ! 3
-       call addetyp('Tb')  ! 4
-       call addetyp('Cb')  ! 5
-       call addetyp('Gb')  ! 6
      endif
      maxsite = istrs*inuc*3
      maxbond = maxsite-1
@@ -299,6 +288,15 @@ do while (.not. logfinal)
      call gtdpar(com,'charge',cgnuc,-1.0)
      ! diffusion constant for nucleotides [default=0.1]
      call gtdpar(com,'diffusion',diffnuc,0.01)
+     if (.not. Qnucl) then
+       ! Add Mono-element Particle Types
+       call addetyp('S',dif=diffnuc)   ! 1
+       call addetyp('P',chg=cgnuc,dif=diffnuc)   ! 2
+       call addetyp('Ab',dif=diffnuc)  ! 3
+       call addetyp('Tb',dif=diffnuc)  ! 4
+       call addetyp('Cb',dif=diffnuc)  ! 5
+       call addetyp('Gb',dif=diffnuc)  ! 6
+     endif
      if (diffnuc.lt.0.0) call error ('shell_simul', 'Diffusion coefficient for each nucleotide is negative', faterr)
      ! Parameter to calculate bonded and non-bonded potential
      ! energy terms [default=0.26]        
@@ -365,12 +363,6 @@ do while (.not. logfinal)
          if (ntype.gt.dtype) call error ('shell_simul', 'ntype is greater than dtype', faterr)
          call getfirst(com,word)
          if (len_trim(word).eq.0) call error ('shell_simul', 'premature end of date in NUCLEOTIDE order', faterr)
-         ! nucleotide name [character*4]
-         atnam(ntype) = ucase(word)
-         ! charge nucleotide
-         cg(ntype) = cgnuc
-         ! diffusion constant
-         diffusion(ntype) = diffnuc
          ! Phosphate
          if ((QfirstP.and.j.eq.1).or.j.gt.1) then
            nsites = nsites + 1
@@ -522,10 +514,6 @@ do while (.not. logfinal)
              atnam(ntype) = 'C'
            endif     
          endif 
-         ! charge nucleotide
-         cg(ntype) = cgnuc
-         ! diffusion constant
-         diffusion(ntype) = diffnuc          
          ! Phosphate
          if ((QfirstP.and.j.eq.0).or.j.gt.0) then
            nsites = nsites + 1
@@ -609,8 +597,8 @@ do while (.not. logfinal)
      Qnucl = .true.
      call reasig
      ! Add Particle
-     if (istrs.gt.0) call addpar(1)
-     if (istrs.eq.2) call addpar(2)
+     if (istrs.gt.0) call addpar(1,1)
+     if (istrs.eq.2) call addpar(2,1)
      call printpdb(outu) 
      write(outu,*)  
   ! **********************************************************************
@@ -680,54 +668,48 @@ do while (.not. logfinal)
         ntype = ntype + 1
         if (ntype.gt.dtype) call error ('shell_simul', 'ntype is greater than dtype', faterr)
         ! name ion type [character*4]
-        call getfirst(com,atnam(ntype))
+        call getfirst(com,wd4)
+        ! Add mono particle with element
+        call addmonopar(wrd4)
         ! particle charge [real*8,default=0]
-        call gtdpar(com,'charge',cg(ntype),0.0)
+        call gtdpar(com,'charge',etypl(netyp)%chg,0.0)
         ! diffusion constant [real*8,default=0.1]
-        call gtdpar(com,'diffusion',diffusion(ntype),0.1)
+        call gtdpar(com,'diffusion',etypl(netyp)%dif,0.1)
         if (diffusion(ntype).lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
-        call addmonopar(atnam(ntype))
+        call addpar(nptyp,2)
       endif
     enddo
     Qpar = .true.
     call reasig
-    ntc=nttyp*(nttyp+1)/2
-    allocate (Qcol(ntc),Qchr(ntc),Qefpot(ntc),Qlj(ntc),Qsrpmfi(ntc),cg2(nttyp))
+    allocate (Qcol(netp),Qchr(netp),Qefpot(netp),Qlj(netp),Qsrpmfi(netp))
     Qchr=.false.
     Qcol=.true.
     Qefpot=.false.
     Qlj=.false.
     Qsrpmfi=.false.
-    cg2=0.0
-  
-  ! Assign charges
-    if (ndna.gt.1) cg2(2)=cgnuc
-    do i=nold+1,ntype
-      cg2(nwtype(i))=cg(i)
-    enddo
   
     ! ASSIGN CHARGES USING CDIE
-    allocate (fct(ntc))
+    allocate (fct(netp))
     fct=0.0
-    do i=1,nttyp
-      do j=i,nttyp
-        if (j.gt.ndna) then
-          if (cg2(i).ne.0.0.and.cg2(j).ne.0.0) then
-            is=etpidx(i,j)
-            fct(is)=celec*cg2(i)*cg2(j)/cdie
-            Qchr(is)=.true.
-          endif
+    do i=1,netyp
+      do j=i,netyp
+        if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
+          is=etpidx(i,j)
+          fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
+          Qchr(is)=.true.
         endif
       enddo
     enddo
   
+    j=1
+    if (Qnucl) j=j+6
     write(outu,*)
-    write(outu,'(6x,a,i3,a)') 'There are ',ntype-nold,' atom types'
+    write(outu,'(6x,a,i3,a)') 'There are ',netyp-j-1,' atom types'
     write(outu,'(6x,a)') 'CHARGE -> ion charge [e]'
     write(outu,'(6x,a)') 'DIFFUSION -> diffusion constant [Ang.**2/ps]'
     write(outu,'(6x,a)') 'NAME---CHARGE---DIFFUSION'
-    do i = nold+1, ntype
-      write(outu,'(6x,a,2f8.3)') atnam(i),cg(i),diffusion(i)
+    do i = j, netyp
+      write(outu,'(6x,a,2f8.3)') etypl(i)%nam,etypl(i)%chg,etypl(i)%dif
     enddo
     write(outu,*)
   
@@ -912,7 +894,6 @@ do while (.not. logfinal)
       endif
       write(outu,'(6x,a,f8.3)') 'Dielectric constant: ',cdie
     endif
-  
     ! Logical variable which indicates if Coulomb interactions
     ! are taken into account using the Debye-Hückel approximation
     Qdeby = check(com,'debye')
@@ -965,7 +946,6 @@ do while (.not. logfinal)
     ikbt = 1.0/kbt
     kbtdna = kbt
     ikbtdna = ikbt
-    
     Qecyl=check(com,'ecyl') 
     Qsphere = check(com,'sphere') ! logical*1 variable
     if (Qecyl.and.Qsphere) call error ('shell_simul','Elliptical Cylinder and Spherical system cannot be used together',faterr)
@@ -1019,14 +999,12 @@ do while (.not. logfinal)
     if (Qnucl) fctn=celec*cgnuc**2/cdie
     if (Qpar) then
       fct=0.0
-      do i=1,nttyp
-        do j=i,nttyp
-          if (j.gt.ndna) then
-            if (cg2(i).ne.0.0.and.cg2(j).ne.0.0) then
-              is=etpidx(i,j)
-              fct(is)=celec*cg2(i)*cg2(j)/cdie
-              Qchr(is)=.true.
-            endif
+      do i=1,netyp
+        do j=i,netyp
+          if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
+            is=etpidx(i,j)
+            fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
+            Qchr(is)=.true.
           endif
         enddo
       enddo
@@ -1058,7 +1036,7 @@ do while (.not. logfinal)
          if (nbuffer.gt.dbuff) call error ('shell_simul', 'nbuffer greater than dbuff', faterr)
          ! Obtention of ion type atnam(itype)
          call getfirst(com,wrd4)
-         call fatnam(atnam,ntype,wrd4,itype)
+         itype=getetyp(wrd4)
          ibfftyp(nbuffer)=itype
          ! Intrinsic chemical potential [real*8,default=0] 
          call gtdpar(com,'mu',mu(nbuffer),0.0)
@@ -1133,7 +1111,7 @@ do while (.not. logfinal)
          ! Transmembrane potential for a buffer
          call gtdpar(com,'volt',battery,0.0)
          ! OBTENTION OF THE ELECTROCHEMICAL POTENTIAL  
-         mu(nbuffer) = mu(nbuffer)+cg(itype)*battery*Coulomb/kcalmol
+         mu(nbuffer) = mu(nbuffer)+etypl(itype)%chg*battery*Coulomb/kcalmol
        endif
      enddo
      Qbuf = .true.
@@ -1191,9 +1169,9 @@ do while (.not. logfinal)
       if (.not.endlog) then
         ! Obtention of ion type atnam(itype)
         call getfirst(com,wrd4)
-        call fatnam(atnam2,nttyp,wrd4,itype)
-        call gtdpar(com,'epsilon',eps(itype),0.0)
-        call gtdpar(com,'sigma',sigma(itype),0.0)
+        itype=getetyp(wrd4)
+        call gtdpar(com,'epsilon',etypl(itype)%eps,0.0)
+        call gtdpar(com,'sigma',etypl(itype)%sig,0.0)
       endif
     enddo
     Qljsin = .true.
@@ -1203,27 +1181,25 @@ do while (.not. logfinal)
     write(outu,'(6x,a)') '--------------'
     write(outu,'(6x,a)') 'type---epsilon(kcal/mol)---sigma(Ang)'
     write(outu,'(6x,a)') '-------------------------------------'
-    do  i = 1, nttyp
-      if (eps(i).ne.0.0.and.sigma(i).ne.0.0) then
-        write(outu,'(6x,a,2f12.4)') atnam2(i),eps(i),sigma(i)
-      endif
+    do  i = 1, netyp
+       write(outu,'(6x,a,2f12.4)') etypl(i)%nam,etypl(i)%eps,etypl(i)%sig
     enddo
-    ntc=nttyp*(nttyp+1)/2
-    allocate (epp4(ntc),sgp2(ntc),epsLJ(ntc),sgLJ(ntc))
+    allocate (epp4(netp),sgp2(netp),epsLJ(netp),sgLJ(netp))
     epsLJ=0.0
     sgLJ=0.0
     epp4=0.0
     sgp2=0.0
-    do i=1,nttyp
-      do j=i,nttyp
+    call updateuetl()
+    do i=1,netyp
+      do j=i,netyp
         if (j.gt.ndna) then
-          if (eps(i).gt.0.0.and.sigma(i).gt.0.0.and.eps(j).gt.0.0.and.sigma(j).gt.0.0) then
+          if (etypl(i)%eps.gt.0.0.and.etypl(i)%sig.gt.0.0.and.etypl(j)%eps.gt.0.0.and.etypl(j)%sig.gt.0.0) then
               is=etpidx(i,j)
-              epp4(is)=4.0*sqrt(eps(i)*eps(j))
-              sgp2(is)=(0.5*(sigma(i)+sigma(j)))**2
+              epp4(is)=4.0*sqrt(etypl(i)%eps*etypl(j)%eps)
+              sgp2(is)=(0.5*(etypl(i)%sig+etypl(j)%sig))**2
               Qlj(is)=.true.
           else
-            write(outu,'(6x,a,x,a,x,a)')'Warning: Missing single LJ parameters to compute pairs for:',atnam2(i),atnam2(j)
+           if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)')'Warning: Missing single LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
           endif
         endif
       enddo
@@ -1262,8 +1238,7 @@ do while (.not. logfinal)
     write(outu,'(6x,a)') 'type1---type2---epsilon(kcal/mol)---sigma(Ang)'
     write(outu,'(6x,a)') '-----------------------------------------'
     if (.not.allocated(epp4)) then
-      ntc=nttyp*(nttyp+1)/2
-      allocate (epp4(ntc),sgp2(ntc))
+      allocate (epp4(netp),sgp2(netp))
       epp4=0.0
       sgp2=0.0
     endif
@@ -1455,14 +1430,8 @@ do while (.not. logfinal)
        if (czmin.gt.czmax) call error ('shell_simul', 'minimum position is greater than maximum position of the channel', faterr)
      endif
      if (Qgr) then
-       if (nfix.eq.0) then
-         call error ('shell_simul', 'RDF cannot be calculated because nfix = 0', warning)
-         Qgr = .false.
-       endif 
-     endif
-     if (Qgr) then
        call gtipar(com,'ion',igr,nsites+1)
-       if (igr.le.0 .or. igr.gt.(nsites+nfix)) call error ('shell_simul', 'fixed reference ion is not adequate in SIMUL order', faterr)
+       if (igr.le.0 .or. igr.gt.(nsites)) call error ('shell_simul', 'fixed reference ion is not adequate in SIMUL order', faterr)
      endif
      nsfbs = ncycle
      vfbs = 0.0
@@ -1771,8 +1740,7 @@ do while (.not. logfinal)
   !        ---------------
      if (.not.Qpar) call error ('shell_simul', 'SRPMF order is defined before PARTICLE order', faterr)
      if (Qefpott) call error ('shell_simul', 'SRPMF must be defined before EFPOT', faterr)
-     ntc=nttyp*(nttyp+1)/2
-     allocate (c0(ntc),c1(is),c2(ntc),c3(is),c4(ntc))
+     allocate (c0(netp),c1(is),c2(netp),c3(is),c4(netp))
      c0=0.0
      c1=0.0
      c2=0.0
@@ -1869,7 +1837,6 @@ do while (.not. logfinal)
   !       ---------------
     if (.not.(Qpar.or.Qnucl)) call error ('shell_simul','EFPOT order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
     cnt=0
-    ntc=nttyp*(nttyp+1)/2
     Qepwrt=check(com,'write')
     ! Assume 0 charge for all particles
     if (check(com,'ignoreq')) then
@@ -1890,12 +1857,12 @@ do while (.not. logfinal)
     nnp=int(minlg*ires)
     minlg=float(nnp)*res
     maxlg=float(mnp)*res
-    maxd=int(float(ntc)*maxlg*ires)
+    maxd=int(float(netp)*maxlg*ires)
     call gtipar(com,'maxdata',maxd,maxd)     
     write(outu,'(6x,a,i0)') 'Max number of data points to be stored (temporary storage array): ',maxd 
     if (allocated(efp)) deallocate(efp)
-    allocate(efp(ntc))
-    allocate (xy(2,maxd),Qefpotread(ntc),nxf(ntc))
+    allocate(efp(netp))
+    allocate (xy(2,maxd),Qefpotread(netp),nxf(netp))
     call updateuetl()
     Qefpotread=.false.
     write(outu,'(6x,a)')
@@ -2139,7 +2106,6 @@ do while (.not. logfinal)
        if (Qpar) then       
          nions = ntot - nsites
          write(outu,'(6x,a,i4)') 'Total number of ions  ',nions
-         write(outu,'(6x,a,i4)') 'Number of fixed ions  ',nfix
          do ib = 1, nbuffer
            write(outu,'(6x,a,2i4)') 'buffer---number of ions ',ib,nat(ib)
          enddo
@@ -2468,28 +2434,8 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'coor') then
   !        ---------------
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'COOR order is defined before PARTICLE and/or NUCLEOTIDE orders', faterr)
-     if (check(com,'fixion').and.Qpar) then
-       call gtipar(com,'nfix',nfix,nfix)
-       if (nfix.lt.0) call error ('shell_simul', 'nfix is lower than zero',faterr)
-       if (nfix.gt.0) then
-         do i = nsites+1, nsites+nfix
-           call getlin(com,inpu,outu) ! new commands line
-           ! Obtention of ion type atnam(itype)
-           call getfirst(com,wrd4)
-           call fatnam(atnam,ntype,wrd4,itype)
-           typei(i) = itype
-           ! X-coordinate for fixed ion
-           call gtdpar(com,'xcor',x(i),0.0)
-           ! Y-coordinate for fixed ion
-           call gtdpar(com,'ycor',y(i),0.0)
-           ! Z-coordinate for fixed ion
-           call gtdpar(com,'zcor',z(i),0.0)
-         enddo
-         if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of date in COOR order', faterr)
-         if (.not.setword(word,com)) call error ('shell_simul', 'premature end of date in COOR order', faterr)
-         if (lcase(word).ne.'end') call error ('shell_simul', 'END keyword is not included in COOR order', faterr)
-       endif
-     elseif (check(com,'read')) then
+     call delparofkind(2)  ! Delete all particles added when ptype were created
+     if (check(com,'read')) then
        call gtipar(com,'unit',iunit,1)
        if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
        if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
@@ -2540,9 +2486,7 @@ do while (.not. logfinal)
              if (ii.ne.i) call error ('shell_simul', 'incorrect number of ions in COOR order', faterr)
            enddo
          endif
-         call gtipar(com,'nfix',nfix,nfix)
-         if (nfix.lt.0) call error ('shell_simul', 'nfix is lower than zero',faterr)
-         natom = ntot - nfix
+         natom = ntot
        endif  
        write(outu,'(6x,a)') 'coordinates have been read'
        call COUNT
@@ -2572,8 +2516,8 @@ do while (.not. logfinal)
            nat(ib) = nint(avnum(ib))
          enddo
          natom = nsites ! initializations
-         ifirst = nsites + nfix + 1 ! first position
-         ilast  = nsites + nfix + nat(1) ! last position
+         ifirst = nsites + 1 ! first position
+         ilast  = nsites + nat(1) ! last position
          if (ilast.gt.datom) call error ('shell_simul', 'numbers of ions/sites is greater than datom', faterr)
          do ib = 1, nbuffer
            itype = ibfftyp(ib)
@@ -2590,12 +2534,10 @@ do while (.not. logfinal)
              call error ('shell_simul', 'numbers of ions/sites is greater than datom', faterr)
            endif
          enddo
-         nions = natom - nsites + nfix
+         nions = natom - nsites
          ntot = nsites + nions
          if (ntot.gt.datom) call error ('shell_simul', 'ntot is greater than datom', faterr)
        endif ! Qbuf
-       call gtipar(com,'nfix',nfix,nfix)
-       if (nfix.lt.0) call error ('shell_simul', 'nfix is lower than zero',faterr)
        call count       
        write(outu,'(6x,a)') 'coordinates have been generated'
      elseif (check(com,'rot').and.Qnucl) then
@@ -2721,18 +2663,10 @@ do while (.not. logfinal)
        enddo
      endif
      if (Qpar) then
-       if (nfix.gt.0) then
-         write(outu,'(6x,a)') 'Fixed Ions'
-         write(outu,'(6x,a,1x,a)') 'ION','CARTESIAN COORDINATES (X,Y,Z)'
-         write(outu,'(6x,a,1x,a)') '---','-----------------------------'
-         do i = nsites+1, nsites+nfix
-           write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,typei(i),x(i),y(i),z(i),ibuffer(i)
-         enddo
-       endif
        write(outu,'(6x,a)') 'Free Ions'
        write(outu,'(6x,a,1x,a)') 'ION','CARTESIAN COORDINATES (X,Y,Z)'
        write(outu,'(6x,a,1x,a)') '---','-----------------------------'
-       do i = nsites+nfix+1, ntot
+       do i = nsites+1, ntot
          write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,typei(i),x(i),y(i),z(i),ibuffer(i)
        enddo
      endif
@@ -2742,7 +2676,6 @@ do while (.not. logfinal)
   !        ---------------
      if (Qnucl) call error ('shell_simul', 'DNA sites cannot uses in TEST order', faterr)
      if (.not.Qpar) call error ('shell_simul', 'Particles have to be defined before TEST order', faterr)
-     if (nfix.gt.0) call error ('shell_simul', 'nfix > 0 in TEST order',faterr)
      ! tolerance in force test
      call gtdpar(com,'tol',tol,0.001)
      if (tol.le.0.0) call error ('shell_simul', 'Tolerance is negative or null in TEST order', faterr)

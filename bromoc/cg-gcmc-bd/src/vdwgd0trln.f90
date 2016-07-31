@@ -68,11 +68,11 @@ if (ok) then
       else ! namsite(j).eq.'Gb'
         ifir = 5*ncel3 
       endif
-    else if (Qnucl .and. Qpar .and. j.gt.(nsites+nfix)) then
+    else if (Qnucl .and. Qpar .and. j.gt.nsites) then
       if (istrs.eq.1) numb = jtype - (inuc+1)
       if (istrs.eq.2) numb = jtype - (2*inuc+1)
       ifir = (6 + numb)*ncel3 
-    else if (.not.Qnucl .and. Qpar .and. j.gt.nfix) then
+    else if (.not.Qnucl .and. Qpar) then
       ifir = (jtype-1)*ncel3
     endif
   else

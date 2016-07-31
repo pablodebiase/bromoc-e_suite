@@ -82,7 +82,7 @@ do igrand = 1, ngcmc
     ip    = int(float(nat(ib))*rndm())+1 ! number of particle [1,nat(ib)+1]
     if (ib.le.nbuffer .and. ip.le.nat(ib)) then
       itype = ibfftyp(ib) ! ion type
-      call find(ibuffer,ib,nfix+nsites,ntot,ip,iat)
+      call find(ibuffer,ib,nsites,ntot,ip,iat)
       call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
 
       if (Qbufferbias(ib)) then

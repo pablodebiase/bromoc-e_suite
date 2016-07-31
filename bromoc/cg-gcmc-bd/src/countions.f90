@@ -47,7 +47,7 @@ cnst=coulomb*ipico**2/(dt*float(icyst))
 cnst2=coulomb*ipico**2/(dt*float(svcntfq))
 
 ncount = 0
-do i = nsites+nfix+1, ntot
+do i = nsites+1, ntot
   j = abs(typei(i))-nold
   ncount(j) = ncount(j) + 1
 enddo

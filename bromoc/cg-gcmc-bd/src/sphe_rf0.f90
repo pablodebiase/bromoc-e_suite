@@ -45,7 +45,7 @@ srdist2 = srdist*srdist
 do ii = 1, ntpol
   coef(ii) = 0.0
 enddo
-do i = nsites+nfix+1, ntot
+do i = nsites+1, ntot
     if (i.eq.j) then
       itype = jtype
       xdiff = xj            

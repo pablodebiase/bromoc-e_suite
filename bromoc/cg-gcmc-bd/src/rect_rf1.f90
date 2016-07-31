@@ -41,7 +41,7 @@ integer xpol,ypol,zpol,itype
 do ii = 1, ntpol
    coef(ii) = 0.0
 enddo
-do i = nsites+nfix+1, ntot
+do i = nsites+1, ntot
   itype = abs(typei(i))
   charge = cg(itype)
   xg = x(i)   
@@ -97,7 +97,7 @@ egsbpb = egsbpb*celec
 
 !reaction field force calculations     
 if (Qforces) then 
-  do mm = nsites+nfix+1, ntot
+  do mm = nsites+1, ntot
     itype = abs(typei(mm))
     charge = cg(itype)
     xg = x(mm)  

@@ -34,7 +34,7 @@ logical*1 lgiat
 ememb = 0.0 ! initilization
 
 do iat = 1, ntot
-  lgiat = iat.le.nsites .or. iat.ge.nsites+nfix+1
+  lgiat = iat.le.nsites .or. iat.ge.nsites+1
   lgiat = lgiat .and. Qforces
   if (iat.le.nsites) then  
     itype = typtyp(iat) 
