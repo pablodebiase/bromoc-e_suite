@@ -35,10 +35,10 @@ real  chi,xi,yi,zi,ai,bi,ci,fi
 logical*1 Beion, Besite, ok
 
 egsbpa = 0.0
-Beion = Qpar .and. j.gt.nsites
+Beion = Qpar .and. j.gt.nelenuc
 Besite = .false.
 if (Qnucl) then 
-  if (j.le.nsites) Besite = namsite(j).eq.'P '
+  if (j.le.nelenuc) Besite = namsite(j).eq.'P '
 endif
 ok = Beion .or. Besite
 

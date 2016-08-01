@@ -43,7 +43,7 @@ real  dist12,esolve,n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
 logical*1 ok,ok2
 real bb
 integer ini,fin,aa,nth,tid,omp_get_thread_num,omp_get_num_threads
-real eefpotloc,eelecloc,evdwloc,esrpmfloc,fxloc(ntot),fyloc(ntot),fzloc(ntot)
+real eefpotloc,eelecloc,evdwloc,esrpmfloc,fxloc(nele),fyloc(nele),fzloc(nele)
 real ebondloc,eangloc,ediheloc,estackloc,ebploc,eexloc,eqqloc,esolvloc
 real eefpotmxloc,eqqmxloc,evdwmxloc,esrpmfmxloc
 
@@ -76,9 +76,9 @@ econ     = 0.0
 if (Qenergy) then
   ! Initializations
   if (Qforces) then
-    fx(1:ntot) = 0.0
-    fy(1:ntot) = 0.0
-    fz(1:ntot) = 0.0
+    fx(1:nele) = 0.0
+    fy(1:nele) = 0.0
+    fz(1:nele) = 0.0
   endif
 
   ! membrane contribution
@@ -117,8 +117,8 @@ if (Qenergy) then
     egsbpb=erfpar
   endif
 
-  dids(1:5,nsites+1:ntot)=0.0
-  aa=(ntot-nsites)*(ntot-nsites-1)/2
+  dids(1:5,nelenuc+1:nele)=0.0
+  aa=(nele-nelenuc)*(nele-nelenuc-1)/2
   !$omp parallel private(ang,ang0,av,bb,bv,cofo,cte1,dc,dd,de,didstmp,dihe,dihe0,dist,dist12,dist2,dist6,eangloc,ebondloc,ebploc,ediheloc,eefp,eefpotloc,eefpotmxloc,eelecloc,eexloc,epsln,eqqloc,eqqmxloc,esolvloc,esrpmf0,esrpmf1,esrpmf2,esrpmf3,esrpmfloc,esrpmfmxloc,estackloc,evdwloc,evdwmxloc,f1,f2,f3,f4,fdf,fdv,fin,fxloc,fyloc,fzloc,i,idist,idist2,idistkd,ini,is,isite1,isite2,isite3,isite4,itype,itype2,iv22,j,jtype,jtype2,m1,m2,m3,modval,n1,n1v,n2,n2v,nth,ok,ok2,Qdeby,sgex2,tid,v1,v12,v2,v22,v23,v2v,v3,varang,vard,vard2,vardihe)
   ebploc=0.0
   eexloc=0.0
@@ -136,31 +136,31 @@ if (Qenergy) then
   eelecloc=0.0
   evdwloc=0.0
   esrpmfloc=0.0
-  fxloc(1:ntot)=0.0
-  fyloc(1:ntot)=0.0
-  fzloc(1:ntot)=0.0
+  fxloc(1:nele)=0.0
+  fyloc(1:nele)=0.0
+  fzloc(1:nele)=0.0
   tid = omp_get_thread_num()
   nth = omp_get_num_threads()
   bb=float(aa)/float(nth)
   if (tid.eq.0) then
-    ini=1+nsites
+    ini=1+nelenuc
   else
-    ini=int(sqrt(0.25+2.0*bb*tid)+0.5+1+nsites)
+    ini=int(sqrt(0.25+2.0*bb*tid)+0.5+1+nelenuc)
   endif
   if (tid+1.eq.nth) then
-    fin=ntot
+    fin=nele
   else
-    fin=int(sqrt(0.25+2.0*bb*(tid+1))+0.5+nsites)
+    fin=int(sqrt(0.25+2.0*bb*(tid+1))+0.5+nelenuc)
   endif
 
   ! nonbonded interaction between ions
   if (Qpar) then                 
     if (Qnonbond) then
       do j=ini,fin
-!     do j = nsites+1, ntot
+!     do j = nelenuc+1, nele
         jtype  = abs(typei(j))
         jtype2 = nwtype(jtype) ! convert atnam to atnam2
-        do i = nsites+1, j-1
+        do i = nelenuc+1, j-1
           itype = abs(typei(i))
           itype2=nwtype(itype) ! convert atnam to atnam2
           is=etpidx(itype2,jtype2)
@@ -219,7 +219,7 @@ if (Qenergy) then
               endif
             endif
             if (de.ne.0.0) then 
-              if (i.gt.nsites) then
+              if (i.gt.nelenuc) then
                 fxloc(i) = fxloc(i) + de*(x(i)-x(j))
                 fyloc(i) = fyloc(i) + de*(y(i)-y(j))
                 fzloc(i) = fzloc(i) + de*(z(i)-z(j))
@@ -229,8 +229,8 @@ if (Qenergy) then
               fzloc(j) = fzloc(j) - de*(z(i)-z(j))
             endif
           endif
-        enddo ! i = nsites+1,...,(j-1)
-      enddo ! j = nsites+1,...,ntot
+        enddo ! i = nelenuc+1,...,(j-1)
+      enddo ! j = nelenuc+1,...,nele
     endif !Qnonbond
   endif  ! Qpar
 
@@ -587,15 +587,15 @@ if (Qenergy) then
           if (kx(i).ne.0.0) then
             if (j.eq.0) then
               if (Qunsplit) then
-                xcon=sum(x(1:nsites1st))*insites*2.0-contrx(i)
-                fx(1:nsites1st)=fx(1:nsites1st)-kx(i)*xcon*insites*2.0
+                xcon=sum(x(1:nelenuc1st))*inelenuc*2.0-contrx(i)
+                fx(1:nelenuc1st)=fx(1:nelenuc1st)-kx(i)*xcon*inelenuc*2.0
                 econ = econ + 0.5*kx(i)*xcon**2
-                xcon=sum(x(1+nsites1st:nsites))*insites*2.0-contrx(ctn+1)
-                fx(1+nsites1st:nsites)=fx(1+nsites1st:nsites)-kx(i)*xcon*insites*2.0
+                xcon=sum(x(1+nelenuc1st:nelenuc))*inelenuc*2.0-contrx(ctn+1)
+                fx(1+nelenuc1st:nelenuc)=fx(1+nelenuc1st:nelenuc)-kx(i)*xcon*inelenuc*2.0
                 econ = econ + 0.5*kx(i)*xcon**2
               else
-                xcon=sum(x(1:nsites))*insites-contrx(i)
-                fx(1:nsites)=fx(1:nsites)-kx(i)*xcon*insites
+                xcon=sum(x(1:nelenuc))*inelenuc-contrx(i)
+                fx(1:nelenuc)=fx(1:nelenuc)-kx(i)*xcon*inelenuc
                 econ = econ + 0.5*kx(i)*xcon**2
               endif
             else
@@ -606,15 +606,15 @@ if (Qenergy) then
           if (ky(i).ne.0.0) then
             if (j.eq.0) then
               if (Qunsplit) then
-                ycon=sum(y(1:nsites1st))*insites*2.0-contry(i)
-                fy(1:nsites1st)=fy(1:nsites1st)-ky(i)*ycon*insites*2.0
+                ycon=sum(y(1:nelenuc1st))*inelenuc*2.0-contry(i)
+                fy(1:nelenuc1st)=fy(1:nelenuc1st)-ky(i)*ycon*inelenuc*2.0
                 econ = econ + 0.5*ky(i)*ycon**2
-                ycon=sum(y(1+nsites1st:nsites))*insites*2.0-contry(ctn+1)
-                fy(1+nsites1st:nsites)=fy(1+nsites1st:nsites)-ky(i)*ycon*insites*2.0
+                ycon=sum(y(1+nelenuc1st:nelenuc))*inelenuc*2.0-contry(ctn+1)
+                fy(1+nelenuc1st:nelenuc)=fy(1+nelenuc1st:nelenuc)-ky(i)*ycon*inelenuc*2.0
                 econ = econ + 0.5*ky(i)*ycon**2
               else
-                ycon=sum(y(1:nsites))*insites-contry(i)
-                fy(1:nsites)=fy(1:nsites)-ky(i)*ycon*insites
+                ycon=sum(y(1:nelenuc))*inelenuc-contry(i)
+                fy(1:nelenuc)=fy(1:nelenuc)-ky(i)*ycon*inelenuc
                 econ = econ + 0.5*ky(i)*ycon**2
               endif
             else
@@ -625,15 +625,15 @@ if (Qenergy) then
           if (kz(i).ne.0.0) then
             if (j.eq.0) then
               if (Qunsplit) then
-                zcon=sum(z(1:nsites1st))*insites*2.0-contrz(i)
-                fz(1:nsites1st)=fz(1:nsites1st)-kz(i)*zcon*insites*2.0
+                zcon=sum(z(1:nelenuc1st))*inelenuc*2.0-contrz(i)
+                fz(1:nelenuc1st)=fz(1:nelenuc1st)-kz(i)*zcon*inelenuc*2.0
                 econ = econ + 0.5*kz(i)*zcon**2
-                zcon=sum(z(1+nsites1st:nsites))*insites*2.0-contrz(ctn+1)
-                fz(1+nsites1st:nsites)=fz(1+nsites1st:nsites)-kz(i)*zcon*insites*2.0
+                zcon=sum(z(1+nelenuc1st:nelenuc))*inelenuc*2.0-contrz(ctn+1)
+                fz(1+nelenuc1st:nelenuc)=fz(1+nelenuc1st:nelenuc)-kz(i)*zcon*inelenuc*2.0
                 econ = econ + 0.5*kz(i)*zcon**2
               else
-                zcon=sum(z(1:nsites))*insites-contrz(i)
-                fz(1:nsites)=fz(1:nsites)-kz(i)*zcon*insites
+                zcon=sum(z(1:nelenuc))*inelenuc-contrz(i)
+                fz(1:nelenuc)=fz(1:nelenuc)-kz(i)*zcon*inelenuc
                 econ = econ + 0.5*kz(i)*zcon**2
               endif
             else
@@ -648,16 +648,16 @@ if (Qenergy) then
   !  nonbonded interactions between interaction sites and ions
   if (Qpar .and. Qnucl .and. Qnonbond) then
     !$omp do
-    do i = nsites+1, ntot
+    do i = nelenuc+1, nele
       itype = abs(typei(i))
       itype2 = nwtype(itype)
-      do j = 1, nsites
+      do j = 1, nelenuc
         jtype2 = typtyp(j)
         is=etpidx(itype2,jtype2)
   ! Compute distances dna fragment-ion
         dist2 = (x(i)-x(j))**2 + (y(i)-y(j))**2 + (z(i)-z(j))**2
         ok=.false.
-        ok2=Qforces .and.(i.gt.nsites.or.stfree(j))
+        ok2=Qforces .and.(i.gt.nelenuc.or.stfree(j))
         if (Qefpot(is)) then
           if (ok2) then
             call getyd(is,dist2,eefp,de,dist)
@@ -735,7 +735,7 @@ if (Qenergy) then
             endif
           endif
           if (de.ne.0.0) then 
-            if (i.gt.nsites) then
+            if (i.gt.nelenuc) then
               fx(i) = fx(i) + de*(x(i)-x(j))
               fy(i) = fy(i) + de*(y(i)-y(j))
               fz(i) = fz(i) + de*(z(i)-z(j))
@@ -747,8 +747,8 @@ if (Qenergy) then
             endif
           endif
         endif
-      enddo   ! j=1,...,nsites
-    enddo ! i=nsites+1,...,ntot 
+      enddo   ! j=1,...,nelenuc
+    enddo ! i=nelenuc+1,...,nele 
     !$omp end do
   endif
   !$omp critical
@@ -768,9 +768,9 @@ if (Qenergy) then
   edihe=edihe+ediheloc
   ebond=ebond+ebondloc
   eang=eang+eangloc
-  fx(1:ntot)=fx(1:ntot)+fxloc(1:ntot)
-  fy(1:ntot)=fy(1:ntot)+fyloc(1:ntot)
-  fz(1:ntot)=fz(1:ntot)+fzloc(1:ntot)
+  fx(1:nele)=fx(1:nele)+fxloc(1:nele)
+  fy(1:nele)=fy(1:nele)+fyloc(1:nele)
+  fz(1:nele)=fz(1:nele)+fzloc(1:nele)
   !$omp end critical
   !$omp end parallel
   ener = ener + eelec + evdw + esrpmf + esrpmfmx + ebond + eang + edihe + estack + ebp + eex + eqq + esolv + eqqmx + evdwmx + eefpot + eefpotmx + econ

@@ -35,17 +35,17 @@ real  xj,yj,zj
 integer i,ii,jj,ij,l,m,itype,lmax,mmax
 real  norm,coefi,coefj,coef2(ntpol), charge, ir
 real  sp,cp,st,ct,r,r2,xdiff,ydiff,zdiff,srdist2,ist
-real  ar(ntot,0:24),ac(ntot,0:24),as(ntot,0:24),ap(ntot,0:24,0:24)
+real  ar(nele,0:24),ac(nele,0:24),as(nele,0:24),ap(nele,0:24,0:24)
 
 lmax = lstpl(ntpol)
 mmax = abs(lstpm(ntpol))
 srdist2 = srdist*srdist
 
-!calculate q_{lm} coefficients for ntot
+!calculate q_{lm} coefficients for nele
 do ii = 1, ntpol
   coef(ii) = 0.0
 enddo
-do i = nsites+1, ntot
+do i = nelenuc+1, nele
     if (i.eq.j) then
       itype = jtype
       xdiff = xj            
@@ -104,7 +104,7 @@ do i = nsites+1, ntot
     endif
 enddo
 
-!calculate Q_{m} coefficients for ntot- (jth ion)
+!calculate Q_{m} coefficients for nele- (jth ion)
 charge = cg(jtype)
 do ii = 1, ntpol
   l = lstpl(ii)
@@ -120,7 +120,7 @@ do ii = 1, ntpol
   endif
 enddo
 
-!reaction field energy calculation G(ntot)-G(ntot-1)
+!reaction field energy calculation G(nele)-G(nele-1)
 egsbpb = 0.0
 do ii = 1, ntpol
   ij = (ii-1)*ntpol + ii

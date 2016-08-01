@@ -25,16 +25,11 @@ use charfuncmod, only: sng   !command parser
 implicit none
 integer i
 
-if (Qpar) then
-  do i = nsites+1, ntot
-     typtyp(i)=nwtype(abs(typei(i)))
-  enddo
-endif
 write(iuntrj) runtime                    ! simulation time in pico-second (before was nano)
-write(iuntrj) ntot                       ! total number of ions and sites in motion
-write(iuntrj) (typtyp(i),i=1,ntot)       ! ion and nucleotides types
-write(iuntrj) (sng(x(i)),i=1,ntot)       ! x coordinates
-write(iuntrj) (sng(y(i)),i=1,ntot)       ! y coordinates
-write(iuntrj) (sng(z(i)),i=1,ntot)       ! z coordinates 
+write(iuntrj) nele                       ! total number of ions and sites in motion
+write(iuntrj) (et(i),i=1,nele)       ! ion and nucleotides types
+write(iuntrj) (sng(r(i)%x),i=1,nele)       ! x coordinates
+write(iuntrj) (sng(r(i)%y),i=1,nele)       ! y coordinates
+write(iuntrj) (sng(r(i)%z),i=1,nele)       ! z coordinates 
 return
 end

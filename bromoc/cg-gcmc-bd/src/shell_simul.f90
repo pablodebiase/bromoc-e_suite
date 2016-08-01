@@ -69,6 +69,7 @@ integer   values(8)
 integer   is,cnt,mnp,nnp,nn,maxd
 integer   wunit,s1,s2,s3,iseed,wallsi4
 integer*1 walls,dnaparams
+integer nsites
 !for trajectory, fraction of denatued bases files and translocation time
 integer    ntras 
 real       vfbs,scald,scaldd
@@ -150,7 +151,7 @@ dodna        = .false.
 iseed        = 3141593
 ntype        = 0
 nold         = 0
-ndna         = 0
+netnuc         = 0
 nbuffer      = 0
 nsites       = 0
 istrs        = 0
@@ -302,7 +303,6 @@ do while (.not. logfinal)
        call addetyp('Tb',dif=diffnuc)  ! 4
        call addetyp('Cb',dif=diffnuc)  ! 5
        call addetyp('Gb',dif=diffnuc)  ! 6
-       ndna=netyp
      endif
      if (diffnuc.lt.0.0) call error ('shell_simul', 'Diffusion coefficient for each nucleotide is negative', faterr)
      ! Parameter to calculate bonded and non-bonded potential
@@ -502,7 +502,7 @@ do while (.not. logfinal)
      if (.not.setword(word,com)) call error ('shell_simul', 'premature end of data in NUCLEOTIDE order', faterr)
      if (lcase(word).ne.'end') call error ('shell_simul', 'END keyword is not included in NUCLEOTIDE order', faterr)
      ! complementary strand
-     nsites1st = nsites
+     nelenuc1st = nsites
      if (istrs.eq.2) then
        j=inuc*3
        if (.not.QfirstP) j=j-1
@@ -534,7 +534,7 @@ do while (.not. logfinal)
            typenuc(nsites) = ntype
            namnucl(nsites) = wrd4(1:1)
            namsite(nsites) = 'P'
-           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
+           call seteleinptyp(nptyp,nsites-nelenuc1st,getetyp(namsite(nsites)))
          endif
          ! Base
          nsites = nsites + 1
@@ -544,16 +544,16 @@ do while (.not. logfinal)
          namnucl(nsites) = wrd4(1:1)           
          if (namnucl(nsites).eq.'A') then
            namsite(nsites) = 'Ab'
-           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
+           call seteleinptyp(nptyp,nsites-nelenuc1st,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'T') then
            namsite(nsites) = 'Tb'
-           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
+           call seteleinptyp(nptyp,nsites-nelenuc1st,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'C') then
            namsite(nsites) = 'Cb'
-           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
+           call seteleinptyp(nptyp,nsites-nelenuc1st,getetyp(namsite(nsites)))
          else if (namnucl(nsites).eq.'G') then
            namsite(nsites) = 'Gb'
-           call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
+           call seteleinptyp(nptyp,nsites-nelenuc1st,getetyp(namsite(nsites)))
          else
            call error ('shell_simul', 'nucleotide name is not correct', faterr)
          endif
@@ -564,7 +564,7 @@ do while (.not. logfinal)
          typenuc(nsites) = ntype
          namnucl(nsites) = wrd4(1:1)
          namsite(nsites) = 'S'            
-         call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
+         call seteleinptyp(nptyp,nsites-nelenuc1st,getetyp(namsite(nsites)))
        enddo
        if (Qexpl2nd) deallocate (secstr)
        call updateptypchg(nptyp)
@@ -608,13 +608,21 @@ do while (.not. logfinal)
      ! nonbonded terms
      call go_qq
      Qnucl = .true.
+     ! Define number of particle types belonging to dna
+     nptnuc=nptyp
      ! Add Particle
      if (istrs.gt.0) call addpar(1,1)
      if (istrs.eq.2) call addpar(2,1)
+     ! Define number of particles belonging to dna
+     nparnuc=npar
      !call printpdb(outu) ! debug
      write(outu,*) 
      ! assert 
      if (nsites.ne.nele) stop 'nsites is not equal to nele'
+     ! Define number of elements belonging to dna
+     nelenuc=nele
+     ! Define number of elements types belonging to dna
+     netnuc=netyp
      if (allocated(nucnam)) deallocate(nucnam)
   ! **********************************************************************
   elseif (wrd5.eq.'atoms') then
@@ -712,7 +720,7 @@ do while (.not. logfinal)
     fct=0.0
     do i=1,netyp
       do j=i,netyp
-        if (j.gt.ndna) then
+        if (j.gt.netnuc) then
           if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
             is=etpidx(i,j)
             fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
@@ -723,11 +731,11 @@ do while (.not. logfinal)
     enddo
   
     write(outu,*)
-    write(outu,'(6x,a,i3,a)') 'There are ',netyp-ndna,' atom types'
+    write(outu,'(6x,a,i3,a)') 'There are ',netyp-netnuc,' atom types'
     write(outu,'(6x,a)') 'CHARGE -> ion charge [e]'
     write(outu,'(6x,a)') 'DIFFUSION -> diffusion constant [Ang.**2/ps]'
     write(outu,'(6x,a)') 'NAME---CHARGE---DIFFUSION'
-    do i=ndna, netyp
+    do i=netnuc, netyp
       write(outu,'(6x,a,2f8.3)') etypl(i)%nam,etypl(i)%chg,etypl(i)%dif
     enddo
     write(outu,*)
@@ -738,7 +746,7 @@ do while (.not. logfinal)
     if (.not. Qnucl) call error ('shell_simul', 'APFOR order is defined before NUCLEOTIDE order', faterr)
     ! number of DNA fixed sites [integer, default=0]
     call gtipar(com,'afn',afn,0)  
-    if (afn.gt.nsites .or. afn.lt.0) call error ('shell_simul', 'Incorrect number of DNA sites',faterr)
+    if (afn.gt.nelenuc .or. afn.lt.0) call error ('shell_simul', 'Incorrect number of DNA sites',faterr)
     if (allocated(af)) deallocate (af)
     if (allocated(sn)) deallocate (sn)
     allocate (af(3,afn),sn(afn))
@@ -746,7 +754,7 @@ do while (.not. logfinal)
       do j = 1, afn
         if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of data in APFOR. New line expected', faterr)
         if (.not.setint(isite,com)) call error ('shell_simul', 'premature end of data in APFOR. Integer Expected.', faterr)
-        if (isite.gt.nsites .or. isite.le.0) call error ('shell_simul', 'Incorrect DNA site', faterr)
+        if (isite.gt.nelenuc .or. isite.le.0) call error ('shell_simul', 'Incorrect DNA site', faterr)
         call gtdpar(com,'fx',af(1,j),0.0)
         call gtdpar(com,'fy',af(2,j),0.0)
         call gtdpar(com,'fz',af(3,j),0.0)
@@ -770,13 +778,13 @@ do while (.not. logfinal)
     if (.not. Qnucl) call error ('shell_simul', 'FIXSITE order is defined before NUCLEOTIDE order', faterr)
     ! number of DNA fixed sites [integer, default=0]
     call gtipar(com,'nstfx',nstfx,0) 
-    if (nstfx.gt.nsites .or. nstfx.lt.0) call error ('shell_simul', 'Incorrect number of DNA fixed sites', faterr)
+    if (nstfx.gt.nelenuc .or. nstfx.lt.0) call error ('shell_simul', 'Incorrect number of DNA fixed sites', faterr)
     Qstfx = nstfx.gt.0
     if (Qstfx) then
       if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of data in FIXSITE order', faterr)
       do j = 1, nstfx
         if (.not.setint(isite,com)) call error ('shell_simul', 'premature end of data in FIXSITE order', faterr)
-        if (isite.gt.nsites .or. isite.le.0) call error ('shell_simul', 'Incorrect DNA fixed site',faterr)
+        if (isite.gt.nelenuc .or. isite.le.0) call error ('shell_simul', 'Incorrect DNA fixed site',faterr)
         stfx(j) = isite
         stfree(isite) = .false.
       enddo
@@ -799,10 +807,10 @@ do while (.not. logfinal)
     Qnotry=check(com,'y')
     Qnotrz=check(com,'z')
     if (.not.(Qnotrx.or.Qnotry.or.Qnotrz)) Qnotrans=.false.
-    insites=1.0/nsites
-    notrx=sum(x(1:nsites))*insites
-    notry=sum(y(1:nsites))*insites
-    notrz=sum(z(1:nsites))*insites
+    inelenuc=1.0/nelenuc
+    notrx=sum(x(1:nelenuc))*inelenuc
+    notry=sum(y(1:nelenuc))*inelenuc
+    notrz=sum(z(1:nelenuc))*inelenuc
     if (Qnotrans) then 
       write(outu,'(6x,a)') 'NOTRANSLATION is on'
       if (Qnotrx) write(outu,'(6x,a,f9.3)') '  DNA centroid will be fixed at x =',notrx
@@ -832,24 +840,24 @@ do while (.not. logfinal)
     do i = 1, ctn
       if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of data in CONTRA. New line expected', faterr)
       if (.not.setint(isite,com)) call error ('shell_simul', 'premature end of data in CONTRA. Integer Expected.', faterr)
-      if (isite.gt.nsites .or. isite.lt.0) call error ('shell_simul', 'Incorrect DNA site', faterr)
+      if (isite.gt.nelenuc .or. isite.lt.0) call error ('shell_simul', 'Incorrect DNA site', faterr)
       call gtdpar(com,'kx',kx(i),0.0)
       call gtdpar(com,'ky',ky(i),0.0)
       call gtdpar(com,'kz',kz(i),0.0)
       csn(i)=isite
       if (csn(i).eq.0) then
-        insites=1.0/nsites
+        inelenuc=1.0/nelenuc
         if (Qunsplit) then
-          contrx(i)=2.0*sum(x(1:nsites1st))*insites
-          contry(i)=2.0*sum(y(1:nsites1st))*insites
-          contrz(i)=2.0*sum(z(1:nsites1st))*insites
-          contrx(ctn+1)=2.0*sum(x(nsites1st+1:nsites))*insites
-          contry(ctn+1)=2.0*sum(y(nsites1st+1:nsites))*insites
-          contrz(ctn+1)=2.0*sum(z(nsites1st+1:nsites))*insites
+          contrx(i)=2.0*sum(x(1:nelenuc1st))*inelenuc
+          contry(i)=2.0*sum(y(1:nelenuc1st))*inelenuc
+          contrz(i)=2.0*sum(z(1:nelenuc1st))*inelenuc
+          contrx(ctn+1)=2.0*sum(x(nelenuc1st+1:nelenuc))*inelenuc
+          contry(ctn+1)=2.0*sum(y(nelenuc1st+1:nelenuc))*inelenuc
+          contrz(ctn+1)=2.0*sum(z(nelenuc1st+1:nelenuc))*inelenuc
         else
-          contrx(i)=sum(x(1:nsites))*insites
-          contry(i)=sum(y(1:nsites))*insites
-          contrz(i)=sum(z(1:nsites))*insites
+          contrx(i)=sum(x(1:nelenuc))*inelenuc
+          contry(i)=sum(y(1:nelenuc))*inelenuc
+          contrz(i)=sum(z(1:nelenuc))*inelenuc
         endif
       else
         contrx(i)=x(csn(i))
@@ -1212,7 +1220,7 @@ do while (.not. logfinal)
     call updateuetl()
     do i=1,netyp
       do j=i,netyp
-        if (j.gt.ndna) then
+        if (j.gt.netnuc) then
           if (etypl(i)%eps.gt.0.0.and.etypl(i)%sig.gt.0.0.and.etypl(j)%eps.gt.0.0.and.etypl(j)%sig.gt.0.0) then
               is=etpidx(i,j)
               epp4(is)=4.0*sqrt(etypl(i)%eps*etypl(j)%eps)
@@ -1264,7 +1272,7 @@ do while (.not. logfinal)
     endif
     do  i = 1, netyp
       do j = i, netyp
-        if (j.gt.ndna) then 
+        if (j.gt.netnuc) then 
           is=etpidx(i,j)
           if (epsLJ(is).gt.0.0 .and. sgLJ(is).gt.0.0) then
             write(outu,'(6x,a,a,2f12.4,$)') etypl(i)%nam,etypl(j)%nam,epsLJ(is),sgLJ(is) 
@@ -1450,8 +1458,8 @@ do while (.not. logfinal)
        if (czmin.gt.czmax) call error ('shell_simul', 'minimum position is greater than maximum position of the channel', faterr)
      endif
      if (Qgr) then
-       call gtipar(com,'ion',igr,nsites+1)
-       if (igr.le.0 .or. igr.gt.(nsites)) call error ('shell_simul', 'fixed reference ion is not adequate in SIMUL order', faterr)
+       call gtipar(com,'ion',igr,nelenuc+1)
+       if (igr.le.0 .or. igr.gt.(nelenuc)) call error ('shell_simul', 'fixed reference ion is not adequate in SIMUL order', faterr)
      endif
      nsfbs = ncycle
      vfbs = 0.0
@@ -1634,7 +1642,7 @@ do while (.not. logfinal)
   
     ! Calculate the interaction of particle "iat" with the rest of
     ! the system
-    if (iat.le.nsites) then
+    if (iat.le.nelenuc) then
       itype = typenuc(iat)
     else 
       itype = abs(typei(iat))
@@ -1837,7 +1845,7 @@ do while (.not. logfinal)
      write(outu,'(6x,a,/,6x,a)') 'Coefficients for the short-range ion-ion interactions','NAME----NAME----C0----C1----C2----C3----C4'  
      do i = 1,netyp
        do j=i,netyp
-         if(j.gt.ndna) then
+         if(j.gt.netnuc) then
            is=etpidx(i,j)
            if (c2(is).ne.0.0) then
              write(outu,'(6x,a,1x,a,5f8.3)') etypl(i)%nam,etypl(j)%nam,c0(is),c1(is),c2(is),c3(is),c4(is)
@@ -1954,7 +1962,7 @@ do while (.not. logfinal)
     write(*,*) 'Used Element Type-Element Type pairs'
     do i = 1,netyp
       do j=i,netyp
-        if(j.gt.ndna) then
+        if(j.gt.netnuc) then
           is=etpidx(i,j)
           if (Qefpot(is).and.Qefpotread(is)) then
             write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',nxf(is),'  From-To: ',efp(is)%xl,' - ',sqrt(efp(is)%xu2)
@@ -1975,7 +1983,7 @@ do while (.not. logfinal)
     if (Qepwrt) then
       do i=1,netyp
         do j=i,netyp
-          if (j.gt.ndna) then
+          if (j.gt.netnuc) then
             is=etpidx(i,j)
             if (Qefpot(is)) then
               write(wunit,*) etypl(i)%nam,' - ',etypl(j)%nam
@@ -2110,7 +2118,7 @@ do while (.not. logfinal)
      write(outu,'(6x,a,f8.3,a)') 'pore length        ',2*plength2,' [Angs]'
      write(outu,'(6x,a,f8.3,a)') 'membrane center    ',   pcenter,' [Angs]'
   
-     do i = ndna+1, netyp
+     do i = netnuc+1, netyp
         write(outu,'(6x,i3,3x,a,1x,5f8.3)') i,etypl(i)%nam,ampl3(i),p3(i)
      enddo
      write(outu,*)
@@ -2119,14 +2127,13 @@ do while (.not. logfinal)
   !        ---------------
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'PRINT order is defined before PARTICLE and/or NUCLEOTIDE orders', warning)
      if (check(com,'system')) then
-       if (Qnucl) write (outu,'(6x,a,i4)') 'Total number of sites ',nsites
+       if (Qnucl) write (outu,'(6x,a,i4)') 'Total number of sites ',nelenuc
        if (Qpar) then       
-         nions = ntot - nsites
+         nions = nele - nelenuc
          write(outu,'(6x,a,i4)') 'Total number of ions  ',nions
          do ib = 1, nbuffer
            write(outu,'(6x,a,2i4)') 'buffer---number of ions ',ib,nat(ib)
          enddo
-         write(outu,'(6x,a,i4)') 'Number of moving atoms ',natom
        endif
      elseif (check(com,'coor')) then
        call gtipar(com,'unit',iunit,1)
@@ -2155,14 +2162,14 @@ do while (.not. logfinal)
          xm=0.0
          ym=0.0
          zm=0.0
-         do i=1,nsites
+         do i=1,nelenuc
            xm=xm+x(i)
            ym=ym+y(i)
            zm=zm+z(i)
          enddo
-         xm=xm/nsites
-         ym=ym/nsites
-         zm=zm/nsites
+         xm=xm/nelenuc
+         ym=ym/nelenuc
+         zm=zm/nelenuc
          write(outu,'(6x,a,3(f15.8,1x))') 'DNA GEOMETRIC CENTER: ',xm,ym,zm
        else 
          call error ('shell_simul', 'Cannot PRINT dnacenter, DNA is not defined', warning)
@@ -2399,14 +2406,13 @@ do while (.not. logfinal)
      if (.not.Qbuf) call error ('shell_simul', 'COUNT order is defined before BUFFER order', faterr)
      call COUNT
      write(outu,*)
-     write(outu,'(6x,a,i4)') 'Total number of ions ',ntot-nsites
+     write(outu,'(6x,a,i4)') 'Total number of ions ',npar-nparnuc
      do ib = 1, nbuffer
        write(outu,'(6x,a,2i4)') 'buffer--number of ions ',ib,nat(ib)
      enddo
      write(outu,'(6x,a)') 'ION----TYPE--BUFFER'
-     do i = nsites+1, ntot
-       itype = abs(typei(i))
-       if (ibuffer(i).ne.0) write(outu,'(6x,i5,1x,a4,1x,i5)') i,atnam(itype),ibuffer(i)
+     do i = nparnuc+1, npar
+       if (parl(i)%ibuf.ne.0) write(outu,'(6x,i5,1x,a4,1x,i5)') i,ptypl(parl(i)%ptyp)%nam,parl(i)%ibuf
      enddo
   ! **********************************************************************
   elseif (wrd5.eq.'coor') then
@@ -2424,7 +2430,7 @@ do while (.not. logfinal)
        if (wrd6.ne.'CRYST1') call error('shell_simul','this file has not BROMOC PDB format',faterr)
        ilast=0
        if (Qnucl) then
-         do i = 1, nsites
+         do i = 1, nelenuc
            read(iunit,'(a)') com
            read (com,'(x6,I5,x,x5,x5,I4,4x,3F8.3)') jtype,itype,rtmp%x,rtmp%y,rtmp%z
            call putcoorinpar(itype,jtype,rtmp%x,rtmp%y,rtmp%z)
@@ -2456,7 +2462,7 @@ do while (.not. logfinal)
        endif
        if (.not.doions.and..not.dodna) call error ('shell_simul', 'all, dna or ions missing after COOR gener', faterr)
        if (dodna) then
-         do i = 1, nsites
+         do i = 1, nelenuc
            call setcar(r(i),xnat(i),ynat(i),znat(i))
          enddo
        endif
@@ -2464,13 +2470,11 @@ do while (.not. logfinal)
          do ib = 1, nbuffer
            nat(ib) = nint(avnum(ib))
          enddo
-         natom = nsites ! initializations
-         ifirst = nsites + 1 ! first position
-         ilast  = nsites + nat(1) ! last position
+         ifirst = nelenuc + 1 ! first position
+         ilast  = nelenuc + nat(1) ! last position
          if (ilast.gt.datom) call error ('shell_simul', 'numbers of ions/sites is greater than datom', faterr)
          do ib = 1, nbuffer
            itype = ibfftyp(ib)
-           natom = natom + nat(ib)
            do i = ifirst, ilast
              typei(i) = itype
              call insert(ib,rtmp%x,rtmp%y,rtmp%z) ! find new center of particle
@@ -2492,7 +2496,7 @@ do while (.not. logfinal)
        Qrot = .true.
        if (check(com,'ref')) then
          call gtipar(com,'s1',s1,1)
-         call gtipar(com,'s2',s2,nsites)
+         call gtipar(com,'s2',s2,nelenuc)
          call gtipar(com,'s3',s3,2)
          write(outu,'(6x,3(a,x,i0,x))') 'Rotating using references: s1=',s1,'s2=',s2,'s3=',s3
          vc3(1)=x(s1)-x(s2)
@@ -2542,7 +2546,7 @@ do while (.not. logfinal)
          sum3 = sum3 + rot(1,j)*rot(3,j)
        enddo
        if (abs(sum1).ge.1.0e-8 .or. abs(sum2).ge.1.0e-8 .or.abs(sum3).ge.1.0e-8) call error ('shel_simul', 'rotation matrix for DNA sites is not orthogonal in COOR order', faterr)
-       do i = 1, nsites
+       do i = 1, nelenuc
          xold = x(i)
          yold = y(i)
          zold = z(i)
@@ -2564,7 +2568,7 @@ do while (.not. logfinal)
        call gtdpar(com,'ytras',ytras,0.0)
        ! traslation in z direction of DNA B isoform coordinate 
        call gtdpar(com,'ztras',ztras,0.0)
-       do i = 1, nsites
+       do i = 1, nelenuc
          x(i) = x(i) + xtras
          y(i) = y(i) + ytras
          z(i) = z(i) + ztras
@@ -2575,15 +2579,15 @@ do while (.not. logfinal)
        xm=0.0
        ym=0.0
        zm=0.0
-       do i=1,nsites
+       do i=1,nelenuc
          xm=xm+x(i)
          ym=ym+y(i)
          zm=zm+z(i)
        enddo
-       xm=xm/nsites
-       ym=ym/nsites
-       zm=zm/nsites
-       do i = 1, nsites
+       xm=xm/nelenuc
+       ym=ym/nelenuc
+       zm=zm/nelenuc
+       do i = 1, nelenuc
          x(i) = x(i) - xm
          y(i) = y(i) - ym
          z(i) = z(i) - zm
@@ -2592,7 +2596,7 @@ do while (.not. logfinal)
        call gtdpar(com,'x',xm,xm)
        call gtdpar(com,'y',ym,ym)
        call gtdpar(com,'z',zm,zm)
-       do i = 1, nsites
+       do i = 1, nelenuc
          x(i) = x(i) + xm
          y(i) = y(i) + ym
          z(i) = z(i) + zm
@@ -2605,16 +2609,16 @@ do while (.not. logfinal)
        write(outu,*)
        write(outu,'(6x,a,1x,a,1x,a,1x,a)') 'STRAND','NUCLEOT','SITE','CARTESIAN COORDINATES (X,Y,Z)'
        write(outu,'(6x,a,1x,a,1x,a,1x,a)') '------','-------','----','-----------------------------'
-       do i = 1, nsites
-        write(outu,'(6x,i1,1x,a1,1x,a2,3(1x,f15.8))') strand(i), namnucl(i),namsite(i), x(i), y(i), z(i)
+       do i = 1, nelenuc
+        write(outu,'(6x,i1,1x,a1,1x,a2,3(1x,f15.8))') strand(i), namnucl(i),namsite(i), r(i)%x, r(i)%y, r(i)%z
        enddo
      endif
      if (Qpar) then
        write(outu,'(6x,a)') 'Free Ions'
        write(outu,'(6x,a,1x,a)') 'ION','CARTESIAN COORDINATES (X,Y,Z)'
        write(outu,'(6x,a,1x,a)') '---','-----------------------------'
-       do i = nsites+1, ntot
-         write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,typei(i),x(i),y(i),z(i),ibuffer(i)
+       do i = nelenuc+1, nele
+         write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,et(i),r(i)%x,r(i)%y,r(i)%z,parl(pt(i))%ibuf
        enddo
      endif
      write(outu,*)
@@ -2683,8 +2687,8 @@ do while (.not. logfinal)
      call energy
      write(outu,'(6x,a,f12.6)') 'Total energy (from ENERGY)      ',ener
      ener = 0.0 ! initialization
-     do iat = 1, ntot
-       call interact(dener,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.)
+     do iat = nelenuc, nele
+       call interact(dener,r(iat)%x,r(iat)%y,r(iat)%z,et(iat),iat,.true.)
        ener = ener + dener
      enddo
      ener = ener*0.5
@@ -2878,7 +2882,7 @@ do while (.not. logfinal)
       call getlin(com,inpu,outu) ! new commands line
       endlog = check(com,'end')
       if (.not.endlog) then
-        ! Obtention of ion type atnam(itype)
+        ! Obtention of ion type 
         call getfirst(com,wrd4)
         itype=getetyp(wrd4)
         call gtdpar(com,'scale',scal(itype),1.0)

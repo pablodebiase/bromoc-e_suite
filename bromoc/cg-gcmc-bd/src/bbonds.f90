@@ -40,12 +40,12 @@ do i = 1, maxpar
   bond(i) = .false.
 enddo
       
-do i = 1, nsites-1 
+do i = 1, nelenuc-1 
   namesite1 = namsite(i)
   namesite2 = namsite(i+1)
   strand1 = strand(i)
   strand2 = strand(i+1)
-  if ((i+2).le.nsites) then
+  if ((i+2).le.nelenuc) then
     strand3 = strand(i+2)
     namesite3 = namsite(i+2)
   endif  
@@ -89,7 +89,7 @@ do i = 1, nsites-1
       endif 
     endif   
   else ! namesite1.eq.'P '          
-    if ((i+2).le.nsites .and. strand1.eq.strand3) then
+    if ((i+2).le.nelenuc .and. strand1.eq.strand3) then
       nbond = nbond + 1
       if (nbond.gt.maxbond) call error ('bonds', 'The number of bonds exceeds the maximum value', faterr)
       sitebond(nbond,1) = i

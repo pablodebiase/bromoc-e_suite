@@ -42,14 +42,14 @@ do i = 1, maxpar
   angle(i) = .false.
 enddo  
  
-do i = 1, nsites-2 
+do i = 1, nelenuc-2 
   strand1 = strand(i)
   strand2 = strand(i+1)
   strand3 = strand(i+2)
   namesite1 = namsite(i)
   namesite2 = namsite(i+1)
   namesite3 = namsite(i+2)
-  if ((i+3).le.nsites) then
+  if ((i+3).le.nelenuc) then
     strand4 = strand(i+3)
     namesite4 = namsite(i+3)
   endif       
@@ -90,7 +90,7 @@ do i = 1, nsites-2
       endif
     endif   
   else if (namesite1.eq.'S ') then  
-    if ((i+3).le.nsites .and. strand1.eq.strand4) then
+    if ((i+3).le.nelenuc .and. strand1.eq.strand4) then
       nangle = nangle + 1
       if (nangle.gt.maxang) call error ('angles', 'The number of bond angles exceeds the maximum value', faterr)
       siteangle(nangle,1) = i
@@ -139,7 +139,7 @@ do i = 1, nsites-2
     else 
       call error ('angles', 'INCORRECT ORDER FOR SITES',faterr)
     endif      
-    if ((i+3).le.nsites .and. strand1.eq.strand4) then
+    if ((i+3).le.nelenuc .and. strand1.eq.strand4) then
       nangle = nangle + 1
       if (nangle.gt.maxang) call error ('angles', 'The number of bond angles exceeds the maximum value', faterr)
       siteangle(nangle,1) = i

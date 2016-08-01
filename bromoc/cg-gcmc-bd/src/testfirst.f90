@@ -22,8 +22,8 @@ use constamod
 use stdiomod
 implicit none
 integer i
-!real*16 fx2(ntot), fy2(ntot), fz2(ntot)
-real fx2(ntot), fy2(ntot), fz2(ntot)
+!real*16 fx2(nele), fy2(nele), fz2(nele)
+real fx2(nele), fy2(nele), fz2(nele)
 real x1,y1,z1
 real delta , tol
 logical*1 endlog
@@ -32,7 +32,7 @@ endlog = .false.
 
 Qforces = .false.
 
-do i=1,ntot
+do i=1,nele
   x1=x(i)
   x(i)=x1-delta
   call energy
@@ -64,7 +64,7 @@ enddo
 Qforces = .true.
 call energy
 
-do i=1,ntot
+do i=1,nele
   if(abs(fx(i)-fx2(i)).gt.tol)then
      write(outu,*) '**bad x-force**    atom',i
      write(outu,*) fx(i),fx2(i)

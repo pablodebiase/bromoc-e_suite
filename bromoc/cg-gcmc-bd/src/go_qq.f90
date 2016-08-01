@@ -41,7 +41,7 @@ nex = 0
 nqq = 0
 nsolv = 0
  
-do i = 2, nsites
+do i = 2, nelenuc
   do j = 1, i-1
 !    Two sites are excluded form all non-bonded interactions if they
 !    constitute a bonb

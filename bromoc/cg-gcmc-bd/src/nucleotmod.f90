@@ -60,7 +60,6 @@
 ! epsolv                -> Energy scale for solvnet-induced contribution
 ! maxsite               -> Maximum number of interaction sites
 ! maxpar                -> Maximum number of interaction pairs
-! nsites                -> Number of interaction sites
 ! nstfx                 -> Number of DNA fixed sites
 ! strand(maxsite)       -> This integer vector indicates the strand for the 
 !                          interaction site
@@ -78,24 +77,25 @@
 !                          sites positions
 ! Qrot                  -> Logical variable which indicates if there is a rotation of DNA
 !                          sites positions
-! typat(datom), typtyp(datom), nwtype(dtype)              
 !                        -> These integer vectors are used in wrtrraj routine
-! ndna                  -> number of sites types
 ! nion                  -> number of ion types
-! nfc                   -> number of explicit atom and ion types 
-! ndnaxnfc              -> ndna*nfc
+! nfc                   -> number of explicit atom and ion types
+! nparnuc               -> nucleotides in npar 
+! nelenuc               -> nucleotides in nele
+! netnuc                -> nucleotides in netyp
+! nptnuc                -> nucleotides in nptyp
 
 module nucleotmod
 implicit none
-integer     istrs, inuc, maxsite, nsites, nstfx,extraP,nsites1st
+integer     istrs, inuc, maxsite, nstfx,extraP,nelenuc1st
 integer,allocatable     ::  strand(:), typenuc(:), stfx(:)
 logical*1,allocatable   ::  stfree(:)
 character*1,allocatable :: namnucl(:)
 character*2,allocatable :: namsite(:)
 real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 real        cgnuc, diffnuc, epsnuc, epsolv, fctn, scalepairing
-real        notrx,notry,notrz,insites  ! NOTRAN
-integer     ndna,nion,ndnaxnion,nfc,ndnaxnfc,setframes
+real        notrx,notry,notrz,inelenuc  ! NOTRAN
+integer     nion,ndnaxnion,nfc,ndnaxnfc,setframes
 !CONTRA
 real        xcon,ycon,zcon
 real,allocatable :: kx(:),ky(:),kz(:),contrx(:),contry(:),contrz(:) 
@@ -105,6 +105,7 @@ logical*1   Qcontrans,Qcontprint,Qunsplit
 logical*1   Qnucl, Qatexp, Qassign, Qpar, Qsystem, Qbuf, Qtraj, Qtrajcont, Qdie, Qsolv, Qfmemb, Qstfx
 logical*1   Qtras, Qrot, Qnotrans, Qnotrx, Qnotry, Qnotrz, Qdnafree, Qinvstr, QfirstP
 real cylall(6,3),din,ain
+integer nptnuc,netnuc,nelenuc,nparnuc
 
 ! Bonded terms
 ! ------------

@@ -26,7 +26,7 @@ use grandmod
 implicit none
 
 integer lmax,mmax,J
-real  xc,ap(ntot,0:LMAX,0:LMAX-2)
+real  xc,ap(nele,0:LMAX,0:LMAX-2)
 !local
 integer l,m
 real  fact,somx2

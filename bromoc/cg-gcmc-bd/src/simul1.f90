@@ -27,7 +27,7 @@ use errormod
 use charfuncmod, only: sng,i8toi   !command parser
 
 implicit none
-integer*8   ncycle,i,icycle,nsec2,nsave,nsfbs,ncountav(ntype-nold)
+integer*8   ncycle,i,icycle,nsec2,nsave,nsfbs,ncountav(nptyp)
 integer ngcmc, nmcm, nbd, ntras, nsec, j,istep,np1,np2,ii
 real    vfbs
 integer   iat, jat, itype, ib, n, iz, ir
@@ -35,7 +35,7 @@ real    naver
 !real*16 dener
 real dener
 real    current, area, zz, vol1, vol2, pres, vir
-integer   ncount(ntype-nold)
+integer   ncount(nptyp)
 integer   prob(nbuffer,0:datom) 
 integer   prob2(ntype,0:datom) 
 integer   prob3(ntype,0:datom)      
@@ -122,9 +122,9 @@ if (Qenergy) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nsites))*insites-contrx(ii)
-          ycon=sum(y(1:nsites))*insites-contry(ii)
-          zcon=sum(z(1:nsites))*insites-contrz(ii)
+          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
+          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
+          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
@@ -133,29 +133,29 @@ if (Qenergy) then
     endif 
     write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
     if (ngcmc.gt.0) then
-      ncount(1:ntype-nold) = 0
-      do iat = nsites+1, ntot
-        itype = abs(typei(iat))-nold
+      ncount = 0
+      do iat = nparnuc+1, npar
+        itype = parl(iat)%ptyp
         ncount(itype) = ncount(itype) + 1
       enddo
-      write(ln,*) '          ',(atnam(itype),'>',ncount(itype-nold),' | ',itype=nold+1,ntype)
+      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
       write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
     endif         
   else if (Qpar.and..not.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded------------PHIsf------------PHIrf-----------PHIvdW' 
     write(outu,'(5x,i10,5f17.4)') 0,ener,eelec+evdw+esrpmf+eefpot, egsbpa,egsbpb,evdwgd 
-    write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'  
+    write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'
     if (ngcmc.gt.0) then
-      ncount(1:ntype-nold) = 0
-      do iat = nsites+1, ntot
-        itype = abs(typei(iat))-nold
+      ncount = 0
+      do iat = nparnuc+1, npar
+        itype = parl(iat)%ptyp
         ncount(itype) = ncount(itype) + 1
       enddo
-      write(ln,*) '          ',(atnam(itype),'>',ncount(itype-nold),' | ',itype=nold+1,ntype)
+      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
-      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
-    endif         
+      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'
+    endif
   else if (Qnucl.and..not.Qpar) then 
     write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded------------PHIsf------------PHIrf------------PHIvdW' 
     write(outu,'(5x,i10,6f17.4)') 0,ener,estack+ebp+eex+eqq+esolv,ebond+eang+edihe,egsbpa,egsbpb,evdwgd 
@@ -164,9 +164,9 @@ if (Qenergy) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nsites))*insites-contrx(ii)
-          ycon=sum(y(1:nsites))*insites-contry(ii)
-          zcon=sum(z(1:nsites))*insites-contrz(ii)
+          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
+          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
+          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
@@ -242,7 +242,7 @@ endif ! Qrho.or.Qgr
 !vi. average density profile along the Z-axis for DNA sites rDNA
 if (Qrdna) then 
   do iz = 1, npoints
-    do itype = 1, nttyp
+    do itype = 1, netyp
       rDNA(itype,iz) = 0.0
     enddo
   enddo
@@ -285,8 +285,8 @@ if (Qtraj.and..not.Qtrajcont) then
     nframe = setframes
   endif
   write(iuntrj) nframe                 ! number of frames
-  write(iuntrj) nttyp                  ! number of ions and nucleotides
-  write(iuntrj) (atnam2(ii),ii=1,nttyp)  ! ion and nucleotides types in character*4          
+  write(iuntrj) netyp                  ! number of ions and nucleotides
+  write(iuntrj) (etypl(ii)%nam,ii=1,netyp)  ! ion and nucleotides types in character*4          
 endif
 
 !x. fraction of denatured bases
@@ -319,7 +319,7 @@ if (Qsec) then
 endif        
 
 !xii. forces        
-do ii = 1, ntot
+do ii = 1, nele
   fx(ii) = 0.0
   fy(ii) = 0.0
   fz(ii) = 0.0
@@ -334,7 +334,7 @@ if (Qpres) pres=0.0
 
 if (Qbuf) then
   do ib = 1, nbuffer
-    ntotat(ib) = nint(avnum(ib))
+    neleat(ib) = nint(avnum(ib))
   enddo
 endif  
 
@@ -357,12 +357,12 @@ do icycle = 1, ncycle
     call grand(ngcmc,prob,icycle)
     ! count ions and accumulate for average
     if (Qpar) then
-      ncount(1:ntype-nold) = 0
-      do iat = nsites+1, ntot
-        itype = abs(typei(iat))-nold
+      ncount = 0
+      do iat = nparnuc+1, npar
+        itype = parl(iat)%ptyp
         ncount(itype) = ncount(itype) + 1
       enddo
-      do itype = 1,ntype-nold
+      do itype = nptnuc+1,nptyp
         ncountav(itype) = ncountav(itype) + ncount(itype)
       enddo
     endif
@@ -377,26 +377,26 @@ do icycle = 1, ncycle
     do istep = 1, nbd
       call energy
       if (Qpres) then
-        vir=dot_product(fx(1:ntot),x(1:ntot))+dot_product(fy(1:ntot),y(1:ntot))+dot_product(fz(1:ntot),z(1:ntot))
-        pres=pres+(ntot-vir*i3*ikbt)*itvol*kba3bar*temp
+        vir=dot_product(fx(1:nele),x(1:nele))+dot_product(fy(1:nele),y(1:nele))+dot_product(fz(1:nele),z(1:nele))
+        pres=pres+(nele-vir*i3*ikbt)*itvol*kba3bar*temp
       endif
       if (Qpar) then
         if (Qdiffuse) then
-          call dynamics1(nsites+1,ntot) ! using non-uniform diffusion constant
+          call dynamics1(nelenuc+1,nele) ! using non-uniform diffusion constant
         elseif (Qprofile) then
-          call dynamics2(nsites+1,ntot) ! using diffusion constant profile 
+          call dynamics2(nelenuc+1,nele) ! using diffusion constant profile 
         elseif (Qproxdiff) then
-          call dynamics3(nsites+1,ntot) ! using dna proximity diffusion constant
+          call dynamics3(nelenuc+1,nele) ! using dna proximity diffusion constant
         else
-          call dynamics0(nsites+1,ntot)
+          call dynamics0(nelenuc+1,nele)
         endif
       endif
       if (Qnucl) then
-        call dynamics0nuc(1,nsites)
+        call dynamics0nuc(1,nelenuc)
         if (Qnotrans) then
-          if (Qnotrx) x(1:nsites)=x(1:nsites)-sum(x(1:nsites))*insites+notrx
-          if (Qnotry) y(1:nsites)=y(1:nsites)-sum(y(1:nsites))*insites+notry
-          if (Qnotrz) z(1:nsites)=z(1:nsites)-sum(z(1:nsites))*insites+notrz
+          if (Qnotrx) x(1:nelenuc)=x(1:nelenuc)-sum(x(1:nelenuc))*inelenuc+notrx
+          if (Qnotry) y(1:nelenuc)=y(1:nelenuc)-sum(y(1:nelenuc))*inelenuc+notry
+          if (Qnotrz) z(1:nelenuc)=z(1:nelenuc)-sum(z(1:nelenuc))*inelenuc+notrz
         endif
       endif ! Qnucl
     enddo
@@ -454,7 +454,7 @@ do icycle = 1, ncycle
         zlpore = czmin
         zgpore = czmax
       endif 
-      do ii = 1, nsites 
+      do ii = 1, nelenuc 
         if (z(ii).ge.zlpore .and. z(ii).le.zgpore) then
           nmemb = nmemb + 1
           if (Qmemb) then
@@ -467,7 +467,7 @@ do icycle = 1, ncycle
           endif
         endif 
       enddo  
-      fmemb = 1.0*nmemb/nsites
+      fmemb = 1.0*nmemb/nelenuc
       ftime = (icycle*nbd)*dt
       write(iuntfm,'(2x,e17.8,1x,f7.4)') ftime, fmemb 
     endif
@@ -479,9 +479,9 @@ do icycle = 1, ncycle
   if (Qsec) then
     if (mod(icycle,nsec).eq.0) then
       write(iuntsc,'(2x,a,1x,i15)') 'cycle',icycle
-      write(iuntsc,'(2x,a,1x,i15,1x,a,1x,i10)') 'ntot',ntot,'seed number',iseed
+      write(iuntsc,'(2x,a,1x,i15,1x,a,1x,i10)') 'nele',nele,'seed number',iseed
       write(iuntsc,'(2x,a)') 'Coordinates:atom--x--y--z'
-      do ii = 1, ntot
+      do ii = 1, nele
         write(iuntsc,'(2x,i15,1x,f10.5,1x,f10.5,1x,f10.5)') ii,x(ii), y(ii), z(ii)
       enddo
     endif 
@@ -489,7 +489,7 @@ do icycle = 1, ncycle
 
   !average density profile along the Z-axis                  
   if (Qrho) then
-    do iat = nsites+1, ntot
+    do iat = nelenuc+1, nele
       itype = abs(typei(iat))
       iz = int((z(iat)-zmini)*idelz) + 1
       if (iz.le.nzmax) then
@@ -499,7 +499,7 @@ do icycle = 1, ncycle
   endif ! Qrho
   !average density profile along the Z-axis for DNA sites
   if (Qrdna) then
-    do iat = 1, nsites
+    do iat = 1, nelenuc
       itype = typtyp(iat)
       iz = int((z(iat)-zmini)*idelz) + 1
       if (iz.le.nzmax) then
@@ -509,7 +509,7 @@ do icycle = 1, ncycle
   endif ! Qrdna
   !radial distribution function 
   if (Qgr) then
-    do iat = nsites+1, ntot
+    do iat = nelenuc+1, nele
       itype = abs(typei(iat))
       dist = (x(iat)-x(igr))**2+(y(iat)-y(igr))**2+(z(iat)-z(igr))**2
       dist = sqrt(dist) ! distance
@@ -526,44 +526,44 @@ do icycle = 1, ncycle
   !  channel
     ok = .not.Qmemb .and. czmin.eq.0.0.and.czmax.eq.0.0
     if (.not.ok) then
-      ncount(1:ntype-nold) = 0 
-      do iat = nsites+1, ntot
-        itype = abs(typei(iat))-nold
+      ncount = 0 
+      do iat = nparnuc+1, npar
+        itype = parl(iat)%ptyp
         if (Qmemb) then ! cylindrical channel
           r = sqrt(x(iat)**2+y(iat)**2)
           ok = z(iat).ge.zmemb1.and.z(iat).le.zmemb2
-          if (ok) ok = rcylinder(nwtype(itype+nold)).gt.0.0.and.r.le.rcylinder(nwtype(itype+nold))
+          if (ok) ok = rcylinder(itype).gt.0.0.and.r.le.rcylinder(itype)
         else ! otherwise
           ok = z(iat).ge.czmin.and.z(iat).le.czmax
         endif
         if (ok) ncount(itype) = ncount(itype) + 1
       enddo
-      do itype = nold+1, ntype
-        prob2(itype,ncount(itype-nold)) = prob2(itype,ncount(itype-nold)) + 1
+      do itype = nptnuc+1, nptyp
+        prob2(itype,ncount(itype)) = prob2(itype,ncount(itype)) + 1
       enddo
     endif
     !system
-    ncount(1:ntype-nold) = 0 
-    do iat = nsites+1, ntot
-      itype = abs(typei(iat))-nold
+    ncount = 0 
+    do iat = nelenuc+1, nele
+      itype = pt(iat)
       ncount(itype) = ncount(itype) + 1
     enddo
-    do itype = nold+1, ntype
-      prob3(itype,ncount(itype-nold)) = prob3(itype,ncount(itype-nold)) + 1
+    do itype = nptnuc+1, nptyp
+      prob3(itype,ncount(itype)) = prob3(itype,ncount(itype)) + 1
     enddo
   endif ! Qprob
   !ion pairing analysis (S frequency)
   if (Qionpair) then         
     if (mod(icycle,nanal).eq.0) then
       do itype = nold+1, ntype
-        do iat = nsites+1, ntot
+        do iat = nelenuc+1, nele
           if (abs(typei(iat)).eq.itype) then 
             iz = int((z(iat)-zmini)*idelz) + 1
             if (iz.le.nzmax) then
               nion1(itype,iz) = nion1(itype,iz) + 1
               np1 = 0
               np2 = 0
-              do jat = nsites+1, ntot
+              do jat = nelenuc+1, nele
                 if (abs(typei(jat)).ne.itype .and.abs(x(iat)-x(jat)).le.s2 .and.abs(y(iat)-y(jat)).le.s2 .and.abs(z(iat)-z(jat)).le.s2) then        
                   r = sqrt((x(iat)-x(jat))**2 + (y(iat)-y(jat))**2 + (z(iat)-z(jat))**2)
                   if (r.le.s1) then
@@ -592,7 +592,7 @@ do icycle = 1, ncycle
   if (Qenerprofile) then
     if (mod(icycle,nanal).eq.0) then      
       do itype = nold+1, ntype
-        do iat= nsites+1, ntot
+        do iat= nelenuc+1, nele
           if (abs(typei(iat)).eq.itype) then
             iz = int((z(iat)-zmini)*idelz) + 1
             if (iz.le.nzmax) then
@@ -628,9 +628,9 @@ do icycle = 1, ncycle
         do ii=1,ctn
           j=csn(ii)
           if (j.eq.0) then
-            xcon=sum(x(1:nsites))*insites-contrx(ii)
-            ycon=sum(y(1:nsites))*insites-contry(ii)
-            zcon=sum(z(1:nsites))*insites-contrz(ii)
+            xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
+            ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
+            zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
           else
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
@@ -649,9 +649,9 @@ do icycle = 1, ncycle
         do ii=1,ctn
           j=csn(ii)
           if (j.eq.0) then
-            xcon=sum(x(1:nsites))*insites-contrx(ii)
-            ycon=sum(y(1:nsites))*insites-contry(ii)
-            zcon=sum(z(1:nsites))*insites-contrz(ii)
+            xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
+            ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
+            zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
           else
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
@@ -660,12 +660,12 @@ do icycle = 1, ncycle
       endif 
     endif        
     if (Qpar.and.ngcmc.gt.0) then
-      ncount(1:ntype-nold) = 0
-      do iat = nsites+1, ntot
-        itype = abs(typei(iat))-nold
+      ncount = 0
+      do iat = nelenuc+1, nele
+        itype = pt(iat)
         ncount(itype) = ncount(itype) + 1
       enddo
-      write(ln,*) '          ',(atnam(itype),'>',ncount(itype-nold),' | ',itype=nold+1,ntype)
+      write(ln,*) '          ',(atnam(itype),'>',ncount(itype),' | ',itype=nptnucd+1,nptyp)
       write(outu,'(a)') trim(ln)
       if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
       write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
@@ -688,9 +688,9 @@ if (nprint.eq.0) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nsites))*insites-contrx(ii)
-          ycon=sum(y(1:nsites))*insites-contry(ii)
-          zcon=sum(z(1:nsites))*insites-contrz(ii)
+          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
+          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
+          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
@@ -709,9 +709,9 @@ if (nprint.eq.0) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nsites))*insites-contrx(ii)
-          ycon=sum(y(1:nsites))*insites-contry(ii)
-          zcon=sum(z(1:nsites))*insites-contrz(ii)
+          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
+          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
+          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
@@ -722,7 +722,7 @@ if (nprint.eq.0) then
   endif   
   if (Qpar.and.ngcmc.gt.0) then
     ncount(1:ntype-nold) = 0
-    do iat = nsites+1, ntot
+    do iat = nelenuc+1, nele
       itype = abs(typei(iat))-nold
       ncount(itype) = ncount(itype) + 1
     enddo
@@ -755,7 +755,7 @@ if (Qpar) then
   write (outu,'(6x,a)') '-----------------------------'
 
   write (outu,'(6x,a,f16.8)') 'Total average number of ions ',float(sum(ncountav(1:ntype-nold)))/float(ncycle)
-  write (outu,'(6x,a,i4)') 'Total number of ions ',ntot-nsites
+  write (outu,'(6x,a,i4)') 'Total number of ions ',nele-nelenuc
   if (Qbuf) then
     call count()
     do ib = 1, nbuffer
@@ -768,7 +768,7 @@ if (Qpar) then
   write (outu,'(6x,a)') 'Statistics: '
   write (outu,*) 
   ncount = 0
-  do ii = nsites+1, ntot
+  do ii = nelenuc+1, nele
     itype = abs(typei(ii))-nold
     ncount(itype) = ncount(itype) + 1
   enddo
@@ -831,31 +831,31 @@ if (Qpar) then
       else ! otherwise
         write (outu,'(6x,a,f7.2,a,f7.2,a)') 'The channel is defined between ',czmin,' and ',czmax,' along Z-axis' 
       endif
-      do itype = nold+1, ntype
+      do itype = nptnuc+1, nptyp
         write (outu,'(6x,a,1x,i5)') 'type',itype
-        ncount(itype-nold) = 0
+        ncount(itype) = 0
         do n = 0, datom
           if (prob2(itype,n).ne.0) then
-            ncount(itype-nold) = ncount(itype-nold) + n*prob2(itype,n)      
+            ncount(itype) = ncount(itype) + n*prob2(itype,n)      
             write (outu,'(6x,i4,f12.3)') n,prob2(itype,n)*1.0/ncycle
           endif
         enddo
-        write (outu,'(6x,a,1x,f12.3)') 'Average number in the'//' channel:',ncount(itype-nold)*1.0/ncycle
+        write (outu,'(6x,a,1x,f12.3)') 'Average number in the'//' channel:',ncount(itype)*1.0/ncycle
         write (outu,*)
       enddo ! itype
     endif
 
     write (outu,'(6x,a)') 'Distribution of particles in'//' the system: '
-    do itype = nold+1, ntype
+    do itype = nptnuc+1, nptyp
       write (outu,'(6x,a,1x,i5)') 'type ',itype
-      ncount(itype-nold) = 0
+      ncount(itype) = 0
       do n = 0, datom
         if (prob3(itype,n).ne.0) then
-          ncount(itype-nold) = ncount(itype-nold) + n*prob3(itype,n)
+          ncount(itype) = ncount(itype) + n*prob3(itype,n)
           write (outu,'(6x,i4,2f12.3)') n,prob3(itype,n)*1.0/ncycle
         endif
       enddo
-      write(outu,'(6x,a,1x,f12.3)') 'Average number in the'//'  system:',ncount(itype-nold)*1.0/ncycle
+      write(outu,'(6x,a,1x,f12.3)') 'Average number in the'//'  system:',ncount(itype)*1.0/ncycle
       write(outu,*)
     enddo ! itype
   endif ! Qprob

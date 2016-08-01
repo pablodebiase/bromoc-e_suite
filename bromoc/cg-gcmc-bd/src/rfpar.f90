@@ -18,7 +18,7 @@
 
 !==============================================================================
 subroutine rfparion
-!(ntot,x,y,z,type,nclx,ncly,nclz,dcel,tranx,trany,tranz,xbcen,ybcen,zbcen,gsrfen,greff,reffac,srfedx,srfedy,srfedz,srfe,reffdx,reffdy,reffdz,reff,qforces)
+!(nele,x,y,z,type,nclx,ncly,nclz,dcel,tranx,trany,tranz,xbcen,ybcen,zbcen,gsrfen,greff,reffac,srfedx,srfedy,srfedz,srfe,reffdx,reffdy,reffdz,reff,qforces)
 !==============================================================================
 !
 !     2006
@@ -27,7 +27,7 @@ subroutine rfparion
 !     srfe, the effective radius parameters reff, and the corresponding
 !     derivatives for all ions from the grids gsrfen and greff.
 !
-!     Input:   ntot (number of ions)
+!     Input:   nele (number of ions)
 !              x, y, z (coordinates of the ions)
 !              type (ion types)
 !              nclx, ncly, nclz (number of grid points in x, y, and z 
@@ -55,8 +55,8 @@ use nucleotmod
 use gsbpmod
 implicit none
 
-real srfedx(ntot-nsites),srfedy(ntot-nsites),srfedz(ntot-nsites),srfe(ntot-nsites)
-real reffdx(ntot-nsites),reffdy(ntot-nsites),reffdz(ntot-nsites),reff(ntot-nsites)
+real srfedx(nele-nelenuc),srfedy(nele-nelenuc),srfedz(nele-nelenuc),srfe(nele-nelenuc)
+real reffdx(nele-nelenuc),reffdy(nele-nelenuc),reffdz(nele-nelenuc),reff(nele-nelenuc)
 integer ncyz,ncel3,i,j,ik,jk,ix,iy,iz,n1,n2,n3,in3,ifir,itype,jtype
 real aux1dx,aux1dy,aux1dz,gaux1
 real aux2dx,aux2dy,aux2dz,gaux2
@@ -72,11 +72,11 @@ erfpar=0.0
 srfe=0.0
 reff=0.0
 !     Main loop by atoms
-do i=nsites+1,ntot
+do i=nelenuc+1,nele
   if (x(i).le.xbcen3+tranx3.and.x(i).ge.xbcen3-tranx3.and. &
       y(i).le.ybcen3+trany3.and.y(i).ge.ybcen3-trany3.and. &
       z(i).le.zbcen3+tranz3.and.z(i).ge.zbcen3-tranz3) then
-    ik=i-nsites
+    ik=i-nelenuc
     itype = abs(typei(i))
     if (Qrfpsin) then
       ifir=0
@@ -173,8 +173,8 @@ do i=nsites+1,ntot
         fy(i) = fy(i) + de*srfedy(ik)
         fz(i) = fz(i) + de*srfedz(ik)
       endif
-      do j=1+nsites,i-1
-        jk=j-nsites
+      do j=1+nelenuc,i-1
+        jk=j-nelenuc
         if (srfe(jk).ne.0.0) then
           jtype = abs(typei(j))
           dist2 = (x(j)-x(i))**2+(y(j)-y(i))**2+(z(j)-z(i))**2
@@ -259,8 +259,8 @@ use nucleotmod
 use gsbpmod
 implicit none
 
-real srfe(ntot-nsites)
-real reff(ntot-nsites)
+real srfe(nele-nelenuc)
+real reff(nele-nelenuc)
 integer ncyz,ncel3,i,j,ik,jk,ix,iy,iz,n1,n2,n3,in3,ifir,itype,jtype
 real gaux1,gaux2,xj,yj,zj
 real one,tau,dist2,aux1,aux2,reffij
@@ -282,8 +282,8 @@ if (.not.(xj.le.xbcen3+tranx3.and.xj.ge.xbcen3-tranx3.and. &
 
 srfe=0.0
 
-do i=nsites+1,ntot
-  ik=i-nsites
+do i=nelenuc+1,nele
+  ik=i-nelenuc
   aux1=0.0
   aux2=0.0
   ok=.false.
@@ -347,14 +347,14 @@ do i=nsites+1,ntot
 enddo
 
 tau = celec*cg(jtype)
-jk=j-nsites
+jk=j-nelenuc
 ! self reaction field energy minus Born energy
 ! reaction field energy 
 erfpar = erfpar + 0.5*tau*cg(jtype)*srfe(jk)**2
 
-do i=nsites+1,ntot
+do i=nelenuc+1,nele
   if (i.ne.j) then 
-    ik=i-nsites
+    ik=i-nelenuc
     if (srfe(ik).ne.0.0) then
       itype = abs(typei(i))
       dist2 = (x(i)-xj)**2+(y(i)-yj)**2+(z(i)-zj)**2

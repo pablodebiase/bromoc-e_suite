@@ -32,7 +32,7 @@ one=1
 ncel3=nclx2*ncly2*nclz2
 oo=1
 
-if (Qnmcden) oo=nttyp
+if (Qnmcden) oo=netyp
 
 allocate (phivt(ncel3*oo))
 do m=1,oo

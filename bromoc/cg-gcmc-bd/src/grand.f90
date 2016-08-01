@@ -45,10 +45,10 @@ do igrand = 1, ngcmc
     if (ib.le.nbuffer .and. avnum(ib).gt.0.0) then
       itype = ibfftyp(ib) ! ion type
       call insert(ib,xnew,ynew,znew)
-      call interact(dener,xnew,ynew,znew,itype,ntot+1,.false.)
+      call interact(dener,xnew,ynew,znew,itype,nele+1,.false.)
 
       if (Qbufferbias(ib)) then
-        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
+        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(neleat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib)+1)
       else
         rate = (avnum(ib)/float(nat(ib)+1))*exp(-(dener-mu(ib))*ikBT)
@@ -62,17 +62,12 @@ do igrand = 1, ngcmc
         ! probability                   
         ener = ener + dener
         nat(ib) = nat(ib) + 1
-        ntot = ntot + 1
-        if (ntot.gt.datom) then
-          call error ('grand', 'ntot is greater than datom',faterr)
-        endif
-        natom = natom + 1
-        x(ntot) = xnew
-        y(ntot) = ynew
-        z(ntot) = znew
-        typei(ntot) = itype
-        if (znew.lt.cz) typei(ntot) = -itype
-        ibuffer(ntot) = ib
+        x(nele) = xnew
+        y(nele) = ynew
+        z(nele) = znew
+        typei(nele) = itype
+        if (znew.lt.cz) typei(nele) = -itype
+        ibuffer(nele) = ib
         ninsert(ib) = ninsert(ib) + 1
       endif
     endif 
@@ -82,11 +77,11 @@ do igrand = 1, ngcmc
     ip    = int(float(nat(ib))*rndm())+1 ! number of particle [1,nat(ib)+1]
     if (ib.le.nbuffer .and. ip.le.nat(ib)) then
       itype = ibfftyp(ib) ! ion type
-      call find(ibuffer,ib,nsites,ntot,ip,iat)
+      call find(ibuffer,ib,nelenuc,nele,ip,iat)
       call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
 
       if (Qbufferbias(ib)) then
-        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
+        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(neleat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib))
       else
         rate = (avnum(ib)/nat(ib))*exp(-(dener-mu(ib))*ikBT)
@@ -99,14 +94,12 @@ do igrand = 1, ngcmc
        ! is less than or equal to destruction transition probability
         ener = ener - dener
         nremove(ib) = nremove(ib) + 1
-        x(iat) = x(ntot)  ! copy coordinates of last particle
-        y(iat) = y(ntot)
-        z(iat) = z(ntot)
-        typei(iat) = typei(ntot)
-        ibuffer(iat) = ibuffer(ntot)
+        x(iat) = x(nele)  ! copy coordinates of last particle
+        y(iat) = y(nele)
+        z(iat) = z(nele)
+        typei(iat) = typei(nele)
+        ibuffer(iat) = ibuffer(nele)
         nat(ib) = nat(ib) - 1
-        natom = natom - 1
-        ntot = ntot - 1
       endif
     endif  
   endif

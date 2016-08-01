@@ -16,9 +16,9 @@ call resizecvec(0)
 
 ! Add element and particle types
 ! Define Particle 1 (POT) and Element 1 (K)
-call addmonopar('K','POT')  ! 1
-call addmonopar('Cl','CLA') ! 2
-call addmonopar('Na','SOD') ! 3
+call addmonoptyp('K','POT')  ! 1
+call addmonoptyp('Cl','CLA') ! 2
+call addmonoptyp('Na','SOD') ! 3
 ! Add element types
 call addetyp('H')   ! 4
 call addetyp('C')   ! 5
@@ -50,13 +50,12 @@ call putcoorinptyp(nptyp,4,0.0,0.0,1.0)
 
 ! Add the following particle types to list
 do i=1,20
-    call addpar(getrand(nptyp))
+    call addpar(getrand(nptyp),3)
 enddo
 
 ! Randomly move particles and rotate
 do i=1,npar
-   call movepar(i,getcar((rand()-0.5)*10.0,(rand()-0.5)*10.0,(rand()-0.5)*10.0))
-   call uranrot(i)
+   call insertpar(i,getcar((rand()-0.5)*10.0,(rand()-0.5)*10.0,(rand()-0.5)*10.0))
 enddo
 
 write(*,*) '>>>>>>>>>> LISTS'

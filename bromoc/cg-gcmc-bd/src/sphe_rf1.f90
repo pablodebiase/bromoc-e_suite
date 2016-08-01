@@ -33,10 +33,10 @@ real  rxnbfx,rxnbfy,rxnbfz
 real  norm, charge
 real  ccc,rpl,cmp,smp,apl,ir,ist
 real  sp,cp,st,ct,r,r2,xdiff,ydiff,zdiff,srdist2
-real  ar(ntot,0:24),ac(ntot,0:24),as(ntot,0:24)
-real  ap(ntot,0:24,0:24),adp(ntot,0:24,0:24)
-real  mq(ntot)
-real  spj(ntot),cpj(ntot),stj(ntot),ctj(ntot)
+real  ar(nele,0:24),ac(nele,0:24),as(nele,0:24)
+real  ap(nele,0:24,0:24),adp(nele,0:24,0:24)
+real  mq(nele)
+real  spj(nele),cpj(nele),stj(nele),ctj(nele)
 real  dx,dy,dz,dr,ddt,dp
 
 lmax = lstpl(ntpol)
@@ -47,7 +47,7 @@ srdist2 = srdist*srdist
 do ii =1,ntpol
   coef(ii) = 0.0
 enddo
-do i = nsites+1, ntot
+do i = nelenuc+1, nele
   itype = abs(typei(i))
   charge = cg(itype)
   xdiff = x(i) 
@@ -121,7 +121,7 @@ egsbpb = egsbpb*celec
 
 !reaction field force calculations     
 if (Qforces) then
-  do mm = nsites+1, ntot
+  do mm = nelenuc+1, nele
     itype = abs(typei(mm))
     charge = cg(itype)
     xdiff = x(mm) 

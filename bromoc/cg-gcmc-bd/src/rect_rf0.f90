@@ -33,7 +33,7 @@ real  xj,yj,zj
 !local variables
 real  norm,coefi,coefj,coef2(ntpol)
 real  xg,yg,zg,xxs,yys,zs
-real  lpolx(ntot,xnpol),lpoly(ntot,ynpol),lpolz(ntot,znpol)
+real  lpolx(nele,xnpol),lpoly(nele,ynpol),lpolz(nele,znpol)
 real  charge
 integer i,ii,jj,ij,n
 integer xpol,ypol,zpol,itype
@@ -42,7 +42,7 @@ integer xpol,ypol,zpol,itype
 do ii = 1, ntpol
    coef(ii) = 0.0
 enddo
-do i = nsites+1, ntot
+do i = nelenuc+1, nele
   if (i.eq.j) then
     itype = jtype
     xg = xj
@@ -87,7 +87,7 @@ do i = nsites+1, ntot
   endif
 enddo
 
-!calculate Q_{m} coefficients for ntot- (jth ion)
+!calculate Q_{m} coefficients for nele- (jth ion)
 charge = cg(jtype)
 do ii = 1, ntpol
   xpol = lstpx(ii)
@@ -97,7 +97,7 @@ do ii = 1, ntpol
   coef2(ii) = coef(ii)-charge*norm*lpolx(j,xpol+1)*lpoly(j,ypol+1)*lpolz(j,zpol+1)
 enddo
 
-!reaction field energy calculation g(ntot)-g(ntot-1)
+!reaction field energy calculation g(nele)-g(nele-1)
 egsbpb=0.0
 do ii = 1, ntpol
   ij = (ii-1)*ntpol+ii

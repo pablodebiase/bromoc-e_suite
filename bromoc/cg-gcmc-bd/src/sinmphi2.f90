@@ -23,7 +23,7 @@ use grandmod
 implicit none
 
 integer   m,i,j
-real    cc0,s0,as(ntot,0:m)
+real    cc0,s0,as(nele,0:m)
 
 as(j,0) = 0.0
 as(j,1) = s0

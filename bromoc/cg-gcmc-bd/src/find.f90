@@ -16,15 +16,15 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine find(ibuffer,ib,nini,ntot,ip,iat)
+subroutine find(ibuffer,ib,nini,nele,ip,iat)
 implicit none
 !Find particle number ip from buffer number ib
-!INPUTS : ibuffer, ib, nini, ntot, ip
+!INPUTS : ibuffer, ib, nini, nele, ip
 !OUTPUT : iat
-integer ibuffer(*),ib,nini,ip,iat,ntot,ipx
+integer ibuffer(*),ib,nini,ip,iat,nele,ipx
 
 ipx = 0 
-do iat = nini+1, ntot
+do iat = nini+1, nele
    if (ibuffer(iat).eq.ib) then
       ipx = ipx + 1
       if (ip.eq.ipx) return

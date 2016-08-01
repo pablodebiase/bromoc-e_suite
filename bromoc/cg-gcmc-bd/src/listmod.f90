@@ -77,9 +77,9 @@ type(partype), allocatable, dimension(:) :: ptypl    !! Type of Particle list ::
 integer nele                                !! Total Number of elements
 type(car), allocatable, dimension(:) :: r  !! Elements Position Vector
 type(car), allocatable, dimension(:) :: f  !! Elements Force Vector
-integer, allocatable, dimension(:) :: et !! Elements Type List of nele size
-integer, allocatable, dimension(:) :: ptypls !! Particle Type List nele size
-integer, allocatable, dimension(:) :: pels !! Particle List of nele size
+integer, allocatable, dimension(:)   :: et !! Elements Type List of nele size
+integer, allocatable, dimension(:)   :: pt !! Particle Type List nele size
+integer, allocatable, dimension(:)   :: pe !! Particle List of nele size
 
 
 !! Used Element Types List
@@ -162,8 +162,6 @@ if (allocated(uetl)) then
 else
    allocate (uetl(netyp))
 endif
-! Update Database
-call updatetypels()
 ! Make a logical list if the etyp is being used 
 do i = 1,netyp
    j=1
@@ -201,17 +199,18 @@ end subroutine
 subroutine updatetypels()
 implicit none
 integer newsize,i,j,ne,sr,ptype
-if (allocated(ptypls)) deallocate (ptypls)
-if (allocated(pels)) deallocate (pels)
+if (allocated(pt)) deallocate (pt)
+if (allocated(pe)) deallocate (pe)
 newsize=size(r)
-allocate (ptypls(newsize),pels(newsize))
+allocate (et(newsize),pt(newsize),pe(newsize))
 do i=1,npar
   sr=parl(i)%sr
   ne=parl(i)%ne
   ptype=parl(i)%ptyp
   do j=1,ne
-    ptypls(sr+j)=ptype
-    pels(sr+j)=i
+    et(sr+j)=ptypl(ptype)%etyp(j)
+    pt(sr+j)=ptype
+    pe(sr+j)=i
   enddo
 enddo
 end subroutine
@@ -285,30 +284,40 @@ integer vdim,newsize
 type(car), allocatable, dimension(:) :: rtmp   !! Elements Position Vector
 type(car), allocatable, dimension(:) :: ftmp   !! Elements Force Vector
 integer, allocatable, dimension(:)   :: ettmp !! Elements Type List of nele size
+integer, allocatable, dimension(:)   :: pttmp !! Elements Type List of nele size
+integer, allocatable, dimension(:)   :: petmp !! Elements Type List of nele size
 
 ! if 0
 if (newsize .lt. 1) then
     if (allocated(r)) deallocate (r)
     if (allocated(f)) deallocate (f)
     if (allocated(et)) deallocate (et)
+    if (allocated(pt)) deallocate (pt)
+    if (allocated(pe)) deallocate (pe)
 endif
 ! Measure Vector Size
 vdim=size(r)
 ! Allocate double of original size in temp vectors
-allocate (rtmp(newsize),ftmp(newsize),ettmp(newsize))
+allocate (rtmp(newsize),ftmp(newsize),ettmp(newsize),pttmp(newsize),petmp(newsize))
 ! Copy Vectors
 if (vdim .gt. newsize) vdim = newsize
 if (allocated(r) .and. vdim .gt. 0) rtmp(1:vdim)=r(1:vdim)
 if (allocated(f) .and. vdim .gt. 0) ftmp(1:vdim)=f(1:vdim)
 if (allocated(et) .and. vdim .gt. 0) ettmp(1:vdim)=et(1:vdim)
+if (allocated(pt) .and. vdim .gt. 0) pttmp(1:vdim)=pt(1:vdim)
+if (allocated(pe) .and. vdim .gt. 0) petmp(1:vdim)=pe(1:vdim)
 ! Deallocate original Vector
 if (allocated(r)) deallocate (r)
 if (allocated(f)) deallocate (f)
 if (allocated(et)) deallocate (et)
+if (allocated(pt)) deallocate (pt)
+if (allocated(pe)) deallocate (pe)
 ! Move allocations
 call move_alloc(rtmp,r)
 call move_alloc(ftmp,f)
 call move_alloc(ettmp,et)
+call move_alloc(pttmp,pt)
+call move_alloc(petmp,pe)
 end subroutine
 
 ! Add Mono Particle (Particle with Single Element)
@@ -335,7 +344,7 @@ if (present(pname)) then
 else
   call addptyp(1,ename)
 endif
-ptypl(nptyp)%etyp(1)=lchg
+ptypl(nptyp)%chg=lchg
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
 end subroutine
@@ -471,6 +480,8 @@ if (ptype .gt. 0 .and. ptype .le. nptyp) then
     j=lastnele+i
     r(j)=ptypl(ptype)%r(i)
     et(j)=ptypl(ptype)%etyp(i)
+    pt(j)=ptype
+    pe(j)=npar
   enddo
 endif
 end subroutine
@@ -510,7 +521,7 @@ endif
 end subroutine
 
 ! Randomly rotates a particle
-subroutine uranroparn(parn)
+subroutine uranrot(parn)
 implicit none
 real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real, parameter :: twopi=2.0*pi
@@ -729,7 +740,7 @@ end subroutine
 
 subroutine delpar(parn)
 implicit none
-integer i,j,n,ne,sr,parn
+integer i,j,ii,jj,n,ne,sr,parn
 ! If parn is out of range exit
 if (parn.gt.npar.or.parn.lt.1) return
 ! if particle not of kind 3 return
@@ -755,10 +766,14 @@ enddo
 ! If there is another of particle with the same ne closer to the end copy that one to parn's place
     ! Copy coordinates
 if (n .gt. parn) then
-  i=parl(parn)%sr+1:parl(parn)%sr+parl(parn)%ne
-  j=parl(n)%sr+1:parl(n)%sr+parl(n)%ne
-  r(i)=r(j)
-  et(i)=et(j)
+  i  = parl(parn)%sr + 1
+  ii = parl(parn)%sr + parl(parn)%ne
+  j  = parl(n)%sr    + 1
+  jj = parl(n)%sr    + parl(n)%ne
+   r(i:ii)= r(j:jj)
+  et(i:ii)=et(j:jj)
+  pt(i:ii)=pt(j:jj)
+  pe(i:ii)=parn
 endif
 ! Move all coordinates backwards and remove that n particle from the coordinate vector
 sr=parl(n)%sr
@@ -766,6 +781,8 @@ do i=sr+1,nele-ne
     j=i+ne
     r(i)=r(j)
     et(i)=et(j)
+    pt(i)=pt(j)
+    pe(i)=pe(j)-1
 enddo
 nele=nele-ne
 
@@ -811,11 +828,10 @@ integer i
 integer :: nunit
 real ibuf
 
-call updatetypels()
 !write (nunit,'(A6,I5)') 'REMARK',nele
 do i=1,nele
-  ibuf=parl(pels(i))%ibuf
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(ptypls(i))%nam,pels(i),r(i)%x,r(i)%y,r(i)%z,ibuf,0.0,''
+  ibuf=parl(pe(i))%ibuf
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuf,0.0,''
 enddo
 write (nunit,'(A)') 'END'
 end subroutine
@@ -826,7 +842,6 @@ integer i
 integer :: nunit
 
 ! Print Particle Data
-call updatetypels()
 write(nunit,*) nele
 write(nunit,*)
 do i=1,nele

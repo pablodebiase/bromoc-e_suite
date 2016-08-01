@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine vdwgd0trln(xj,yj,zj,j,jtype,jtype2,Qalert)
+subroutine vdwgd0trln(xj,yj,zj,j,jtype,Qalert)
 !-----------------------------------------------------------------------
 !This subroutine computes only the repulsive potential energy
 !for one particle used in subroutine INTERACT in simul.f
@@ -53,31 +53,11 @@ if (ok) then
   yi = yj + trany2-ybcen2
   zi = zj + tranz2-zbcen2
   esvdw = svdw
-  if (Qnmcden) then                                         
-    if (Qnucl .and. j.le.nsites) then
-      if (namsite(j).eq.'S ') then
-        ifir = 0
-      else if (namsite(j).eq.'P ') then
-        ifir = ncel3 
-      else if (namsite(j).eq.'Ab') then
-        ifir = 2*ncel3 
-      else if (namsite(j).eq.'Tb') then
-        ifir = 3*ncel3 
-      else if (namsite(j).eq.'Cb') then
-        ifir = 4*ncel3 
-      else ! namsite(j).eq.'Gb'
-        ifir = 5*ncel3 
-      endif
-    else if (Qnucl .and. Qpar .and. j.gt.nsites) then
-      if (istrs.eq.1) numb = jtype - (inuc+1)
-      if (istrs.eq.2) numb = jtype - (2*inuc+1)
-      ifir = (6 + numb)*ncel3 
-    else if (.not.Qnucl .and. Qpar) then
-      ifir = (jtype-1)*ncel3
-    endif
+  if (Qnmcden) then
+    ifir = (jtype-1)*ncel3
   else
-    if (Qsvdw) esvdw = esvdw * scal(jtype2)
-  endif                                                     
+    if (Qsvdw) esvdw = svdw * scal(jtype)
+  endif
   !integer counter for ion cartesian coordinates        
   ix = int(xi*idcel2)
   iy = int(yi*idcel2)
@@ -109,8 +89,8 @@ if (ok) then
   if (phisum.ge.thold8) then
     evdwgd = 1.0e10
     if (Qalert) then
-      warn(jtype2)=warn(jtype2)+1
-      if (Qwarn) write(outu,'(a,i5,a,5f10.5)')'Warning in routine vdwgd0trln :: particle inside membrane or protein - ',j,'  '//atnam2(jtype2),xj,yj,zj,phisum,thold8
+      warn(jtype)=warn(jtype)+1
+      if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd0trln :: particle inside membrane or protein - ',i,'  '//etypl(jtype)%nam,xj,yj,zj,phisum,thold8
     endif
   endif
 endif   

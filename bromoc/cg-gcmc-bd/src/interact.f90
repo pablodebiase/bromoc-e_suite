@@ -48,7 +48,7 @@ real  angbond, angdih
 
 dener = 0.0 ! Initialization
 
-Beion = Qpar .and. j.gt.nsites
+Beion = Qpar .and. j.gt.nelenuc
 if (Beion) then
   jtype2 = nwtype(jtype)
 else 
@@ -172,7 +172,7 @@ if (Qenergy) then ! total energy
   !nonbonded interaction between ions
   if (Beion) then
     if (Qnonbond) then
-      do i = nsites+1, ntot
+      do i = nelenuc+1, ntot
         if (i.ne.j) then
           itype = abs(typei(i))
           itype2=nwtype(itype)
@@ -205,7 +205,7 @@ if (Qenergy) then ! total energy
             endif  
           endif 
         endif ! j  
-      enddo ! i=nsites+1,...,ntot  
+      enddo ! i=nelenuc+1,...,ntot  
     endif !Qnonbond
   endif ! Beion 
  !interaction between interaction sites (nucleotides)
@@ -349,7 +349,7 @@ if (Qenergy) then ! total energy
   ! nonbonded interactions between interaction sites and ions       
   if (Qpar .and. Qnucl .and. Qnonbond) then
     if (Beion) then
-      do i = 1, nsites
+      do i = 1, nelenuc
         itype2 = typtyp(i)
         is=etpidx(itype2,jtype2)
         dist2 = (x(i)-xj)**2 + (y(i)-yj)**2 + (z(i)-zj)**2    
@@ -378,9 +378,9 @@ if (Qenergy) then ! total energy
             endif
           endif
         endif
-      enddo ! i=1,...,nsites
+      enddo ! i=1,...,nelenuc
     else
-      do i = nsites+1, ntot
+      do i = nelenuc+1, ntot
         itype = abs(typei(i))
         itype2 = nwtype(itype)
         is=etpidx(itype2,jtype2)
@@ -410,7 +410,7 @@ if (Qenergy) then ! total energy
             endif
           endif
         endif
-      enddo ! i=nsites+1,...,ntot
+      enddo ! i=nelenuc+1,...,ntot
     endif ! Beion
   endif ! Qpar .and. Qnucl .and. Qnonbond
 endif !Qenergy

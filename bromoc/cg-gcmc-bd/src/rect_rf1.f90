@@ -31,7 +31,7 @@ real  rxnbfx,rxnbfy,rxnbfz
 real  xg,yg,zg,dx,dy,dz,norm
 real  ccc
 real  xlpol,ylpol,zlpol,xxs,yys,zs
-real  lpolx(ntot,xnpol),lpoly(ntot,ynpol),lpolz(ntot,znpol)
+real  lpolx(nele,xnpol),lpoly(nele,ynpol),lpolz(nele,znpol)
 real  dlpolx(xnpol),dlpoly(ynpol),dlpolz(znpol)
 real  mq(ntpol**2), charge
 integer i,ii,jj,ij,mm,n
@@ -41,7 +41,7 @@ integer xpol,ypol,zpol,itype
 do ii = 1, ntpol
    coef(ii) = 0.0
 enddo
-do i = nsites+1, ntot
+do i = nelenuc+1, nele
   itype = abs(typei(i))
   charge = cg(itype)
   xg = x(i)   
@@ -97,7 +97,7 @@ egsbpb = egsbpb*celec
 
 !reaction field force calculations     
 if (Qforces) then 
-  do mm = nsites+1, ntot
+  do mm = nelenuc+1, nele
     itype = abs(typei(mm))
     charge = cg(itype)
     xg = x(mm)  

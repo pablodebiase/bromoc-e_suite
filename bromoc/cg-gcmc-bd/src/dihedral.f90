@@ -35,7 +35,7 @@ character*2 namesite1, namesite2, namesite3, namesite4, namesite5, namesite6
 cte = pi/180.0
 ndihe = 0 ! Initialization
 
-do i = 1, nsites-3 
+do i = 1, nelenuc-3 
   namesite1 = namsite(i)
   namesite2 = namsite(i+1) 
   namesite3 = namsite(i+2)
@@ -44,16 +44,16 @@ do i = 1, nsites-3
   strand2 = strand(i+1)
   strand3 = strand(i+2)
   strand4 = strand(i+3)
-  if ((i+4).le.nsites) then 
+  if ((i+4).le.nelenuc) then 
     namesite5 = namsite(i+4)
     strand5 = strand(i+4)
   endif  
-  if ((i+5).le.nsites) then
+  if ((i+5).le.nelenuc) then
     namesite6 = namsite(i+5)
     strand6 = strand(i+5)
   endif    
   if (namesite1.eq.'Ab'.or.namesite1.eq.'Tb'.or.namesite1.eq.'Cb'.or.namesite1.eq.'Gb') then
-    if ((i+4).le.nsites .and. strand1.eq.strand5) then 
+    if ((i+4).le.nelenuc .and. strand1.eq.strand5) then 
       ndihe = ndihe + 1      
       if (ndihe.gt.maxdihe) call error ('dihedral', 'The number of bond angles exceeds the maximum value', faterr)
       sitedihe(ndihe,1) = i
@@ -121,7 +121,7 @@ do i = 1, nsites-3
         call error ('dihedral', 'INCORRECT ORDER FOR SITES',faterr)
       endif          
     endif 
-    if ((i+4).le.nsites .and. strand1.eq.strand5) then    
+    if ((i+4).le.nelenuc .and. strand1.eq.strand5) then    
       if (namesite2.eq.'P '.and.namesite4.eq.'S '.and.namesite5.eq.'P ') then  ! S(5')-P-(3')S(5')-P
         ndihe = ndihe + 1
         if (ndihe.gt.maxdihe) call error ('dihedral', 'The number of bond angles exceeds the maximum value', faterr)
@@ -139,7 +139,7 @@ do i = 1, nsites-3
       endif  
     endif  
   else ! namesite1.eq.'P '
-    if ((i+5).le.nsites .and. strand1.eq.strand6) then
+    if ((i+5).le.nelenuc .and. strand1.eq.strand6) then
       if (namesite3.eq.'S '.and.namesite4.eq.'P '.and.namesite6.eq.'S ') then ! P-(3')S(5')-P-(3')S     
         ndihe = ndihe + 1
         if (ndihe.gt.maxdihe) call error ('dihedral', 'The number of bond angles exceeds the maximum value', faterr)

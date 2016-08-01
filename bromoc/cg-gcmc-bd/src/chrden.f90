@@ -43,15 +43,15 @@ ichitn=1.0
 if (Qchdenorm) then
   chitp=0.0
   chitn=0.0
-  do i=1,ntot
-    if (i.le.nsites.or.i.gt.nsites) then
+  do i=1,nele
+    if (i.le.nelenuc.or.i.gt.nelenuc) then
       ok = .false.
-      if (i.le.nsites) then
+      if (i.le.nelenuc) then
         if (namsite(i).eq.'P ') then
           chi = cgnuc
           ok = .true.
         endif
-      else if (i.gt.nsites) then
+      else if (i.gt.nelenuc) then
         itype = abs(typei(i))
         chi = cg(itype)
         ok = .true.
@@ -72,15 +72,15 @@ if (Qchdenorm) then
   ichitn=1.0/abs(chitn)
 endif
 
-do i = 1, ntot
-  if (i.le.nsites .or. i.gt.nsites) then 
+do i = 1, nele
+  if (i.le.nelenuc .or. i.gt.nelenuc) then 
     ok = .false.
-    if (i.le.nsites) then
+    if (i.le.nelenuc) then
       if (namsite(i).eq.'P ') then
         chi = cgnuc
         ok = .true.
       endif
-    else if (i.gt.nsites) then
+    else if (i.gt.nelenuc) then
       itype = abs(typei(i))
       chi = cg(itype)
       ok = .true.
@@ -105,7 +105,7 @@ do i = 1, ntot
       endif
     endif ! ok  
   endif  
-enddo ! i = 1,...,ntot
+enddo ! i = 1,...,nele
 
 return
 end

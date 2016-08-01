@@ -23,16 +23,16 @@ use nucleotmod
 implicit none
 integer iat
 real xnew, ynew, znew
-real radius,natom2
+real radius,natom
 logical*1 endok
 
 !Pick one atom randomly and move it (if it moves outside the 
 !limits, pick a different atom)
 
 endok = .true.  
-natom2 = float(natom - nsites)
+natom = float(nele - nelenuc)
 do while (endok)
-  iat = nsites + int(natom2*rndm()) + 1 ! [nsites+1,ntot]
+  iat = nelenuc + int(natom*rndm()) + 1 ! [nelenuc+1,nele]
   xnew = x(iat) + mcmax*(rndm()-0.5)
   ynew = y(iat) + mcmax*(rndm()-0.5)
   znew = z(iat) + mcmax*(rndm()-0.5)

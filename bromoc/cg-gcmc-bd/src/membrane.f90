@@ -33,18 +33,11 @@ logical*1 lgiat
 
 ememb = 0.0 ! initilization
 
-do iat = 1, ntot
-  lgiat = iat.le.nsites .or. iat.ge.nsites+1
+do iat = 1, nele
+  lgiat = iat.le.nelenuc .or. iat.ge.nelenuc+1
   lgiat = lgiat .and. Qforces
-  if (iat.le.nsites) then  
-    itype = typtyp(iat) 
-    charge = 0.0 
-    if (namsite(iat).eq.'P ') charge = cgnuc
-  else
-    itype2 = abs(typei(iat)) 
-    charge = cg(itype2) 
-    itype = nwtype(itype2) 
-  endif
+  itype=et(iat)
+  charge=etypl(itype)%chg
 
   ! Nernst transmembrane potential
   if (voltage.ne.0.0.and.charge.ne.0.0) then

@@ -318,7 +318,7 @@ if (istrs.eq.2) then
   jbase = 0
   jS    = 0
   jP    = 0
-  do isite = nsites, nuc+1, -1
+  do isite = nelenuc, nuc+1, -1
     if (namsite(isite).eq.'Ab') then
       jbase = jbase + 1
       rnat(isite)   = cylAb(1,2)
@@ -359,11 +359,11 @@ endif
 
 ! Save coordinates to lists
 ! First Strand
-do i = 1, nsites1st
+do i = 1, nelenuc1st
    call putcoorinptyp(1,i,xnat(i),ynat(i),znat(i))
 enddo
-do i = nsites1st+1,nsites
-   call putcoorinptyp(2,i-nsites1st,xnat(i),ynat(i),znat(i))
+do i = nelenuc1st+1,nelenuc
+   call putcoorinptyp(2,i-nelenuc1st,xnat(i),ynat(i),znat(i))
 enddo
 
 !OUTPUT
@@ -427,7 +427,7 @@ endif
 write(outu,'(/6x,a)') 'Native structure for B isoform of DNA'
 write(outu,'(/6x,a)') 'STRAND SITE# NUCLEOT SITE CARTESIAN COORDINATES (X,Y,Z)'
 write(outu,'(6x,a)') '------ ----- ------- ---- -----------------------------'
-do i = 1, nsites
+do i = 1, nelenuc
   write(outu,'(6x,i2,5x,i4,2x,a1,5x,a2,3x,f8.3,2x,f8.3,2x,f8.3)') strand(i),i,namnucl(i),namsite(i),xnat(i),ynat(i),znat(i)
 enddo
 return

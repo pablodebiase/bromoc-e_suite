@@ -47,8 +47,8 @@ esvdw = svdw
 
 !Main loop by atoms
 
-do i = 1, ntot
-  if (i.le.nsites .or. i.gt.nsites) then
+do i = 1, nele
+  if (i.le.nelenuc .or. i.gt.nelenuc) then
     ok=x(i).le.xbcen2+tranx2.and.x(i).ge.xbcen2-tranx2.and. &
        y(i).le.ybcen2+trany2.and.y(i).ge.ybcen2-trany2.and. &
        z(i).le.vzmax.and.z(i).ge.vzmin
@@ -58,38 +58,11 @@ do i = 1, ntot
       yi = y(i) + trany2-ybcen2
       zi = z(i) + tranz2-zbcen2
 !      if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
-      if (Qnmcden) then                                      
-        if (Qnucl .and. i.le.nsites) then
-          if (namsite(i).eq.'S ') then
-            ifir = 0
-          else if (namsite(i).eq.'P ') then
-            ifir = ncel3 
-          else if (namsite(i).eq.'Ab') then
-            ifir = 2*ncel3 
-          else if (namsite(i).eq.'Tb') then
-            ifir = 3*ncel3 
-          else if (namsite(i).eq.'Cb') then
-            ifir = 4*ncel3 
-          else ! namsite(i).eq.'Gb'
-            ifir = 5*ncel3 
-          endif
-        else if (Qnucl .and. Qpar .and. i.gt.nsites) then
-          if (istrs.eq.1) numb = abs(typei(i)) - (inuc+1)
-          if (istrs.eq.2) numb = abs(typei(i)) - (2*inuc+1)
-          ifir = (6 + numb)*ncel3 
-        else if (.not.Qnucl .and. Qpar) then
-          ifir = (abs(typei(i))-1)*ncel3
-        endif
+      if (Qnmcden) then
+        ifir = (et(i)-1)*ncel3
       else
-        if (Qsvdw) then 
-          if (i.le.nsites) then 
-            itype2=typtyp(i)
-          else
-            itype2=nwtype(abs(typei(i)))
-          endif
-          esvdw = svdw * scal(itype2)
-        endif
-      endif                                                     
+        if (Qsvdw) esvdw = svdw * scal(et(i))
+      endif
       !initializations forces     
       vdwfx = 0.0
       vdwfy = 0.0
@@ -141,20 +114,13 @@ do i = 1, ntot
         enddo ! n2
       enddo ! n1
       if (phisum.ge.thold8) then
-        if (.not.Qsvdw) then
-          if (i.le.nsites) then
-            itype2=typtyp(i)
-          else
-            itype2=nwtype(abs(typei(i)))
-          endif
-        endif
-        warn(itype2)=warn(itype2)+1
-        if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1trln :: particle inside membrane or protein - ',i,'  '//atnam2(itype2),x(i),y(i),z(i),phisum,thold8
+        warn(et(i))=warn(et(i))+1
+        if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1trln :: particle inside membrane or protein - ',i,'  '//etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,phisum,thold8
       endif
-      if (Qforces) then  
-        fx(i) = fx(i) + vdwfx
-        fy(i) = fy(i) + vdwfy
-        fz(i) = fz(i) + vdwfz
+      if (Qforces) then
+        f(i)%x = f(i)%x + vdwfx
+        f(i)%y = f(i)%y + vdwfy
+        f(i)%z = f(i)%z + vdwfz
       endif
     endif  
   endif   

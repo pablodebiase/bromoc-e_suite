@@ -30,13 +30,13 @@ real,external :: rndm,rndm1
 real    ikbt,ikbtdna
 real    temp,kbt,fact0n1,fact0n2,kbtdt,dnatemp,kbtdna
 real*8 runtime
-integer ntype, nold, nbuffer, ntot, natom
+integer nbuffer
 
 integer typei(datom)
 
 integer,allocatable :: warn(:)
 integer     ibfftyp(dbuff),nat(dtype),idtype(dtype)
-integer     nremove(dtype),ninsert(dtype),ntotat(dtype),nwtype(dtype)
+integer     nremove(dtype),ninsert(dtype),ntotat(dtype)
 real        ampl1(dtype),p1(2,dtype)
 real        ampl2(dtype),p2(2,dtype),rcylinder(dtype),deltaz,ampl3(dtype),p3(dtype)
 real        volume(dbuff),avnum(dbuff),mu(dbuff),density(dbuff),kb(dbuff),LZmin(dbuff),LZmax(dbuff),Rmin(dbuff),Rmax(dbuff)

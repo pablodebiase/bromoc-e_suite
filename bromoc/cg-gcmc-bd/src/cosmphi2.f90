@@ -24,7 +24,7 @@ use grandmod
 implicit none
 
 integer   m,i,j
-real    cc0,ac(ntot,0:m)
+real    cc0,ac(nele,0:m)
 
 ac(j,0) = 1.0
 ac(j,1) = cc0

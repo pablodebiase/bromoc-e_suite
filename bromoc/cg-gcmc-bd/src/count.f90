@@ -19,7 +19,7 @@
 subroutine count()
 !     Count all the ions and assign them to their appropriate buffer
 !     nbuffer: the number of buffers in the system
-!     ntot: number of particles in the system
+!     nele: number of elements in the system
 !     buffer number ib concerns ions of type ibfftyp(ib)
 !     particle i belongs to the buffer number ibuffer(i) 
 !     (note that if ibuffer(i) is zero, then particle does not belong to any buffer
@@ -39,10 +39,10 @@ logical*1 endlog
 do ib = 1, nbuffer
    nat(ib) = 0 
 enddo
-do i = nsites+1, ntot
+do i = nelenuc+1, nele
 ! To which buffer does a particle of type (i) at this location belongs?
   ibuffer(i) = 0
-  if (i.gt.nsites) then
+  if (i.gt.nelenuc) then
     itype = abs(typei(i))
     endlog = .false.
     ib = 1

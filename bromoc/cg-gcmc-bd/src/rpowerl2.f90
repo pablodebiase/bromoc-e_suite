@@ -24,7 +24,7 @@ use grandmod
 implicit none
 
 integer l,i,j
-real    r,ar(ntot,0:l)
+real    r,ar(nele,0:l)
 
 ar(j,0) = 1.0
 do i = 1, l
