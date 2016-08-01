@@ -16,22 +16,22 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE SINMPHI2(J,M,CC0,S0,AS)
+subroutine sinmphi2(j,m,cc0,s0,as)
 !------------------------------------------------------------------------
 !sin(M*phi) calculation (M > 0)
 use grandmod
 implicit none
 
-INTEGER   M,I,J
-REAL    CC0,S0,AS(NTOT,0:M)
+integer   m,i,j
+real    cc0,s0,as(ntot,0:m)
 
-AS(J,0) = 0.0
-AS(J,1) = S0
-AS(J,2) = 2.0*CC0*S0
-AS(J,3) = 2.0*CC0*AS(J,2)-S0
-DO I = 4, M
-  AS(J,I) = 2.0*CC0*AS(J,I-1)-AS(J,I-2)
-ENDDO
+as(j,0) = 0.0
+as(j,1) = s0
+as(j,2) = 2.0*cc0*s0
+as(j,3) = 2.0*cc0*as(j,2)-s0
+do i = 4, m
+  as(j,i) = 2.0*cc0*as(j,i-1)-as(j,i-2)
+enddo
  
-RETURN
-END
+return
+end

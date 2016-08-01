@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE DYNAMICS1(ninit,nfinal)
+subroutine dynamics1(ninit,nfinal)
 use grandmod
 use constamod
 use stdiomod

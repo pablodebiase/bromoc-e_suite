@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE INTERACT(dener,xj,yj,zj,jtype,j,Qalert)
+subroutine interact(dener,xj,yj,zj,jtype,j,qalert)
 ! calculate the interaction of particle "j" with the rest of the system
 use apfmod
 use ioxmod 
@@ -416,4 +416,4 @@ if (Qenergy) then ! total energy
 endif !Qenergy
 
 return
-end
+end subroutine

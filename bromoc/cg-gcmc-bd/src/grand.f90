@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE GRAND(ngcmc,prob,icycle)
+subroutine grand(ngcmc,prob,icycle)
 !THE GRAND CANONICAL MONTECARLO ALGORITHIM      
 use grandmod
 use constamod
@@ -118,4 +118,4 @@ do igrand = 1, ngcmc
 enddo
 
 return
-end
+end subroutine

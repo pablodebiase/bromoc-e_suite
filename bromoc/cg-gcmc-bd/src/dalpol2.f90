@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE DALPOL2(J,LMAX,MMAX,XC,AP,ADP)
+subroutine dalpol2(j,lmax,mmax,xc,ap,adp)
 !------------------------------------------------------------------------
 !Derivatives of Associate Legendre Polynomials (From Smythe's BOOK)
 !This is different from FUNCTION DALPOL because we don't consider xc > 1 here.
@@ -30,24 +30,24 @@ real  xc,ap(ntot,0:lmax,0:mmax+1),adp(ntot,0:lmax,0:mmax)
 integer l,m
 real  fact
 
-IF(XC.EQ.1.0.OR.XC.EQ.-1.0) THEN
-   DO L = 0,LMAX
-      ADP(J,L,0) = 0.0
-      IF(XC.EQ. 1.0) ADP(J,L,0) = L*(L+1.0)*0.5
-      IF(XC.EQ.-1.0) ADP(J,L,0) = (-1.0)**(L+1)*L*(L+1.0)*0.5
-      DO M = 1, MMAX
-         ADP(J,L,M) = 0.0
-      ENDDO
-   ENDDO
-   RETURN
-ENDIF
+if(xc.eq.1.0.or.xc.eq.-1.0) then
+   do l = 0,lmax
+      adp(j,l,0) = 0.0
+      if(xc.eq. 1.0) adp(j,l,0) = l*(l+1.0)*0.5
+      if(xc.eq.-1.0) adp(j,l,0) = (-1.0)**(l+1)*l*(l+1.0)*0.5
+      do m = 1, mmax
+         adp(j,l,m) = 0.0
+      enddo
+   enddo
+   return
+endif
 
-DO L = 0, LMAX
-   DO M = 0, MMAX
-      FACT = 1.0/SQRT(1.0-XC*XC)
-      ADP(J,L,M) = FACT*(AP(J,L,M+1)-FACT*M*XC*AP(J,L,M))
-   ENDDO
-ENDDO
+do l = 0, lmax
+   do m = 0, mmax
+      fact = 1.0/sqrt(1.0-xc*xc)
+      adp(j,l,m) = fact*(ap(j,l,m+1)-fact*m*xc*ap(j,l,m))
+   enddo
+enddo
  
-RETURN
-END SUBROUTINE
+return
+end subroutine

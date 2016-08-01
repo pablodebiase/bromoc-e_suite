@@ -33,9 +33,6 @@ real*8 runtime
 integer ntype, nold, nbuffer, ntot, natom
 
 integer typei(datom)
-real    x(datom),y(datom),z(datom)
-real    fx(datom),fy(datom),fz(datom)
-integer typtyp(datom),ibuffer(datom)
 
 integer,allocatable :: warn(:)
 integer     ibfftyp(dbuff),nat(dtype),idtype(dtype)

@@ -16,23 +16,23 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE COSMPHI2(J,M,CC0,AC)
+subroutine cosmphi2(j,m,cc0,ac)
 !------------------------------------------------------------------------
 !     cos(M*phi) calculation (M > 0)
 !
 use grandmod
 implicit none
 
-INTEGER   M,I,J
-REAL    CC0,AC(NTOT,0:M)
+integer   m,i,j
+real    cc0,ac(ntot,0:m)
 
-AC(J,0) = 1.0
-AC(J,1) = CC0
-AC(J,2) = 2.0*CC0*CC0-1.0
-AC(J,3) = (2.0*AC(J,2)-1.0)*CC0
-DO I = 4, M
-  AC(J,I) = 2.0*CC0*AC(J,I-1)-AC(J,I-2)
-ENDDO
+ac(j,0) = 1.0
+ac(j,1) = cc0
+ac(j,2) = 2.0*cc0*cc0-1.0
+ac(j,3) = (2.0*ac(j,2)-1.0)*cc0
+do i = 4, m
+  ac(j,i) = 2.0*cc0*ac(j,i-1)-ac(j,i-2)
+enddo
 
-RETURN
-END
+return
+end

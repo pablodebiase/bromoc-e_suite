@@ -16,31 +16,31 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE SPHE_SVPOL(NMPOL,LSTPL,LSTPM)
+subroutine sphe_svpol(nmpol,lstpl,lstpm)
 !-----------------------------------------------------------------------
 !store the basis-set number 
 !in LSTPL and LSTPM array for Spherical Harmonics
 
 implicit none
-INTEGER NMPOL,LSTPL(*),LSTPM(*)
+integer nmpol,lstpl(*),lstpm(*)
 !local
-INTEGER L,M,NORDER
+integer l,m,norder
 
 !always the same order in spherical harmonics
-NORDER=0
-DO L=0,NMPOL-1
-   NORDER=NORDER+1 
-   LSTPL(NORDER) =L
-   LSTPM(NORDER) =0
-   DO M=1,L
-      NORDER=NORDER+1 
-      LSTPL(NORDER) =L
-      LSTPM(NORDER) =M
-      NORDER=NORDER+1 
-      LSTPL(NORDER) =L
-      LSTPM(NORDER) =-M
-   ENDDO
-ENDDO
+norder=0
+do l=0,nmpol-1
+   norder=norder+1 
+   lstpl(norder) =l
+   lstpm(norder) =0
+   do m=1,l
+      norder=norder+1 
+      lstpl(norder) =l
+      lstpm(norder) =m
+      norder=norder+1 
+      lstpl(norder) =l
+      lstpm(norder) =-m
+   enddo
+enddo
 
-RETURN
-END
+return
+end subroutine

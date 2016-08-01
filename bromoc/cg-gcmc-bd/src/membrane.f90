@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE MEMBRANE
+subroutine membrane
 !Paper => B. Roux, Biophys. J., 73:2980-2989 (1997)
 use grandmod
 use constamod
@@ -107,4 +107,4 @@ do iat = 1, ntot
 enddo 
 
 return
-end
+end subroutine

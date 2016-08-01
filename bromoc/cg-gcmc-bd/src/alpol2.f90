@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE ALPOL2(J,LMAX,MMAX,XC,AP)
+subroutine alpol2(j,lmax,mmax,xc,ap)
 !------------------------------------------------------------------------
 !The Associate Legendre Polynomials 
 !(Numerical recipes in Fortran 77: 6.8. Spherical Harmonics) 
@@ -59,5 +59,5 @@ do l=2,lmax
    enddo
 enddo
  
-RETURN
-END SUBROUTINE
+return
+end subroutine

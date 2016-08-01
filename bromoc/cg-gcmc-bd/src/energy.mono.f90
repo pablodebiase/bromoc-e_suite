@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE ENERGY
+subroutine energy
 use apfmod
 use ioxmod
 use grandmod
@@ -689,4 +689,4 @@ if (Qenergy) then
   ener = ener + eelec + evdw + esrpmf + esrpmfmx + ebond + eang + edihe + estack + ebp + eex + eqq + esolv + eqqmx + evdwmx + eefpot + eefpotmx + econ
 endif                     !Qenergy
 return
-end
+end subroutine

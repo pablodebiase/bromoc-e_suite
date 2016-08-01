@@ -95,7 +95,7 @@ character*2,allocatable :: namsite(:)
 real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 real        cgnuc, diffnuc, epsnuc, epsolv, fctn, scalepairing
 real        notrx,notry,notrz,insites  ! NOTRAN
-integer     ndna,nion,nttyp,ndnaxnion,nfc,ndnaxnfc,setframes
+integer     ndna,nion,ndnaxnion,nfc,ndnaxnfc,setframes
 !CONTRA
 real        xcon,ycon,zcon
 real,allocatable :: kx(:),ky(:),kz(:),contrx(:),contry(:),contrz(:) 

@@ -16,20 +16,20 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE RPOWERL2(J,L,R,AR)
+subroutine rpowerl2(j,l,r,ar)
 !------------------------------------------------------------------------
 !     R^L calculation (L >= 0)
 !
 use grandmod
 implicit none
 
-INTEGER L,I,J
-REAL    R,AR(NTOT,0:L)
+integer l,i,j
+real    r,ar(ntot,0:l)
 
-AR(J,0) = 1.0
-DO I = 1, L
-  AR(J,I) = AR(J,I-1)*R
-ENDDO
+ar(j,0) = 1.0
+do i = 1, l
+  ar(j,i) = ar(j,i-1)*r
+enddo
  
-RETURN
-END
+return
+end subroutine

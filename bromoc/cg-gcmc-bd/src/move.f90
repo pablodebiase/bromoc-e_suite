@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE MOVE(iat,xnew,ynew,znew)
+subroutine move(iat,xnew,ynew,znew)
 use grandmod
 use nucleotmod
 
@@ -47,4 +47,4 @@ do while (endok)
 enddo 
   
 return
-end
+end subroutine

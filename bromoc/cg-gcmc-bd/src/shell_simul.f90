@@ -46,13 +46,15 @@ character com*2048,word*1024,fnam*80,wrd5*5
 integer unvec(maxopen), numb, totnumb, nions, kode, maxpart, ncl3, in1, in2
 character*80 title
 character*4 wrd4,ionname
+character*4,allocatable,dimension(:) :: nucnam
+character*6 wrd6
 !real*16 dener
 real dener
 real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol
+real resol,ibuf
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
 logical*1 logmemb, logmmij, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
@@ -75,6 +77,8 @@ integer    nsec
 
 !for TEST order
 real       tol, delta, maxl,minl,maxlg,minlg
+! temporary coordinates
+type(car) rtmp
 
 !for MEMBRANE and ION-ION orders
 !for effective dielectric constant for DNA
@@ -184,8 +188,8 @@ call delparall()
 ! allocate space for lists
 call resizeetypl(4000)  ! Resize Element-Type Vectors
 call resizeptypl(1000) ! Resize Particle-Type Vectors
-call resizeparl(23000) ! Resize Particle Lists
-call resizecvec(23000) ! Resize Element Lists
+call resizeparl(10000) ! Resize Particle Lists
+call resizecvec(20000) ! Resize Element Lists
 
 call header(outu)
 start = timer()
@@ -265,6 +269,8 @@ do while (.not. logfinal)
      ! number of nucleotides of each strand [default=0]
      call gtipar (com,'nucleot',inuc,0)
      if (inuc.le.0) call error ('shell_simul', 'Incorrect numbers of nucleotides in NUCLEOTIDES order', faterr)
+     if (allocated(nucnam)) deallocate(nucnam)
+     allocate (nucnam(inuc*2))
      ! allocate variables
      if (Qnucl) then
        deallocate (strand,typenuc,stfx,stfree,namnucl,namsite,xnat,ynat,znat,rnat,phinat)
@@ -296,6 +302,7 @@ do while (.not. logfinal)
        call addetyp('Tb',dif=diffnuc)  ! 4
        call addetyp('Cb',dif=diffnuc)  ! 5
        call addetyp('Gb',dif=diffnuc)  ! 6
+       ndna=netyp
      endif
      if (diffnuc.lt.0.0) call error ('shell_simul', 'Diffusion coefficient for each nucleotide is negative', faterr)
      ! Parameter to calculate bonded and non-bonded potential
@@ -363,13 +370,16 @@ do while (.not. logfinal)
          if (ntype.gt.dtype) call error ('shell_simul', 'ntype is greater than dtype', faterr)
          call getfirst(com,word)
          if (len_trim(word).eq.0) call error ('shell_simul', 'premature end of date in NUCLEOTIDE order', faterr)
+         ! nucleotide name [character*4]
+         wrd4 = ucase(word)
+         nucnam(ntype) = wrd4
          ! Phosphate
          if ((QfirstP.and.j.eq.1).or.j.gt.1) then
            nsites = nsites + 1
            if (nsites.gt.maxsite) call error ('shell_simul', 'nsites is greater than maxsite', faterr)
            strand(nsites) = 1
            typenuc(nsites) = ntype
-           namnucl(nsites) = atnam(ntype)(1:1)
+           namnucl(nsites) = wrd4(1:1)
            namsite(nsites) = 'P'
            call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
          endif
@@ -378,7 +388,7 @@ do while (.not. logfinal)
          if (nsites.gt.maxsite) call error ('shell_simul', 'nsites is greater than maxsite', faterr)
          strand(nsites) = 1                 
          typenuc(nsites) = ntype
-         namnucl(nsites) = atnam(ntype)(1:1)
+         namnucl(nsites) = wrd4(1:1)
          if (namnucl(nsites).eq.'A') then
            namsite(nsites) = 'Ab' 
            call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
@@ -399,10 +409,11 @@ do while (.not. logfinal)
          if (nsites.gt.maxsite) call error ('shell_simul', 'nsites is greater than maxsite', faterr)
          strand(nsites) = 1
          typenuc(nsites) = ntype
-         namnucl(nsites) = atnam(ntype)(1:1) 
+         namnucl(nsites) = wrd4(1:1) 
          namsite(nsites) = 'S'
          call seteleinptyp(nptyp,nsites,getetyp(namsite(nsites)))
        enddo
+       call updateptypchg(nptyp)
      endif 
      ! read explicit second strand
      if (Qexpl2nd) then
@@ -501,26 +512,27 @@ do while (.not. logfinal)
          ntype = ntype + 1
          if (ntype.gt.dtype) call error ('shell_simul', 'ntype is greater than dtype', faterr)
          if (Qexpl2nd) then
-           atnam(ntype)=secstr(j+1)
+           wrd4=secstr(j+1)
          else
            ! nucleotide name [character*4]
-           if (atnam(ntypold-j)(1:1).eq.'A') then
-             atnam(ntype) = 'T'
-           else if (atnam(ntypold-j)(1:1).eq.'T') then
-             atnam(ntype) = 'A'
-           else if (atnam(ntypold-j)(1:1).eq.'C') then
-             atnam(ntype) = 'G'
+           if (nucnam(ntypold-j)(1:1).eq.'A') then
+             wrd4 = 'T'
+           else if (nucnam(ntypold-j)(1:1).eq.'T') then
+             wrd4 = 'A'
+           else if (nucnam(ntypold-j)(1:1).eq.'C') then
+             wrd4 = 'G'
            else
-             atnam(ntype) = 'C'
+             wrd4 = 'C'
            endif     
          endif 
+         nucnam(ntype) = wrd4
          ! Phosphate
          if ((QfirstP.and.j.eq.0).or.j.gt.0) then
            nsites = nsites + 1
            if (nsites.gt.maxsite) call error ('shell_simul', 'nsites is greater than maxsite', faterr)
            strand(nsites) = 2
            typenuc(nsites) = ntype
-           namnucl(nsites) = atnam(ntype)(1:1)
+           namnucl(nsites) = wrd4(1:1)
            namsite(nsites) = 'P'
            call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
          endif
@@ -529,7 +541,7 @@ do while (.not. logfinal)
          if (nsites.gt.maxsite) call error ('shell_simul', 'nsites is greater than maxsite', faterr)
          strand(nsites) = 2
          typenuc(nsites) = ntype
-         namnucl(nsites) = atnam(ntype)(1:1)           
+         namnucl(nsites) = wrd4(1:1)           
          if (namnucl(nsites).eq.'A') then
            namsite(nsites) = 'Ab'
            call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
@@ -550,11 +562,12 @@ do while (.not. logfinal)
          if (nsites.gt.maxsite) call error ('shell_simul', 'nsites is greater than maxsite', faterr)
          strand(nsites) = 2
          typenuc(nsites) = ntype
-         namnucl(nsites) = atnam(ntype)(1:1)
+         namnucl(nsites) = wrd4(1:1)
          namsite(nsites) = 'S'            
          call seteleinptyp(nptyp,nsites-nsites1st,getetyp(namsite(nsites)))
        enddo
        if (Qexpl2nd) deallocate (secstr)
+       call updateptypchg(nptyp)
      endif
      nold = ntype           
      fctn=celec*cgnuc**2/cdie
@@ -578,9 +591,9 @@ do while (.not. logfinal)
      write(outu,'(6x,a)') '----------------------------------------'
      do i = 1, ntype
        if (i.le.inuc) then
-         write(outu,'(6x,i3,4x,a1,2x,f8.3,2x,f8.3,2x,e9.2)') 1, atnam(i), epsnuc, cgnuc, diffnuc
+         write(outu,'(6x,i3,4x,a1,2x,f8.3,2x,f8.3,2x,e9.2)') 1, nucnam(i), epsnuc, cgnuc, diffnuc
        else 
-         write(outu,'(6x,i3,4x,a1,2x,f8.3,2x,f8.3,2x,e9.2)') 2, atnam(i), epsnuc, cgnuc, diffnuc        
+         write(outu,'(6x,i3,4x,a1,2x,f8.3,2x,f8.3,2x,e9.2)') 2, nucnam(i), epsnuc, cgnuc, diffnuc        
        endif  
      enddo
      write(outu,*)
@@ -595,12 +608,14 @@ do while (.not. logfinal)
      ! nonbonded terms
      call go_qq
      Qnucl = .true.
-     call reasig
      ! Add Particle
      if (istrs.gt.0) call addpar(1,1)
      if (istrs.eq.2) call addpar(2,1)
-     call printpdb(outu) 
-     write(outu,*)  
+     !call printpdb(outu) ! debug
+     write(outu,*) 
+     ! assert 
+     if (nsites.ne.nele) stop 'nsites is not equal to nele'
+     if (allocated(nucnam)) deallocate(nucnam)
   ! **********************************************************************
   elseif (wrd5.eq.'atoms') then
   !       ---------------
@@ -665,22 +680,26 @@ do while (.not. logfinal)
       call getlin(com,inpu,outu) ! new commands line 
       endlog = check(com,'end')
       if (.not.endlog) then
-        ntype = ntype + 1
-        if (ntype.gt.dtype) call error ('shell_simul', 'ntype is greater than dtype', faterr)
         ! name ion type [character*4]
         call getfirst(com,wd4)
         ! Add mono particle with element
-        call addmonopar(wrd4)
-        ! particle charge [real*8,default=0]
-        call gtdpar(com,'charge',etypl(netyp)%chg,0.0)
-        ! diffusion constant [real*8,default=0.1]
-        call gtdpar(com,'diffusion',etypl(netyp)%dif,0.1)
-        if (diffusion(ntype).lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
-        call addpar(nptyp,2)
+        itype=getptyp(wd4)
+        if (itype.eq.0) then
+          call addmonoptyp(wrd4)
+          itype=nptyp
+          ! particle charge [real*8,default=0]
+          call gtdpar(com,'charge',etypl(netyp)%chg,0.0)
+          ! diffusion constant [real*8,default=0.1]
+          call gtdpar(com,'diffusion',etypl(netyp)%dif,0.1)
+          if (etypl(netyp)%dif.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
+          ! Update Particle Charge
+          call updateptypchg(itype)
+        endif
+        ! Add the particle temporarily to the particle list
+        call addpar(itype,3)
       endif
     enddo
     Qpar = .true.
-    call reasig
     allocate (Qcol(netp),Qchr(netp),Qefpot(netp),Qlj(netp),Qsrpmfi(netp))
     Qchr=.false.
     Qcol=.true.
@@ -693,22 +712,22 @@ do while (.not. logfinal)
     fct=0.0
     do i=1,netyp
       do j=i,netyp
-        if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
-          is=etpidx(i,j)
-          fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
-          Qchr(is)=.true.
+        if (j.gt.ndna) then
+          if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
+            is=etpidx(i,j)
+            fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
+            Qchr(is)=.true.
+          endif
         endif
       enddo
     enddo
   
-    j=1
-    if (Qnucl) j=j+6
     write(outu,*)
-    write(outu,'(6x,a,i3,a)') 'There are ',netyp-j-1,' atom types'
+    write(outu,'(6x,a,i3,a)') 'There are ',netyp-ndna,' atom types'
     write(outu,'(6x,a)') 'CHARGE -> ion charge [e]'
     write(outu,'(6x,a)') 'DIFFUSION -> diffusion constant [Ang.**2/ps]'
     write(outu,'(6x,a)') 'NAME---CHARGE---DIFFUSION'
-    do i = j, netyp
+    do i=ndna, netyp
       write(outu,'(6x,a,2f8.3)') etypl(i)%nam,etypl(i)%chg,etypl(i)%dif
     enddo
     write(outu,*)
@@ -1028,15 +1047,16 @@ do while (.not. logfinal)
      if (.not.Qpar) call error ('shell_simul', 'BUFFER order is defined before PARTICLE order', faterr)
      if (.not.Qsystem) call error ('shell_simul', 'BUFFER order is defined before SYSTEM order', faterr)
      endlog = .false.
+     nbuffer=0
      do while (.not.endlog)
        call getlin(com,inpu,outu) ! new commands line
        endlog = check(com,'end')
        if (.not.endlog) then
          nbuffer = nbuffer + 1
          if (nbuffer.gt.dbuff) call error ('shell_simul', 'nbuffer greater than dbuff', faterr)
-         ! Obtention of ion type atnam(itype)
+         ! Obtention of ion type 
          call getfirst(com,wrd4)
-         itype=getetyp(wrd4)
+         itype=getptyp(wrd4)
          ibfftyp(nbuffer)=itype
          ! Intrinsic chemical potential [real*8,default=0] 
          call gtdpar(com,'mu',mu(nbuffer),0.0)
@@ -1149,12 +1169,12 @@ do while (.not. logfinal)
         ninsert(ib)= 0
         if (Qsphere) then
           if (logbuff) then
-            write(outu,'(6x,a,4f12.5,1x,2e12.4,f10.5)') atnam(ibfftyp(ib)),mu(ib),Rmin(ib),Rmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
+            write(outu,'(6x,a,4f12.5,1x,2e12.4,f10.5)') ptypl(ibfftyp(ib))%nam,mu(ib),Rmin(ib),Rmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
           else
-            write(outu,'(6x,a,6f12.5,1x,2e12.4,f10.5)') atnam(ibfftyp(ib)),mu(ib),LZmin(ib),LZmax(ib),Rmin(ib),Rmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
+            write(outu,'(6x,a,6f12.5,1x,2e12.4,f10.5)') ptypl(ibfftyp(ib))%nam,mu(ib),LZmin(ib),LZmax(ib),Rmin(ib),Rmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
           endif
         else
-          write(outu,'(6x,a,4f12.5,1x,2e12.4,f10.5)') atnam(ibfftyp(ib)),mu(ib),LZmin(ib),LZmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
+          write(outu,'(6x,a,4f12.5,1x,2e12.4,f10.5)') ptypl(ibfftyp(ib))%nam,mu(ib),LZmin(ib),LZmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
         endif
      enddo
      write(outu,*)
@@ -1167,7 +1187,7 @@ do while (.not. logfinal)
       call getlin(com,inpu,outu) ! new commands line
       endlog = check(com,'end')
       if (.not.endlog) then
-        ! Obtention of ion type atnam(itype)
+        ! Obtention of ion type 
         call getfirst(com,wrd4)
         itype=getetyp(wrd4)
         call gtdpar(com,'epsilon',etypl(itype)%eps,0.0)
@@ -1219,12 +1239,12 @@ do while (.not. logfinal)
       call getlin(com,inpu,outu) ! new commands line
       endlog = check(com,'end')
       if (.not.endlog) then
-        ! Obtention of ion type atnam(itype)
+        ! Obtention of ion type
         call getfirst(com,wrd4)
-        call fatnam(atnam2,nttyp,wrd4,itype)
-        ! Obtention of ion type atnam(jtype)
+        itype=getetyp(wrd4)
+        ! Obtention of ion type 
         call getfirst(com,wrd4)
-        call fatnam(atnam2,nttyp,wrd4,jtype)
+        jtype=getetyp(wrd4)
         is=etpidx(itype,jtype)
         call gtdpar(com,'epsilon',epsLJ(is),0.0)
         call gtdpar(com,'sigma',sgLJ(is),0.0)
@@ -1242,12 +1262,12 @@ do while (.not. logfinal)
       epp4=0.0
       sgp2=0.0
     endif
-    do  i = 1, nttyp
-      do j = i, nttyp
+    do  i = 1, netyp
+      do j = i, netyp
         if (j.gt.ndna) then 
           is=etpidx(i,j)
           if (epsLJ(is).gt.0.0 .and. sgLJ(is).gt.0.0) then
-            write(outu,'(6x,a,a,2f12.4,$)') atnam2(i),atnam2(j),epsLJ(is),sgLJ(is) 
+            write(outu,'(6x,a,a,2f12.4,$)') etypl(i)%nam,etypl(j)%nam,epsLJ(is),sgLJ(is) 
             if (Qlj(is)) then
               write(outu,'(a)') ' (replaced)'
             else
@@ -1258,9 +1278,9 @@ do while (.not. logfinal)
             sgp2(is)=sgLJ(is)**2
           else
             if (Qlj(is)) then
-              write(outu,'(6x,a,a,2f12.4,a)') atnam2(i),atnam2(j), epp4(is)*0.25,sqrt(sgp2(is)),' (from single LJ)'
+              write(outu,'(6x,a,a,2f12.4,a)') etypl(i)%nam,etypl(j)%nam,epp4(is)*0.25,sqrt(sgp2(is)),' (from single LJ)'
             else
-              write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing LJ parameters to compute pairs for:',atnam2(i),atnam2(j)
+              write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
             endif
           endif
         endif
@@ -1277,7 +1297,7 @@ do while (.not. logfinal)
        Qpres=.false.
      endif
      if (Qpar.and..not.(Qefpott.or.Qljsin.or.Qljpar)) call error ('shell_simul', 'No effective potential and no Lennard Jones parameters defined', warning)
-     if (.not.allocated(warn)) allocate (warn(nttyp))
+     if (.not.allocated(warn)) allocate (warn(netyp))
      warn=0
      ! number of steps for BD or MC simulations
      ! [integer,default=0]
@@ -1482,8 +1502,8 @@ do while (.not. logfinal)
      
      if (sum(warn).gt.0) then
        write(outu,*) '      Warnings summary:'
-       do i=1,nttyp
-         write(outu,*) '               ',atnam2(i),warn(i)
+       do i=1,netyp
+         write(outu,*) '               ',etypl(i)%nam,warn(i)
        enddo
      endif
   ! **********************************************************************
@@ -1668,9 +1688,9 @@ do while (.not. logfinal)
        call getlin(com,inpu,outu) ! new commands line
        endlog = check(com,'end')
        if (.not.endlog) then
-         ! Obtention of ion type atnam(itype)      
+         ! Obtention of ion type     
          call getfirst(com,wrd4)
-         call fatnam(atnam2,nttyp,wrd4,itype)
+         itype=getetyp(wrd4)
          ! Repulsive membrane potential [real*8,default=0]
          call gtdpar(com,'amplmemb',ampl1(itype),0.0)
          if (ampl1(itype).lt.0.0) call error ('shell_simul', 'Repulsive membrane potential has a negative value', faterr)
@@ -1696,13 +1716,13 @@ do while (.not. logfinal)
        endif
      enddo
      Qmemb = .true.
-     do i=1,nttyp
+     do i=1,netyp
        if (ampl1(i).lt.0.0) then 
-         write(*,'(6x,a)') 'ERROR: Invalid membrane constant for type '//atnam2(i)
+         write(*,'(6x,a)') 'ERROR: Invalid membrane constant for type '//etypl(i)%nam
          Qmemb=.false.
        endif
        if (ampl2(i).lt.0.0.and.Qpore) then
-         write(*,'(6x,a)') 'ERROR: Invalid Pore constant for type '//atnam2(i)
+         write(*,'(6x,a)') 'ERROR: Invalid Pore constant for type '//etypl(i)%nam
          Qmemb=.false.
        endif
      enddo
@@ -1727,11 +1747,11 @@ do while (.not. logfinal)
      else
        write(outu,'(6x,a)') 'NAME---AMPLMEMB---PMEMB'   
      endif
-     do i = 1, nttyp
+     do i = 1, netyp
        if (Qpore) then 
-         write(outu,'(6x,a,1x,5f12.3)') atnam2(i),ampl1(i),p1(1,i),ampl2(i),p2(1,i),rcylinder(i)
+         write(outu,'(6x,a,1x,5f12.3)') etypl(i)%nam,ampl1(i),p1(1,i),ampl2(i),p2(1,i),rcylinder(i)
        else
-         write(outu,'(6x,a,1x,5f12.3)') atnam2(i),ampl1(i),p1(1,i)
+         write(outu,'(6x,a,1x,5f12.3)') etypl(i)%nam,ampl1(i),p1(1,i)
        endif
      enddo
      write(outu,*)
@@ -1758,13 +1778,12 @@ do while (.not. logfinal)
        jtype = 0 ! counter of ion types
        endlog = check(com,'end')
        if (.not.endlog) then
-         ! Obtention of ion type atnam(itype)
+         ! Obtention of ion type 
          call getfirst(com,wrd4)
-         call fatnam(atnam2,nttyp,wrd4,itype)
-         ! Obtention of ion type atnam(jtype)
+         itype=getetyp(wrd4)
+         ! Obtention of ion type
          call getfirst(com,wrd4)
-         call fatnam(atnam2,nttyp,wrd4,jtype)
-         if (itype.eq.0.or.jtype.eq.0) call error ('shell_simul', 'A ion pair is necessary in SRPMF order', faterr)
+         jtype=getetyp(wrd4)
          is=etpidx(itype,jtype)
          ! c_0 parameter [real*8,default=0]
          call gtdpar(com,'c0',c0(is),0.0)
@@ -1816,17 +1835,16 @@ do while (.not. logfinal)
   
      write(outu,'(6x,a)')'Short-range ion-ion interactions are turn on' 
      write(outu,'(6x,a,/,6x,a)') 'Coefficients for the short-range ion-ion interactions','NAME----NAME----C0----C1----C2----C3----C4'  
-     ! ndna = nttyp-ntype+nold
-     do i = 1,nttyp
-       do j=i,nttyp
+     do i = 1,netyp
+       do j=i,netyp
          if(j.gt.ndna) then
            is=etpidx(i,j)
            if (c2(is).ne.0.0) then
-             write(outu,'(6x,a,1x,a,5f8.3)') atnam2(i),atnam2(j),c0(is),c1(is),c2(is),c3(is),c4(is)
+             write(outu,'(6x,a,1x,a,5f8.3)') etypl(i)%nam,etypl(j)%nam,c0(is),c1(is),c2(is),c3(is),c4(is)
              c2(is)=1.0/c2(is)
              Qsrpmfi(is)=.true.
            else
-              write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing SRPMF parameters for:',atnam2(i),atnam2(j)
+              write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing SRPMF parameters for:',etypl(i)%nam,etypl(j)%nam
            endif
          endif
        enddo
@@ -1873,13 +1891,12 @@ do while (.not. logfinal)
       jtype = 0 ! counter of ion types
       endlog = check(com,'end')
       if (.not.endlog) then
-        ! Obtention of ion type atnam(itype)
+        ! Obtention of ion type 
         call getfirst(com,wrd4)
-        call fatnam(atnam2,nttyp,wrd4,itype)
-        ! Obtention of ion type atnam(jtype)
+        itype=getetyp(wrd4)
+        ! Obtention of ion type 
         call getfirst(com,wrd4)
-        call fatnam(atnam2,nttyp,wrd4,jtype)
-        if (itype.eq.0.or.jtype.eq.0) call error ('shell_simul','A ion pair is necessary in EFPOT order', faterr)
+        jtype=getetyp(wrd4)
         is=etpidx(itype,jtype)
         if (check(com,'read')) then
           Qefpot(is) = .true.
@@ -1892,7 +1909,7 @@ do while (.not. logfinal)
           if (unvec(iunit).eq.-1) call error('shell_simul','unit incorrect in EFPOT order', faterr)
           iunit = unvec(iunit)
           call gtdpar(com,'scal',scaldd,scald)
-          write(outu,*) '     Scaling ',atnam2(itype),'-',atnam2(jtype),' potential by ',scaldd
+          write(outu,*) '     Scaling ',etypl(i)%nam,'-',etypl(j)%nam,' potential by ',scaldd
           cnt=1
           if (cnt.gt.maxd) call error ('shell_simul','Number of data is greater than expected. Increase maxdata.',faterr) ! Check if maxdata is correct
           read(iunit,*,IOSTAT=kode) xy(1,cnt),xy(2,cnt)
@@ -1935,20 +1952,20 @@ do while (.not. logfinal)
     enddo
     write(outu,'(6x,a)') 'Effective potential was activated for the following pairs:'
     write(*,*) 'Used Element Type-Element Type pairs'
-    do i = 1,nttyp
-      do j=i,nttyp
+    do i = 1,netyp
+      do j=i,netyp
         if(j.gt.ndna) then
           is=etpidx(i,j)
           if (Qefpot(is).and.Qefpotread(is)) then
-            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')atnam2(i),atnam2(j),'  Number of Points:',nxf(is),'  From-To: ',efp(is)%xl,' - ',sqrt(efp(is)%xu2)
+            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',nxf(is),'  From-To: ',efp(is)%xl,' - ',sqrt(efp(is)%xu2)
           elseif (Qefpot(is).and..not.Qefpotread(is)) then
             Qcol(is) = .true. ! if discretize is active, ignore this keyword for that pair 
             nnp=int(efp(is)%xl*ires)
             mnp=int(sqrt(efp(is)%xu2)*ires)
             call discretize(is,nnp,mnp,nxf(is))
-            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')atnam2(i),atnam2(j),'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
+            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
           elseif (etul(i).and.etul(j)) then
-            write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',atnam2(i),atnam2(j),' . Using '  &
+            write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',etypl(i)%nam,etypl(j)%nam,' . Using '  &
                       //' Coulombic and Lennard Jones and/or SRPMF parameters on the fly'
           endif
         endif
@@ -1956,12 +1973,12 @@ do while (.not. logfinal)
     enddo
     write(outu,*)'     Resolution: ',res
     if (Qepwrt) then
-      do i=1,nttyp
-        do j=i,nttyp
+      do i=1,netyp
+        do j=i,netyp
           if (j.gt.ndna) then
             is=etpidx(i,j)
             if (Qefpot(is)) then
-              write(wunit,*) atnam2(i),' - ',atnam2(j)
+              write(wunit,*) etypl(i)%nam,' - ',etypl(j)%nam
               do k=int((efp(is)%xl-1.0)*ires*10.0),int((sqrt(efp(is)%xu2)+10.0)*ires*10.0)
                 x1=k*res*0.1
                 call getyd(is,x1**2,x2,x3,r1)
@@ -2065,9 +2082,9 @@ do while (.not. logfinal)
        call getlin(com,inpu,outu) ! new commands line
        endlog = check(com,'end')
        if (.not.endlog) then
-         ! Obtention of ion type atnam(itype)
+         ! Obtention of ion type 
          call getfirst(com,wrd4)
-         call fatnam(atnam,ntype,wrd4,itype)
+         itype=getetyp(wrd4)
          call gtdpar(com,'lowfraction',ampl3(itype),0.0)
          call gtdpar(com,'switchlength',p3(itype),1.0)
          ! Writting file of diffusion constant 
@@ -2093,8 +2110,8 @@ do while (.not. logfinal)
      write(outu,'(6x,a,f8.3,a)') 'pore length        ',2*plength2,' [Angs]'
      write(outu,'(6x,a,f8.3,a)') 'membrane center    ',   pcenter,' [Angs]'
   
-     do i = nold+1, ntype
-        write(outu,'(6x,i3,3x,a,1x,5f8.3)') i,atnam(i),ampl3(i),p3(i)
+     do i = ndna+1, netyp
+        write(outu,'(6x,i3,3x,a,1x,5f8.3)') i,etypl(i)%nam,ampl3(i),p3(i)
      enddo
      write(outu,*)
   ! *******************************************************************
@@ -2120,53 +2137,14 @@ do while (.not. logfinal)
        write(outu,*)    
        write(outu,'(6x,a)') 'Configuration has been written'
        if (check(com,'xyz')) then
-         write(iunit,'(i5)') ntot
-         write(iunit,*)
-         do i=1,nsites
-           write(iunit,*) atnam2(typtyp(i)),x(i),y(i),z(i)
-         enddo
-         do i=nsites+1,ntot       
-           write(iunit,*) atnam2(nwtype(abs(typei(i)))),x(i),y(i),z(i)
-         enddo
-       elseif (check(com,'pdb')) then
-         if (.not.Qsphere) write(iunit,'(A6,3f9.3,3f7.2)') 'CRYST1',LX,LY,LZ,90.0,90.0,90.0
-         do i=1,nsites
-           write (iunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,atnam2(typtyp(i)),'DNA  ',typtyp(i),x(i),y(i),z(i)
-         enddo
-         do i=1+nsites,ntot
-           write (iunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,atnam2(nwtype(abs(typei(i)))),'ION  ',nwtype(abs(typei(i))),x(i),y(i),z(i)
-         enddo
-         write (iunit,'(A)') 'END'
-       else
-         if (Qnucl) then
-           write(iunit,'(i5)') nsites
-           do i = 1, nsites
-            write(iunit,'(i1,1x,a1,1x,a2,3(1x,f15.8))') strand(i),namnucl(i),namsite(i),x(i),y(i),z(i)
-           enddo
+         call printxyz(iunit)
+       else 
+         if (Qsphere) then
+           write(iunit,'(A6)') 'CRYST1'
+         else
+           write(iunit,'(A6,3f9.3,3f7.2)') 'CRYST1',LX,LY,LZ,90.0,90.0,90.0
          endif
-         nions = ntot - nsites
-         write(iunit,'(i5)') nions
-         if (Qpar) then
-           if (check(com,'charmm')) then
-             do i = nsites+1, ntot    
-               if (Qbuf) then
-                 j=ibuffer(i)
-               else
-                 j=0
-               endif
-               write(iunit,'(2(i5,1x),2(a4,1x),3(f10.5,1x),i4)') i,i,atnam2(nwtype(abs(typei(i)))),atnam2(nwtype(abs(typei(i)))),x(i),y(i),z(i),j
-             enddo
-           else
-             do i = nsites+1, ntot    
-               if (Qbuf) then
-                 j=ibuffer(i)
-               else
-                 j=0
-               endif
-               write(iunit,'(2(i5,1x),3(f15.8,1x),i4)') i,typei(i),x(i),y(i),z(i),j
-             enddo
-           endif
-         endif
+         call printpdb(iunit) 
        endif  
      elseif (check(com,'title')) then
        write(outu,'(6x,a)') 'TITLE: '//trim(title)
@@ -2434,7 +2412,7 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'coor') then
   !        ---------------
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'COOR order is defined before PARTICLE and/or NUCLEOTIDE orders', faterr)
-     call delparofkind(2)  ! Delete all particles added when ptype were created
+     call delparofkind(3)  ! Delete all particles added when ptype were created
      if (check(com,'read')) then
        call gtipar(com,'unit',iunit,1)
        if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
@@ -2442,51 +2420,27 @@ do while (.not. logfinal)
        if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in COOR order', faterr)
        iunit = unvec(iunit)
        write(outu,'(6x,a,i3)')'Reading coordinates from unit ',iunit
+       read(iunit,'(A6)') wrd6
+       if (wrd6.ne.'CRYST1') call error('shell_simul','this file has not BROMOC PDB format',faterr)
+       ilast=0
        if (Qnucl) then
-         read(iunit,*) ii
-         if (ii.ne.nsites) call error ('shell_simul', 'NSITES has a wrong value',faterr)
-         write(outu,'(6x,a,i5)') 'nsites ',nsites
          do i = 1, nsites
            read(iunit,'(a)') com
-! free format
-           read(com,*) strand(i), namnucl(i),namsite(i), x(i), y(i), z(i)
-!           read(com,'(i1,1x,a1,1x,a2,1x,f10.5,1x,f10.5,1x,f10.5)') strand(i), namnucl(i),namsite(i), x(i), y(i), z(i)
+           read (com,'(x6,I5,x,x5,x5,I4,4x,3F8.3)') jtype,itype,rtmp%x,rtmp%y,rtmp%z
+           call putcoorinpar(itype,jtype,rtmp%x,rtmp%y,rtmp%z)
          enddo
-         ntot = nsites
        endif
-       if (Qpar) then 
-         if (check(com,'charmm')) then
-           ! CHARMM format     
-           endlog = .true.
-           do while (endlog)
-             read(iunit,'(a)') com
-             endlog = com(1:1).eq.'*'
-           enddo 
-           read(com,'(i5)') nions
-           write(outu,'(6x,a,i5)') 'nions ',nions
-           ntot = nsites + nions
-           if (ntot.gt.datom) call error ('shell_simul', 'ntot is greater than datom', faterr)
-           do i = nsites+1, ntot
-             read(iunit,'(a)') com
-             read(com,*) ii,ii,ionname,ionname,x(i),y(i),z(i),ibuffer(i)
-!             read(com,'(i5,1x,i5,1x,a4,1x,a4,1x,f10.5,1x,f10.5,1x,f10.5,1x,i4)') ii,ii,ionname,ionname,x(i),y(i),z(i),ibuffer(i)
-             if (ii.ne.i) call error ('shell_simul', 'incorrect number of ions in COOR order', faterr)
-             call fatnam(atnam,ntype,ionname,itype)
-             typei(i)=itype
-           enddo
-         else
-           read(iunit,'(i5)') nions
-           write(outu,'(6x,a,i5)') 'nions ',nions
-           ntot = nsites + nions
-           if (ntot.gt.datom) call error ('shell_simul', 'ntot is greater than datom', faterr)
-           do i = nsites+1, ntot
-             read(iunit,'(a)') com
-             read(com,*) ii,typei(i),x(i),y(i),z(i),ibuffer(i)
-!             read(com,'(i5,1x,i5,1x,f10.5,1x,f10.5,1x,f10.5,1x,i4)') ii,typei(i),x(i),y(i),z(i),ibuffer(i)
-             if (ii.ne.i) call error ('shell_simul', 'incorrect number of ions in COOR order', faterr)
-           enddo
-         endif
-         natom = ntot
+       if (Qpar) then
+         read(iunit,'(a)') com
+         do while (trim(adjustl(com))(1:3).ne.'END')
+           read (com,'(x6,I5,x,A5,x5,I4,4x,3F8.3,F6.2)') jtype,wrd4,itype,rtmp%x,rtmp%y,rtmp%z,ibuf
+           if (ilast.ne.itype) then
+             call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuf))
+           endif
+           call putcoorinpar(itype,jtype,rtmp%x,rtmp%y,rtmp%z)
+           ilast=itype
+           read(iunit,'(a)') com
+         enddo
        endif  
        write(outu,'(6x,a)') 'coordinates have been read'
        call COUNT
@@ -2503,13 +2457,8 @@ do while (.not. logfinal)
        if (.not.doions.and..not.dodna) call error ('shell_simul', 'all, dna or ions missing after COOR gener', faterr)
        if (dodna) then
          do i = 1, nsites
-           x(i) = xnat(i)
-           y(i) = ynat(i)
-           z(i) = znat(i)
-           call setcar(r(i),x(i),y(i),z(i))
+           call setcar(r(i),xnat(i),ynat(i),znat(i))
          enddo
-         ntot = nsites
-         if (ntot.gt.datom) call error ('shell_simul', 'ntot is greater than datom', faterr)
        endif
        if (doions) then
          do ib = 1, nbuffer
@@ -2524,9 +2473,10 @@ do while (.not. logfinal)
            natom = natom + nat(ib)
            do i = ifirst, ilast
              typei(i) = itype
-             ibuffer(i) = ib
-             call INSERT(ib,x(i),y(i),z(i))
-             if(z(i).lt.cz) typei(i) = -itype
+             call insert(ib,rtmp%x,rtmp%y,rtmp%z) ! find new center of particle
+             call addpar(itype,kind=3,ibuf=ib) ! add particle to list
+             call insertpar(npar,rtmp) ! locate and rotate
+             if(rtmp%z.lt.cz) typei(i) = -itype
            enddo
            ifirst = ifirst + nat(ib)
            ilast = ifirst + nat(ib+1) - 1
@@ -2534,11 +2484,8 @@ do while (.not. logfinal)
              call error ('shell_simul', 'numbers of ions/sites is greater than datom', faterr)
            endif
          enddo
-         nions = natom - nsites
-         ntot = nsites + nions
-         if (ntot.gt.datom) call error ('shell_simul', 'ntot is greater than datom', faterr)
        endif ! Qbuf
-       call count       
+       call count() 
        write(outu,'(6x,a)') 'coordinates have been generated'
      elseif (check(com,'rot').and.Qnucl) then
        ! rotation for DNA sites coordinates
@@ -2924,7 +2871,7 @@ do while (.not. logfinal)
     if (.not.Qpar.and..not.Qnucl) call error ('shell_simul', 'SVDW order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
     if (.not.Qphiv) call error ('shell_simul', 'Repulsion field has not been read', faterr)
     if (Qnmcden) call error ('shell_simul', 'SVDW not compatible with NMCDEN', faterr)
-    allocate (scal(nttyp))
+    allocate (scal(netyp))
     scal=1.0
     endlog = .false.
     do while (.not. endlog)
@@ -2933,14 +2880,14 @@ do while (.not. logfinal)
       if (.not.endlog) then
         ! Obtention of ion type atnam(itype)
         call getfirst(com,wrd4)
-        call fatnam(atnam2,nttyp,wrd4,itype)
+        itype=getetyp(wrd4)
         call gtdpar(com,'scale',scal(itype),1.0)
       endif
     enddo
     Qsvdw = .true.
     write(outu,'(/6x,a/6x,a)') 'SVDW Type Scaling Factor enabled','Type   Factor'
-    do i=1,nttyp
-      write(outu,'(6x,a,3x,f10.5)') atnam2(i),scal(i)
+    do i=1,netyp
+      write(outu,'(6x,a,3x,f10.5)') etypl(i)%nam,scal(i)
     enddo
   elseif (wrd5.eq.'exit') then
   !        ---------------

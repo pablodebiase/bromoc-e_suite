@@ -35,12 +35,14 @@ type :: parpro
     integer :: sr                              !! Starting in the position vector
     integer :: ne                              !! Number of element in the particle
     integer :: kind                            !! Kind of Particle (Nucleotide, Particles, Charmm)
+    integer :: ibuf                            !! Buffer Id (only for Particles)
 end type parpro
 
 ! Particle Type
 type :: partype
     integer :: ne                              !! Number of Elements in Particle
     character*4                      :: nam    !! Particle Name
+    real                             :: chg    !! Particle Total Charge
     integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
     type(car),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
 end type partype
@@ -75,67 +77,68 @@ type(partype), allocatable, dimension(:) :: ptypl    !! Type of Particle list ::
 integer nele                                !! Total Number of elements
 type(car), allocatable, dimension(:) :: r  !! Elements Position Vector
 type(car), allocatable, dimension(:) :: f  !! Elements Force Vector
-integer, allocatable, dimension(:) :: etypls !! Elements Type List of nele size
+integer, allocatable, dimension(:) :: et !! Elements Type List of nele size
 integer, allocatable, dimension(:) :: ptypls !! Particle Type List nele size
 integer, allocatable, dimension(:) :: pels !! Particle List of nele size
 
+
 !! Used Element Types List
-integer nuet                      !! Total Number of Used Element Types in etypls
+integer nuet                      !! Total Number of Used Element Types in et
 integer, allocatable, dimension(:) :: uetl
 
 contains
 
-subroutine Merge(A,NA,B,NB,C,NC)
-integer, intent(in) :: NA,NB,NC         ! Normal usage: NA+NB = NC
-integer, intent(in out) :: A(NA)        ! B overlays C(NA+1:NC)
-integer, intent(in)     :: B(NB)
-integer, intent(in out) :: C(NC)
-integer :: I,J,K
-I = 1; J = 1; K = 1;
-do while(I <= NA .and. J <= NB)
-   if (A(I) <= B(J)) then
-      C(K) = A(I)
-      I = I+1
+subroutine merge(a,na,b,nb,c,nc)
+integer, intent(in) :: na,nb,nc         ! normal usage: na+nb = nc
+integer, intent(in out) :: a(na)        ! b overlays c(na+1:nc)
+integer, intent(in)     :: b(nb)
+integer, intent(in out) :: c(nc)
+integer :: i,j,k
+i = 1; j = 1; k = 1;
+do while(i <= na .and. j <= nb)
+   if (a(i) <= b(j)) then
+      c(k) = a(i)
+      i = i+1
    else
-      C(K) = B(J)
-      J = J+1
+      c(k) = b(j)
+      j = j+1
    endif
-   K = K + 1
+   k = k + 1
 enddo
-do while (I <= NA)
-   C(K) = A(I)
-   I = I + 1
-   K = K + 1
+do while (i <= na)
+   c(k) = a(i)
+   i = i + 1
+   k = k + 1
 enddo
 return
 end subroutine merge
  
-recursive subroutine MergeSort(A,N,T)
-integer, intent(in) :: N
-integer, dimension(N), intent(in out) :: A
-integer, dimension((N+1)/2), intent (out) :: T
-integer :: NA,NB,V
-if (N < 2) return
-if (N == 2) then
-   if (A(1) > A(2)) then
-      V = A(1)
-      A(1) = A(2)
-      A(2) = V
+recursive subroutine mergesort(a,n,t)
+integer, intent(in) :: n
+integer, dimension(n), intent(in out) :: a
+integer, dimension((n+1)/2), intent (out) :: t
+integer :: na,nb,v
+if (n < 2) return
+if (n == 2) then
+   if (a(1) > a(2)) then
+      v = a(1)
+      a(1) = a(2)
+      a(2) = v
    endif
    return
 endif      
-NA=(N+1)/2
-NB=N-NA
+na=(n+1)/2
+nb=n-na
 
-call MergeSort(A,NA,T)
-call MergeSort(A(NA+1),NB,T)
+call mergesort(a,na,t)
+call mergesort(a(na+1),nb,t)
 
-if (A(NA) > A(NA+1)) then
-   T(1:NA)=A(1:NA)
-   call Merge(T,NA,A(NA+1),NB,A,N)
+if (a(na) > a(na+1)) then
+   t(1:na)=a(1:na)
+   call merge(t,na,a(na+1),nb,a,n)
 endif
 return
-end subroutine MergeSort
+end subroutine mergesort
 
 subroutine msort(a,n)
 integer n
@@ -166,7 +169,7 @@ do i = 1,netyp
    j=1
    etul(i)=.false.
    do while (j.le.nele)
-      if (etypls(j).eq.i) then
+      if (et(j).eq.i) then
          etul(i)=.true.
          exit
       endif
@@ -175,12 +178,12 @@ do i = 1,netyp
 enddo
 ! Get Unused etyp
 nuet=1
-uetl(nuet)=etypls(1)
+uetl(nuet)=et(1)
 do i = 2,nele
    j=1
    f=.false.
    do while (j.le.nuet)
-     if (etypls(i).eq.uetl(j)) then
+     if (et(i).eq.uetl(j)) then
        f=.true.
        exit
      endif
@@ -188,7 +191,7 @@ do i = 2,nele
    enddo
    if (.not.f) then
      nuet=nuet+1
-     uetl(nuet)=etypls(i)
+     uetl(nuet)=et(i)
    endif
 enddo
 ! Sort uetl
@@ -198,18 +201,16 @@ end subroutine
 subroutine updatetypels()
 implicit none
 integer newsize,i,j,ne,sr,ptype
-if (allocated(etypls)) deallocate (etypls)
 if (allocated(ptypls)) deallocate (ptypls)
 if (allocated(pels)) deallocate (pels)
 newsize=size(r)
-allocate (etypls(newsize),ptypls(newsize),pels(newsize))
+allocate (ptypls(newsize),pels(newsize))
 do i=1,npar
   sr=parl(i)%sr
   ne=parl(i)%ne
   ptype=parl(i)%ptyp
   do j=1,ne
     ptypls(sr+j)=ptype
-    etypls(sr+j)=ptypl(ptype)%etyp(j)
     pels(sr+j)=i
   enddo
 enddo
@@ -281,31 +282,37 @@ end subroutine
 subroutine resizecvec(newsize)
 implicit none
 integer vdim,newsize
-type(car), allocatable, dimension(:) :: rtmp  !! Elements Position Vector
-type(car), allocatable, dimension(:) :: ftmp  !! Elements Force Vector
+type(car), allocatable, dimension(:) :: rtmp   !! Elements Position Vector
+type(car), allocatable, dimension(:) :: ftmp   !! Elements Force Vector
+integer, allocatable, dimension(:)   :: ettmp !! Elements Type List of nele size
+
 ! if 0
 if (newsize .lt. 1) then
     if (allocated(r)) deallocate (r)
     if (allocated(f)) deallocate (f)
+    if (allocated(et)) deallocate (et)
 endif
 ! Measure Vector Size
 vdim=size(r)
 ! Allocate double of original size in temp vectors
-allocate (rtmp(newsize),ftmp(newsize))
+allocate (rtmp(newsize),ftmp(newsize),ettmp(newsize))
 ! Copy Vectors
 if (vdim .gt. newsize) vdim = newsize
 if (allocated(r) .and. vdim .gt. 0) rtmp(1:vdim)=r(1:vdim)
 if (allocated(f) .and. vdim .gt. 0) ftmp(1:vdim)=f(1:vdim)
+if (allocated(et) .and. vdim .gt. 0) ettmp(1:vdim)=et(1:vdim)
 ! Deallocate original Vector
 if (allocated(r)) deallocate (r)
 if (allocated(f)) deallocate (f)
+if (allocated(et)) deallocate (et)
 ! Move allocations
 call move_alloc(rtmp,r)
 call move_alloc(ftmp,f)
+call move_alloc(ettmp,et)
 end subroutine
 
 ! Add Mono Particle (Particle with Single Element)
-subroutine addmonopar(ename,pname,chg,dif,eps,sig)
+subroutine addmonoptyp(ename,pname,chg,dif,eps,sig)
 implicit none
 character*(*) ename
 character*(*),optional,intent(in) :: pname
@@ -328,6 +335,7 @@ if (present(pname)) then
 else
   call addptyp(1,ename)
 endif
+ptypl(nptyp)%etyp(1)=lchg
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
 end subroutine
@@ -342,8 +350,8 @@ do while (getetyp.le.netyp)
    if (etypl(getetyp)%nam.eq.ename) return
    getetyp=getetyp+1
 enddo
-write(*,'(a,a,a)') ' * Error. Type name ',trim(adjustl(ename)),' not found'
-stop
+getetyp=0
+write(*,'(a,a,a)') 'Type name ',trim(adjustl(ename)),' not found'
 end function
 
 ! get ptyp from pname
@@ -356,8 +364,8 @@ do while (getptyp.le.nptyp)
    if (ptypl(getptyp)%nam.eq.pname) return
    getptyp=getptyp+1
 enddo
-write(*,'(a,a,a)') ' * Error. Type name ',trim(adjustl(pname)),' not found'
-stop
+getptyp=0
+write(*,'(a,a,a)') 'Type name ',trim(adjustl(pname)),' not found'
 end function
 
 ! Edit Element Type
@@ -402,24 +410,43 @@ integer ptypn, nen, etyp
 ptypl(ptypn)%etyp(nen)=etyp
 end subroutine
 
+subroutine updateptypchg(ptypn)
+implicit none
+integer ptypn,i
+real chg
+if (.not.allocated(ptypl(ptypn)%etyp)) return
+chg=0.0
+do i=1,ptypl(ptypn)%ne
+  chg=chg+etypl(ptypl(ptypn)%etyp(i))%chg
+enddo
+ptypl(ptypn)%chg=chg
+end subroutine
+
 ! Add Particle Type
-subroutine addptyp(ne,pnam)
+subroutine addptyp(ne,pnam,chg)
 implicit none
 integer ne
 character*(*) pnam
+real,optional,intent(in) :: chg 
 if (ne .lt. 1) return
 nptyp=nptyp+1
 if (nptyp .gt. size(ptypl)) call resizeptypl(nptyp)
 ptypl(nptyp)%ne = ne
 ptypl(nptyp)%nam = pnam
+if (present(chg)) then
+  ptypl(nptyp)%chg = chg
+else
+  ptypl(nptyp)%chg = 0.0
+endif
 allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne))
 end subroutine
 
 ! Add Particle Type To Particle List
-subroutine addpar(ptype,kind)
+subroutine addpar(ptype,kind,ibuf)
 implicit none
-integer ptype,lastnele,i
+integer ptype,lastnele,i,j
 integer,optional,intent(in) :: kind
+integer,optional,intent(in) :: ibuf
 if (ptype .gt. 0 .and. ptype .le. nptyp) then
   npar=npar+1
   lastnele=nele
@@ -434,10 +461,35 @@ if (ptype .gt. 0 .and. ptype .le. nptyp) then
   else
     parl(npar)%kind=0
   endif
+  if (present(ibuf)) then
+    parl(npar)%ibuf=ibuf
+  else
+    parl(npar)%ibuf=0
+  endif
   ! Copy Coordinates from Particle Type Template 
   do i=1,parl(npar)%ne
-    r(lastnele+i)=ptypl(ptype)%r(i)
+    j=lastnele+i
+    r(j)=ptypl(ptype)%r(i)
+    et(j)=ptypl(ptype)%etyp(i)
   enddo
+endif
+end subroutine
+
+subroutine insertpar(parn,rcent)
+implicit none
+type(car) :: rcent,arcent  ! Particle Centroid
+integer parn ! Particle Number 
+if (parl(parn)%ne .eq. 1) then
+  call setcarmonopar(parn,rcent)
+else
+  ! Compute Actual Centroid
+  call getcentroid(arcent,parn)
+  ! Compute Displacement: Substract Actual Centroid to New Centroid
+  call subcar2par(parn,arcent)
+  ! Add Displacement to all elements position
+  call addcar2par(parn,rcent)
+  ! Randomly rotate particle
+  call uranrot(parn)
 endif
 end subroutine
 
@@ -458,7 +510,7 @@ endif
 end subroutine
 
 ! Randomly rotates a particle
-subroutine uranrot(parn)
+subroutine uranroparn(parn)
 implicit none
 real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real, parameter :: twopi=2.0*pi
@@ -677,14 +729,17 @@ end subroutine
 
 subroutine delpar(parn)
 implicit none
-integer i,n,ne,sr,parn
+integer i,j,n,ne,sr,parn
+! If parn is out of range exit
+if (parn.gt.npar.or.parn.lt.1) return
+! if particle not of kind 3 return
+if (parl(parn)%kind.ne.3) return
+! if last particle or no more particles
 if (npar .le. 1) then
     nele=0
     npar=0
     return
 endif
-! If no more particles or parn is out of range exit
-if (parn.gt.npar.or.parn.lt.1) return
 ! If parn is the last particle just remove
 if (parn .eq. npar) then
     nele=nele-parl(parn)%ne
@@ -699,11 +754,18 @@ do while (parl(n)%ne .ne. ne .and. n.gt.parn)
 enddo
 ! If there is another of particle with the same ne closer to the end copy that one to parn's place
     ! Copy coordinates
-if (n .gt. parn) r(parl(parn)%sr+1:parl(parn)%sr+parl(parn)%ne)=r(parl(n)%sr+1:parl(n)%sr+parl(n)%ne)
+if (n .gt. parn) then
+  i=parl(parn)%sr+1:parl(parn)%sr+parl(parn)%ne
+  j=parl(n)%sr+1:parl(n)%sr+parl(n)%ne
+  r(i)=r(j)
+  et(i)=et(j)
+endif
 ! Move all coordinates backwards and remove that n particle from the coordinate vector
 sr=parl(n)%sr
 do i=sr+1,nele-ne
-    r(i)=r(i+ne)
+    j=i+ne
+    r(i)=r(j)
+    et(i)=et(j)
 enddo
 nele=nele-ne
 
@@ -717,6 +779,7 @@ do i=n,npar-1
    parl(i)%sr=parl(i+1)%sr-ne
    parl(i)%ne=parl(i+1)%ne
    parl(i)%kind=parl(i+1)%kind
+   parl(i)%ibuf=parl(i+1)%ibuf
 enddo
 npar=npar-1
 end subroutine
@@ -746,10 +809,13 @@ subroutine printpdb(nunit)
 implicit none
 integer i
 integer :: nunit
+real ibuf
 
 call updatetypels()
+!write (nunit,'(A6,I5)') 'REMARK',nele
 do i=1,nele
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3)') 'ATOM  ',i,etypl(etypls(i))%nam,ptypl(ptypls(i))%nam,pels(i),r(i)%x,r(i)%y,r(i)%z
+  ibuf=parl(pels(i))%ibuf
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(ptypls(i))%nam,pels(i),r(i)%x,r(i)%y,r(i)%z,ibuf,0.0,''
 enddo
 write (nunit,'(A)') 'END'
 end subroutine
@@ -764,7 +830,7 @@ call updatetypels()
 write(nunit,*) nele
 write(nunit,*)
 do i=1,nele
-    write(nunit,*) etypl(etypls(i))%nam,r(i)%x,r(i)%y,r(i)%z
+    write(nunit,*) etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z
 enddo
 end subroutine
 

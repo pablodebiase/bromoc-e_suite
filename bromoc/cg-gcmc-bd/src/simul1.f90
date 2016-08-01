@@ -473,7 +473,7 @@ do icycle = 1, ncycle
     endif
   endif
 
-  call count
+  call count()
 
   !Security outputfile contains coordinates and seed nnumbers
   if (Qsec) then
@@ -757,7 +757,7 @@ if (Qpar) then
   write (outu,'(6x,a,f16.8)') 'Total average number of ions ',float(sum(ncountav(1:ntype-nold)))/float(ncycle)
   write (outu,'(6x,a,i4)') 'Total number of ions ',ntot-nsites
   if (Qbuf) then
-    call count
+    call count()
     do ib = 1, nbuffer
       write (outu,'(6x,a,2i4)') 'buffer--number of ions ',ib,nat(ib)
     enddo

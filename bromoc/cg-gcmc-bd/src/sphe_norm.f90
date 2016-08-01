@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE SPHE_NORM(NMPOL,BNORM,SRDIST)
+subroutine sphe_norm(nmpol,bnorm,srdist)
 !-----------------------------------------------------------------------
 !calculate the normalization constants of the spherical harmonics basis functions
 !input: SRDIST -> radius sphere
@@ -25,36 +25,36 @@ SUBROUTINE SPHE_NORM(NMPOL,BNORM,SRDIST)
 
 use constamod
 implicit none
-INTEGER NMPOL
-REAL  BNORM(*),SRDIST
+integer nmpol
+real  bnorm(*),srdist
 !local
-INTEGER L,M,NORDER
-REAL  SR2,LPART,RPART,UPFACTO,DNFACTO,FACTORI,ipi,itwopi
+integer l,m,norder
+real  sr2,lpart,rpart,upfacto,dnfacto,factori,ipi,itwopi
 
 !always the same order in spherical harmonics
-NORDER=1
-SR2=SRDIST*SRDIST
-RPART=SR2*SRDIST
+norder=1
+sr2=srdist*srdist
+rpart=sr2*srdist
 
 itwopi=1.0/twopi
-LPART=1.5*ITWOPI
-ipi=0.5*ITWOPI
-BNORM(NORDER)=SQRT(LPART/RPART)
-DO L=1,NMPOL-1
-   LPART=(2.0*L+1.0)*(2.0*L+3.0)*ipi
-   RPART=RPART*SR2
-   NORDER=NORDER+1
-   BNORM(NORDER)=SQRT(LPART/RPART)
-   LPART=(2.0*L+1.0)*(2.0*L+3.0)*ITWOPI       ! change for m > 0
-   DO M=1,L
-      NORDER=NORDER+1 
-      UPFACTO=FACTORI(L-M)
-      DNFACTO=FACTORI(L+M)
-      BNORM(NORDER)=SQRT(LPART*UPFACTO/(RPART*DNFACTO))
-      NORDER=NORDER+1 
-      BNORM(NORDER)=BNORM(NORDER-1)
-   ENDDO
-ENDDO
+lpart=1.5*itwopi
+ipi=0.5*itwopi
+bnorm(norder)=sqrt(lpart/rpart)
+do l=1,nmpol-1
+   lpart=(2.0*l+1.0)*(2.0*l+3.0)*ipi
+   rpart=rpart*sr2
+   norder=norder+1
+   bnorm(norder)=sqrt(lpart/rpart)
+   lpart=(2.0*l+1.0)*(2.0*l+3.0)*itwopi       ! change for m > 0
+   do m=1,l
+      norder=norder+1 
+      upfacto=factori(l-m)
+      dnfacto=factori(l+m)
+      bnorm(norder)=sqrt(lpart*upfacto/(rpart*dnfacto))
+      norder=norder+1 
+      bnorm(norder)=bnorm(norder-1)
+   enddo
+enddo
 
-RETURN
-END
+return
+end subroutine

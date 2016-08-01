@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE TESTFIRST(tol,delta)
+subroutine testfirst(tol,delta)
 use grandmod
 use constamod
 use stdiomod
@@ -91,4 +91,4 @@ endif
 write(outu,*)
 
 return
-end
+end subroutine

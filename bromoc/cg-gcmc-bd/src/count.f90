@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBROUTINE COUNT
+subroutine count()
 !     Count all the ions and assign them to their appropriate buffer
 !     nbuffer: the number of buffers in the system
 !     ntot: number of particles in the system
