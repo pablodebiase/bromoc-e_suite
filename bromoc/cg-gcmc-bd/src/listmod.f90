@@ -494,7 +494,7 @@ if (parl(parn)%ne .eq. 1) then
   call setcarmonopar(parn,rcent)
 else
   ! Compute Actual Centroid
-  call getcentroid(arcent,parn)
+  call getcentroid(parn,arcent)
   ! Compute Displacement: Substract Actual Centroid to New Centroid
   call subcar2par(parn,arcent)
   ! Add Displacement to all elements position
@@ -512,7 +512,7 @@ if (parl(parn)%ne .eq. 1) then
   call setcarmonopar(parn,rcent)
 else
   ! Compute Actual Centroid
-  call getcentroid(arcent,parn)
+  call getcentroid(parn,arcent)
   ! Compute Displacement: Substract Actual Centroid to New Centroid
   call subcar2par(parn,arcent)
   ! Add Displacement to all elements position
@@ -556,7 +556,7 @@ rot(3,1)=x*z*ocosp-y*sinp
 rot(3,2)=y*z*ocosp+x*sinp
 rot(3,3)=cosp+z*z*ocosp
 ! Get Centroid
-call getcentroid(cent,parn)
+call getcentroid(parn,cent)
 ! Remove Centroid
 call subcar2par(parn,cent)
 ! Rotate Particle
@@ -590,11 +590,12 @@ rc%y=y
 rc%z=z
 end subroutine
 
-subroutine getcentroid(rc,parn)
+subroutine getcentroid(parn,rc)
 implicit none
-type(car) :: rc  ! Particle Centroid
-integer i,ne,sr,parn ! Particle Number 
+integer i,ne,sr
 real ine
+integer,intent(in)    :: parn ! Particle Number 
+type(car),intent(out) :: rc  ! Particle Centroid
 ne=parl(parn)%ne
 ine=1.0/ne
 sr=parl(parn)%sr

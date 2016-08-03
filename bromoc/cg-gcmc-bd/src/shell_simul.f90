@@ -1698,7 +1698,7 @@ do while (.not. logfinal)
        if (.not.endlog) then
          ! Obtention of ion type     
          call getfirst(com,wrd4)
-         itype=getetyp(wrd4)
+         itype=getptyp(wrd4)
          ! Repulsive membrane potential [real*8,default=0]
          call gtdpar(com,'amplmemb',ampl1(itype),0.0)
          if (ampl1(itype).lt.0.0) call error ('shell_simul', 'Repulsive membrane potential has a negative value', faterr)

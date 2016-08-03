@@ -24,10 +24,11 @@ use constamod
 use gsbpmod
 use nucleotmod
 use errormod
+use listmod
 use charfuncmod, only: sng,i8toi   !command parser
 
 implicit none
-integer*8   ncycle,i,icycle,nsec2,nsave,nsfbs,ncountav(nptyp)
+integer*8   ncycle,i,icycle,nsec2,nsave,nsfbs,ncountav(nptnuc+1:nptyp)
 integer ngcmc, nmcm, nbd, ntras, nsec, j,istep,np1,np2,ii
 real    vfbs
 integer   iat, jat, itype, ib, n, iz, ir
@@ -35,7 +36,7 @@ real    naver
 !real*16 dener
 real dener
 real    current, area, zz, vol1, vol2, pres, vir
-integer   ncount(nptyp)
+integer   ncount(nptnuc+1:nptyp)
 integer   prob(nbuffer,0:datom) 
 integer   prob2(ntype,0:datom) 
 integer   prob3(ntype,0:datom)      
@@ -43,14 +44,15 @@ integer   irmax, nzmax
 integer   npoints,iseed,pncross(ntype-nold,cntpts)
 parameter (npoints = 10000)
 real    dr, idelz,delz, zmini, dist
-real    gr(ntype,npoints), rho(ntype,npoints), rDNA(6,npoints), sgr(ntype) 
+real    gr(ntype,npoints), rho(ntype,npoints), rDNA(6,npoints), sgr(ntype)
 real    r,flux 
 real,parameter :: i3 = 1.0/3.0
+type(car) rr,rs
 
 !ion pairing S frequency
 integer   nion1(ntype,npoints) 
-integer   npair1(ntype,npoints),npair2(ntype,npoints) 
-integer   npair3(ntype,npoints),npair4(ntype,npoints) 
+integer   npair1(nptyp,npoints),npair2(nptyp,npoints) 
+integer   npair3(nptyp,npoints),npair4(nptyp,npoints)
 real    s1,s2,itvol
 
 !energy profiles
@@ -127,7 +129,7 @@ if (Qenergy) then
           zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
-          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
+          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
         endif
       enddo
     endif 
@@ -530,11 +532,12 @@ do icycle = 1, ncycle
       do iat = nparnuc+1, npar
         itype = parl(iat)%ptyp
         if (Qmemb) then ! cylindrical channel
-          r = sqrt(x(iat)**2+y(iat)**2)
-          ok = z(iat).ge.zmemb1.and.z(iat).le.zmemb2
+          call getcentroid(ia, rr)
+          r = sqrt(rr%x**2+rr%y**2)
+          ok = rr%z.ge.zmemb1.and.rr%z.le.zmemb2
           if (ok) ok = rcylinder(itype).gt.0.0.and.r.le.rcylinder(itype)
         else ! otherwise
-          ok = z(iat).ge.czmin.and.z(iat).le.czmax
+          ok = r%z.ge.czmin.and.r%z.le.czmax
         endif
         if (ok) ncount(itype) = ncount(itype) + 1
       enddo
@@ -544,8 +547,8 @@ do icycle = 1, ncycle
     endif
     !system
     ncount = 0 
-    do iat = nelenuc+1, nele
-      itype = pt(iat)
+    do iat = nparnuc+1, npar
+      itype = parl(iat)%ptyp
       ncount(itype) = ncount(itype) + 1
     enddo
     do itype = nptnuc+1, nptyp
@@ -555,17 +558,19 @@ do icycle = 1, ncycle
   !ion pairing analysis (S frequency)
   if (Qionpair) then         
     if (mod(icycle,nanal).eq.0) then
-      do itype = nold+1, ntype
-        do iat = nelenuc+1, nele
-          if (abs(typei(iat)).eq.itype) then 
-            iz = int((z(iat)-zmini)*idelz) + 1
+      do itype = nptnuc+1, nptyp
+        do iat = nparnuc+1, npar
+          if (parl(iat)%ptyp.eq.itype) then 
+            call getcentroid(iat, rr)
+            iz = int((rr%z-zmini)*idelz) + 1
             if (iz.le.nzmax) then
               nion1(itype,iz) = nion1(itype,iz) + 1
               np1 = 0
               np2 = 0
-              do jat = nelenuc+1, nele
-                if (abs(typei(jat)).ne.itype .and.abs(x(iat)-x(jat)).le.s2 .and.abs(y(iat)-y(jat)).le.s2 .and.abs(z(iat)-z(jat)).le.s2) then        
-                  r = sqrt((x(iat)-x(jat))**2 + (y(iat)-y(jat))**2 + (z(iat)-z(jat))**2)
+              do jat = nparnuc+1, npar
+                call getcentroid(jat, rs)
+                if (parl(jat)%ptyp.ne.itype.and.abs(rr%x-rs%x).le.s2.and.abs(rr%y-rs%y).le.s2.and.abs(rr%z-rs%z).le.s2) then
+                  r = sqrt((rr%x-rs%x)**2 + (rr%y-rs%y)**2 + (rr%z-rs%z)**2)
                   if (r.le.s1) then
                     np1 = np1 + 1
                   else if (r.gt.s1.and.r.le.s2) then
@@ -591,10 +596,11 @@ do icycle = 1, ncycle
   !enegy profiles along Z-axis
   if (Qenerprofile) then
     if (mod(icycle,nanal).eq.0) then      
-      do itype = nold+1, ntype
-        do iat= nelenuc+1, nele
-          if (abs(typei(iat)).eq.itype) then
-            iz = int((z(iat)-zmini)*idelz) + 1
+      do itype = nptnuc+1, nptyp
+        do iat= nparnuc+1, npar
+          if (parl(iat)%ptyp.eq.itype) then
+            call getcentroid(iat, rr)
+            iz = int((rr%z-zmini)*idelz) + 1
             if (iz.le.nzmax) then
               nion2(itype,iz) = nion2(itype,iz) + 1
               call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
@@ -633,7 +639,7 @@ do icycle = 1, ncycle
             zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
           else
-            write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
+            write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
           endif
         enddo
       endif 
@@ -654,18 +660,18 @@ do icycle = 1, ncycle
             zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
           else
-            write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
+            write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
           endif
         enddo
       endif 
     endif        
     if (Qpar.and.ngcmc.gt.0) then
       ncount = 0
-      do iat = nelenuc+1, nele
-        itype = pt(iat)
+      do iat = nparnuc+1, npar
+        itype = parl(iat)%ptyp
         ncount(itype) = ncount(itype) + 1
       enddo
-      write(ln,*) '          ',(atnam(itype),'>',ncount(itype),' | ',itype=nptnucd+1,nptyp)
+      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
       if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
       write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
@@ -693,7 +699,7 @@ if (nprint.eq.0) then
           zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
-          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
+          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
         endif
       enddo
     endif 
@@ -714,19 +720,19 @@ if (nprint.eq.0) then
           zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
-          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
+          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
         endif
       enddo
     endif 
     write(outu,'(10x,a)') '----------------------------------------------------------------------------------------'
   endif   
   if (Qpar.and.ngcmc.gt.0) then
-    ncount(1:ntype-nold) = 0
-    do iat = nelenuc+1, nele
-      itype = abs(typei(iat))-nold
+    ncount = 0
+    do iat = nparnuc+1, npar
+      itype = parl(iat)%ptyp
       ncount(itype) = ncount(itype) + 1
     enddo
-    write(ln,*) '          ',(atnam(itype),'>',ncount(itype-nold),' | ',itype=nold+1,ntype)
+    write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
     write(outu,'(a)') trim(ln)
     if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
       write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
@@ -736,16 +742,16 @@ endif
 if (Qrdna) then
   write(outu,*)
   write(outu,*) 'DNA average density profile: '
-  write(outu,*) 'ntype = ',nttyp,' delz = ',delz,' zmin = ',zmini
-  write(outu,*) 'DNA sites types: ',(atnam2(ii),ii=1,nttyp)
+  write(outu,*) 'ntype = ',netyp,' delz = ',delz,' zmin = ',zmini
+  write(outu,*) 'DNA sites types: ',(etypl(ii)%nam,ii=1,netyp)
   do iz = 1, nzmax
     zz = zmini + (iz*1.0-0.5)*delz
     area = lx*ly
     if (Qsphere) area = pi*(Rmax(1)**2-zz**2)
-    do itype = 1, nttyp
+    do itype = 1, netyp
       rDNA(itype,iz) = rDNA(itype,iz)/(ncycle*delz*area)
     enddo
-    write(outu,'(2f10.3,2x,8(e11.4,2x))') zz, area, (rDNA(ii,iz),ii=1,nttyp)
+    write(outu,'(2f10.3,2x,8(e11.4,2x))') zz, area, (rDNA(ii,iz),ii=1,netyp)
   enddo 
 endif 
 
@@ -754,7 +760,7 @@ if (Qpar) then
   write (outu,'(6x,a)') 'Results from the simulation: '
   write (outu,'(6x,a)') '-----------------------------'
 
-  write (outu,'(6x,a,f16.8)') 'Total average number of ions ',float(sum(ncountav(1:ntype-nold)))/float(ncycle)
+  write (outu,'(6x,a,f16.8)') 'Total average number of ions ',float(sum(ncountav(nptnuc+1:nptyp)))/float(ncycle)
   write (outu,'(6x,a,i4)') 'Total number of ions ',nele-nelenuc
   if (Qbuf) then
     call count()
@@ -768,18 +774,18 @@ if (Qpar) then
   write (outu,'(6x,a)') 'Statistics: '
   write (outu,*) 
   ncount = 0
-  do ii = nelenuc+1, nele
-    itype = abs(typei(ii))-nold
+  do ii = nparnuc+1, npar
+    itype = parl(ii)%ptyp
     ncount(itype) = ncount(itype) + 1
   enddo
   write(outu,'(6x,a)') 'Last total number of non-fixed ions per type:' 
-  do itype=1,ntype-nold
-    write(outu,'(6x,a,a,i0)') atnam(itype+nold),' =  ',ncount(itype)
+  do itype=nptnuc+1,nptyp
+    write(outu,'(6x,a,a,i0)') ptypl(itype)%nam,' =  ',ncount(itype)
   enddo
   write (outu,*)
   write(outu,'(6x,a)') 'Average number of ions per type:' 
-  do itype = 1,ntype-nold
-    write (outu,'(6x,a,a,f16.8)') atnam(itype+nold),' =  ',float(ncountav(itype))/float(ncycle)
+  do itype = nptnuc+1,nptyp
+    write (outu,'(6x,a,a,f16.8)') ptypl(itype)%nam,' =  ',float(ncountav(itype))/float(ncycle)
   enddo
   write (outu,*)
   
@@ -788,8 +794,8 @@ if (Qpar) then
       do ii=1,cntpts 
         current = 0.0
         write (outu,'(6x,a,i0,a,f11.4)') 'Counting Zone= ',ii,'  Counting z-pos= ',zcont(ii)
-        do itype = 1, ntype-nold
-          write (outu,'(8x,a,a)') 'Particle type ',atnam(itype+nold)
+        do itype = 1, nptnuc+1, nptyp
+          write (outu,'(8x,a,a)') 'Particle type ',ptypl(itype)%nam
           write (outu,'(8x,2(a,i7))') 'forward   ',nforward(itype,ii),'   backward ',nbackward(itype,ii)
           write (outu,'(8x,a,i7)') 'Net Number of particle going forward:',nforward(itype,ii)-nbackward(itype,ii)
           write(outu,*) 
@@ -927,8 +933,8 @@ if (Qpar) then
   if (Qionpair) then
     write (outu,*)
     write (outu,'(6x,a)') 'Ion Pairing Analysis: '
-    do itype = nold+1, ntype
-      write (outu,*) atnam(itype)
+    do itype = nptnuc+1, nptyp
+      write (outu,*) ptypl(itype)%nam
       do iz = 1, nzmax
         zz = zmini+(iz*1.0-0.5)*delz
         if (nion1(itype,iz).gt.0) then
@@ -944,8 +950,8 @@ if (Qpar) then
     write (outu,*)
     write (outu,'(6x,a)') 'Energy profile along the Z-axis: '
     write (outu,'(6x,a)') 'zz--probability--etot--eion--esf--erf'//'--egvdw'
-    do itype = nold+1, ntype
-      write (outu,'(6x,a,1x,a)') 'atom',atnam(itype)
+    do itype = nptnuc+1, nptyp
+      write (outu,'(6x,a,1x,a)') 'atom',ptypl(itype)%nam
       do iz = 1, nzmax
         zz = zmini+(iz*1.0-0.5)*delz
         if (nion2(itype,iz).gt.0) then
