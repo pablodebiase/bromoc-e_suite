@@ -1380,7 +1380,7 @@ do while (.not. logfinal)
        iuncnt = unvec(iuncnt)
        call gtcrpar(com,'zcont',cntpts,word)
        if (cntpts.le.0) call error ('shell_simul','zcont cannot be empty or ommited if countions present',faterr)
-       allocate (zcont(cntpts),nbackward(1:ntype-nold,cntpts),nforward(1:ntype-nold,cntpts))
+       allocate (zcont(cntpts),nbackward(nptnuc+1:nptyp,cntpts),nforward(nptnuc+1:nptyp,cntpts))
        call gtcdpar(word,zcont)
      endif
 
@@ -1458,7 +1458,7 @@ do while (.not. logfinal)
        if (czmin.gt.czmax) call error ('shell_simul', 'minimum position is greater than maximum position of the channel', faterr)
      endif
      if (Qgr) then
-       call gtipar(com,'ion',igr,nelenuc+1)
+       call gtipar(com,'ion',igr,nparnuc+1)
        if (igr.le.0 .or. igr.gt.(nelenuc)) call error ('shell_simul', 'fixed reference ion is not adequate in SIMUL order', faterr)
      endif
      nsfbs = ncycle

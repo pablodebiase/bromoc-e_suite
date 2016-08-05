@@ -36,29 +36,29 @@ use grandmod
 use nucleotmod
 use stdiomod
 use constamod
+use listmod
 implicit none
 integer*8 icyst
-integer i,j,nt,ncount(ntype-nold),ncross(ntype-nold,cntpts),pncross(ntype-nold,cntpts) 
-real curr(ntype-nold,cntpts),currave(ntype-nold,cntpts),cnst,cnst2
+integer i,j,ncount(nptnuc+1:nptyp),ncross(nptnuc+1:nptyp,cntpts),pncross(nptnuc+1:nptyp,cntpts) 
+real curr(nptnuc+1:nptyp,cntpts),currave(nptnuc+1:nptyp,cntpts),cnst,cnst2
 character*8192 ln
 
-nt=ntype-nold
 cnst=coulomb*ipico**2/(dt*float(icyst))
 cnst2=coulomb*ipico**2/(dt*float(svcntfq))
 
 ncount = 0
-do i = nelenuc+1, nele
-  j = abs(typei(i))-nold
+do i = nparnuc+1, npar
+  j = parl(i)%ptyp
   ncount(j) = ncount(j) + 1
 enddo
 ncross=nforward-nbackward
 currave=float(ncross)*cnst  ! in pico amperes
 curr=float(ncross-pncross)*cnst2 ! in pico amperes
-do j=1,nt 
-  write(ln,*) atnam(j+nold),icyst,float(icyst)*dt,ncount(j),(zcont(i),nforward(j,i),nbackward(j,i),curr(j,i)*cg(j+nold),currave(j,i)*cg(j+nold),i=1,cntpts)
+do j=nptnuc+1,nptyp
+  write(ln,*) ptypl(j)%nam,icyst,float(icyst)*dt,ncount(j),(zcont(i),nforward(j,i),nbackward(j,i),curr(j,i)*cg(j+nold),currave(j,i)*cg(j+nold),i=1,cntpts)
   write(iuncnt,'(a)') trim(ln)
 enddo
-write(ln,*) 'TOT ',icyst,float(icyst)*dt,(zcont(i),sum(curr(1:nt,i)*cg(nold+1:ntype)),sum(currave(1:nt,i)*cg(nold+1:ntype)),i=1,cntpts)
+write(ln,*) 'TOT ',icyst,float(icyst)*dt,(zcont(i),sum(curr(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%chg),sum(currave(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%chg),i=1,cntpts)
 write(iuncnt,'(a)') trim(ln)
 pncross=ncross
 end subroutine

@@ -38,29 +38,29 @@ real dener
 real    current, area, zz, vol1, vol2, pres, vir
 integer   ncount(nptnuc+1:nptyp)
 integer   prob(nbuffer,0:datom) 
-integer   prob2(ntype,0:datom) 
-integer   prob3(ntype,0:datom)      
+integer   prob2(nptyp,0:datom) 
+integer   prob3(nptyp,0:datom)      
 integer   irmax, nzmax
-integer   npoints,iseed,pncross(ntype-nold,cntpts)
+integer   npoints,iseed,pncross(nptnuc+1:nptyp,cntpts)
 parameter (npoints = 10000)
-real    dr, idelz,delz, zmini, dist
-real    gr(ntype,npoints), rho(ntype,npoints), rDNA(6,npoints), sgr(ntype)
+real    idr, dr, idelz,delz, zmini, dist
+real    gr(nptyp,npoints), rho(nptyp,npoints), rDNA(6,npoints), sgr(nptyp)
 real    r,flux 
 real,parameter :: i3 = 1.0/3.0
 type(car) rr,rs
 
 !ion pairing S frequency
-integer   nion1(ntype,npoints) 
+integer   nion1(nptyp,npoints) 
+integer   nion2(nptyp,npoints) 
 integer   npair1(nptyp,npoints),npair2(nptyp,npoints) 
 integer   npair3(nptyp,npoints),npair4(nptyp,npoints)
 real    s1,s2,itvol
 
 !energy profiles
-integer  nion2(ntype,npoints) 
-!real*16   etmp,etot(ntype,npoints),eion(ntype,npoints) 
-!real*16   erf(ntype,npoints),esf(ntype,npoints), egvdw(ntype,npoints)
-real   etmp,etot(ntype,npoints),eion(ntype,npoints) 
-real   erf(ntype,npoints),esf(ntype,npoints), egvdw(ntype,npoints)
+!real*16   etmp,etot(nptyp,npoints),eion(nptyp,npoints) 
+!real*16   erf(nptyp,npoints),esf(nptyp,npoints), egvdw(nptyp,npoints)
+real   etmp,etot(nptyp,npoints),eion(nptyp,npoints) 
+real   erf(nptyp,npoints),esf(nptyp,npoints), egvdw(nptyp,npoints)
 
 !fraction of denatured bases 
 real  ibond, ftime
@@ -205,14 +205,14 @@ endif
 if (Qprob) then
 !ii. number probability in the system
   do iat = 0, datom
-    do itype = nold+1, ntype
+    do itype = nptnuc+1, nptyp
       prob3(itype,iat)  = 0   
     enddo
   enddo
 
 !iii. number probability in the channel
   do iat = 0, datom 
-    do itype = nold+1, ntype
+    do itype = nptnuc+1, nptyp
       prob2(itype,iat)  = 0 
     enddo
   enddo
@@ -231,14 +231,10 @@ if (Qrho .or. Qgr) then
 !along the Z-axis rho(z)
   irmax = 0
   dr    = 0.1 ! for g(r): small fixed distance
-  do itype = nold+1, ntype 
-    sgr(itype) = 0.0
-    do iz = 1, npoints
-      rho(itype,iz) = 0.0
-      gr(itype,iz)  = 0.0
-    enddo
-  enddo
-
+  idr = 1/dr
+  sgr = 0.0
+  rho = 0.0
+  gr  = 0.0
 endif ! Qrho.or.Qgr
 
 !vi. average density profile along the Z-axis for DNA sites rDNA
@@ -254,7 +250,7 @@ if (Qionpair) then
 !vii. ion pairing S frequency
   s1 = 4.0
   s2 = 6.45
-  do itype = nold+1, ntype
+  do itype = nptnuc+1, nptyp
     do iz = 1, npoints
       nion1(itype,iz)  = 0
       npair1(itype,iz) = 0
@@ -267,7 +263,7 @@ endif ! Qionpair
 
 if (Qenerprofile) then
 !viii. energy profiles
-  do itype  = nold+1, ntype
+  do itype = nptnuc+1, nptyp
     do iz = 1, npoints
       nion2(itype,iz)  = 0
       etot(itype,iz)   = 0.0
@@ -347,7 +343,7 @@ endif
 kbtdt = dt * ikbt
 fact0n1=diffnuc*kbtdna*dt
 fact0n2=sqrt(2.0*dt*diffnuc)
-do ii=1+nold,ntype
+do ii=1+netnuc,netyp
   fact1a(ii)=diffusion(ii)*kBTdt
   fact2a(ii)=sqrt(2.0*dt*diffusion(ii))
 enddo
@@ -491,36 +487,33 @@ do icycle = 1, ncycle
 
   !average density profile along the Z-axis                  
   if (Qrho) then
-    do iat = nelenuc+1, nele
-      itype = abs(typei(iat))
-      iz = int((z(iat)-zmini)*idelz) + 1
-      if (iz.le.nzmax) then
-        rho(itype,iz) = rho(itype,iz) + 1.0
-      endif
+    do iat = nparnuc+1, npar
+      itype = parl(iat)%ptyp
+      call getcentroid(ia, rr)
+      iz = int((rr%z-zmini)*idelz) + 1
+      if (iz.le.nzmax) rho(itype,iz) = rho(itype,iz) + 1.0
     enddo
   endif ! Qrho
   !average density profile along the Z-axis for DNA sites
   if (Qrdna) then
     do iat = 1, nelenuc
-      itype = typtyp(iat)
-      iz = int((z(iat)-zmini)*idelz) + 1
-      if (iz.le.nzmax) then
-        rDNA(itype,iz) = rDNA(itype,iz) + 1.0
-      endif
+      itype = et(iat)
+      iz = int((r(iat)%z-zmini)*idelz) + 1
+      if (iz.le.nzmax) rDNA(itype,iz) = rDNA(itype,iz) + 1.0
     enddo
   endif ! Qrdna
   !radial distribution function 
   if (Qgr) then
-    do iat = nelenuc+1, nele
-      itype = abs(typei(iat))
-      dist = (x(iat)-x(igr))**2+(y(iat)-y(igr))**2+(z(iat)-z(igr))**2
+    call getcentroid(igr, rs)
+    do iat = nparnuc+1, npar
+      itype = parl(iat)%ptyp
+      call getcentroid(iat, rr)
+      dist = (rr%x-rs%x)**2+(rr%y-rs%y)**2+(rr%z-rs%z)**2
       dist = sqrt(dist) ! distance
-      ir = int(dist/dr) + 1 ! spherical shell
+      ir = int(dist*idr) + 1 ! spherical shell
       if (ir.gt.irmax) irmax = ir
       if (irmax.gt.npoints) irmax = npoints
-      if (ir.le.npoints) then
-        gr(itype,ir) = gr(itype,ir) + 1.0
-      endif
+      if (ir.le.npoints) gr(itype,ir) = gr(itype,ir) + 1.0
     enddo 
   endif ! Qgr
   !average probability distributions
@@ -531,13 +524,13 @@ do icycle = 1, ncycle
       ncount = 0 
       do iat = nparnuc+1, npar
         itype = parl(iat)%ptyp
+        call getcentroid(ia, rr)
         if (Qmemb) then ! cylindrical channel
-          call getcentroid(ia, rr)
           r = sqrt(rr%x**2+rr%y**2)
           ok = rr%z.ge.zmemb1.and.rr%z.le.zmemb2
           if (ok) ok = rcylinder(itype).gt.0.0.and.r.le.rcylinder(itype)
         else ! otherwise
-          ok = r%z.ge.czmin.and.r%z.le.czmax
+          ok = rr%z.ge.czmin.and.rr%z.le.czmax
         endif
         if (ok) ncount(itype) = ncount(itype) + 1
       enddo
@@ -742,7 +735,7 @@ endif
 if (Qrdna) then
   write(outu,*)
   write(outu,*) 'DNA average density profile: '
-  write(outu,*) 'ntype = ',netyp,' delz = ',delz,' zmin = ',zmini
+  write(outu,*) 'netyp = ',netyp,' delz = ',delz,' zmin = ',zmini
   write(outu,*) 'DNA sites types: ',(etypl(ii)%nam,ii=1,netyp)
   do iz = 1, nzmax
     zz = zmini + (iz*1.0-0.5)*delz
@@ -801,8 +794,8 @@ if (Qpar) then
           write(outu,*) 
           flux = (nforward(itype,ii)-nbackward(itype,ii))/(dt*float(nbd*ncycle))
           write (outu,'(8x,a,e11.4)') 'Flux in [particle/ps]   ',flux
-          write (outu,'(8x,a,e11.4)') 'Current [in pA]         ',cg(itype+nold)*(flux*coulomb*ipico**2)
-          current=current+cg(itype+nold)*(flux*coulomb*ipico**2)
+          write (outu,'(8x,a,e11.4)') 'Current [in pA]         ',ptypl(itype)%chg*flux*coulomb*ipico**2
+          current=current+ptypl(itype)%chg*flux*coulomb*ipico**2
           write (outu,*) 
         enddo ! itype
         write (outu,'(8x,a,e11.4)') 'Total Current [in pA]               ',current
@@ -869,10 +862,10 @@ if (Qpar) then
   if (Qrho) then
     write (outu,*)
     write (outu,*) 'Average density profile: '
-    write (outu,*) 'ntype = ',ntype-nold,' delz = ',delz,' zmin = ',zmini
+    write (outu,*) 'nptyp = ',nptyp-nptnuc,' delz = ',delz,' zmin = ',zmini
     do iz = 1, nzmax
       zz = zmini+(iz*1.0-0.5)*delz
-      do itype = nold+1, ntype
+      do itype = nptnuc+1, nptyp
         if (Qsphere) then
           logvab = .false.
           ib = 0
@@ -889,7 +882,7 @@ if (Qpar) then
         endif
         rho(itype,iz)=rho(itype,iz)/(ncycle*delz*area)
       enddo
-      write (outu,'(2f10.3,2x,8(e11.4,2x))') zz,area,(rho(ii,iz),ii=nold+1,ntype)
+      write (outu,'(2f10.3,2x,8(e11.4,2x))') zz,area,(rho(ii,iz),ii=nptnuc+1,nptyp)
     enddo
   endif ! Qrho
 
@@ -897,14 +890,14 @@ if (Qpar) then
     write (outu,*)
     write (outu,*) 'Integration number : '
     do ir = 1, irmax
-      do itype = nold+1, ntype
+      do itype = nptnuc+1, nptyp
          sgr(itype)=sgr(itype)+gr(itype,ir)/ncycle
       enddo
-      write (outu,'(f12.3,8e17.4)') (ir*1.0-0.5)*dr,(sgr(ii),ii=nold+1,ntype)
+      write (outu,'(f12.3,8e17.4)') (ir*1.0-0.5)*dr,(sgr(ii),ii=nptnuc+1,nptyp)
     enddo
     write(outu,*)
     write(outu,*) 'Radial distribution function : '
-    do itype= nold+1, ntype
+    do itype= nptnuc+1, nptyp
       ! obtention index for density in the buffer
       ib = 1
       ok = .true.
@@ -926,7 +919,7 @@ if (Qpar) then
       enddo
     enddo
     do ir = 1, irmax
-      write (outu,'(f12.3,8e17.4)') (ir*1.0-0.5)*dr,(gr(ii,ir),ii=nold+1,ntype)
+      write (outu,'(f12.3,8e17.4)') (ir*1.0-0.5)*dr,(gr(ii,ir),ii=nptnuc+1, nptyp)
     enddo
   endif ! Qgr
 
