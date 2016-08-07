@@ -24,36 +24,26 @@ use errormod
 
 implicit none
 integer ninit, nfinal, itype, i
-integer nfloc(1:ntype-nold,cntpts),nbloc(1:ntype-nold,cntpts)
 real,external :: rgauss
 real delx, dely, delz
 real zold
 
-!$omp parallel private(i,itype,zold,delx,dely,delz,nfloc,nbloc)
-nfloc=0
-nbloc=0
+!$omp parallel private(i,itype,zold,delx,dely,delz)
 !$omp do
 do i = ninit, nfinal
-  itype = abs(typei(i))
-  delx = fx(i)*fact1a(itype)
-  dely = fy(i)*fact1a(itype)
-  delz = fz(i)*fact1a(itype)
+  itype = et(i)
+  delx = f(i)%x*fact1a(itype)
+  dely = f(i)%y*fact1a(itype)
+  delz = f(i)%z*fact1a(itype)
   if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
   if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
   if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-  x(i) = x(i) + delx + fact2a(itype)*rgauss()
-  y(i) = y(i) + dely + fact2a(itype)*rgauss()
-  zold = z(i)
-  z(i) = z(i) + delz + fact2a(itype)*rgauss()
-! Keep track of the net flux of particle
-  if (Qcountion) call countions(zold,z(i),itype-nold,nfloc,nbloc)
-  call fixcoor(x(i),y(i),z(i))
+  r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
+  r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
+  r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
+  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
 !$omp end do
-!$omp critical
-nforward = nforward + nfloc
-nbackward = nbackward + nbloc
-!$omp end critical
 !$omp end parallel
 return
 end subroutine

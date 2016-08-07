@@ -28,7 +28,7 @@ parameter (dbuff = 2*dtype)
 !parameter (dindx = dtype*(dtype+1)/2)
 real,external :: rndm,rndm1
 real    ikbt,ikbtdna
-real    temp,kbt,fact0n1,fact0n2,kbtdt,dnatemp,kbtdna
+real    temp,kbt,kBTdt,dnatemp,kbtdna
 real*8 runtime
 integer nbuffer
 

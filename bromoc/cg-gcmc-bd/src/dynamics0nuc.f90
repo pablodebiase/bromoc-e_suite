@@ -24,23 +24,26 @@ use nucleotmod
 use errormod
 
 implicit none
-integer ninit, nfinal, i
+integer ninit, nfinal, i, itype
 real,external :: rgauss
 real delx, dely, delz
 
 do i = ninit, nfinal
   if (stfree(i)) then
-    delx = fx(i)*fact0n1
-    dely = fy(i)*fact0n1
-    delz = fz(i)*fact0n1
+    itype = et(i)
+    delx = f(i)%x*fact1a(itype)
+    dely = f(i)%y*fact1a(itype)
+    delz = f(i)%z*fact1a(itype)
     if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
     if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
     if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-    x(i) = x(i) + delx + fact0n2*rgauss()
-    y(i) = y(i) + dely + fact0n2*rgauss()
-    z(i) = z(i) + delz + fact0n2*rgauss()
-    if (.not.Qdnafree) call fixcoor(x(i),y(i),z(i))
+    r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
+    r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
+    r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
+    ! Fix Coor
+    if (.not.Qdnafree) call fixcoor(r(i)%x,r(i)%y,r(i)%z)
   endif 
 enddo
 return
-end
+end subroutine
+

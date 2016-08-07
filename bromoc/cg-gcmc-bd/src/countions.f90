@@ -16,17 +16,28 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine countions(zold,zi,i,nf,nb)
+
+subroutine countallions()
+use listmod
 use grandmod
 implicit none
-integer i,j,nf(1:ntype-nold,cntpts),nb(1:ntype-nold,cntpts)
+integer i
+do i=1+nparnuc,npar
+  call countions(parz(i),iparz(i),pt(i))
+enddo
+end subroutine
+
+subroutine countions(zold,zi,i)
+use grandmod
+implicit none
+integer i,j
 real zold,zi
 
 do j=1,cntpts
   if ((zold.lt.zcont(j)).and.(zi.ge.zcont(j))) then
-    nf(i,j) = nf(i,j) + 1
+    nforward(i,j) = nforward(i,j) + 1
   elseif((zold.ge.zcont(j)).and.(zi.lt.zcont(j)))then
-    nb(i,j) = nb(i,j) + 1
+    nbackward(i,j) = nbackward(i,j) + 1
   endif
 enddo
 end subroutine
@@ -55,7 +66,7 @@ ncross=nforward-nbackward
 currave=float(ncross)*cnst  ! in pico amperes
 curr=float(ncross-pncross)*cnst2 ! in pico amperes
 do j=nptnuc+1,nptyp
-  write(ln,*) ptypl(j)%nam,icyst,float(icyst)*dt,ncount(j),(zcont(i),nforward(j,i),nbackward(j,i),curr(j,i)*cg(j+nold),currave(j,i)*cg(j+nold),i=1,cntpts)
+  write(ln,*) ptypl(j)%nam,icyst,float(icyst)*dt,ncount(j),(zcont(i),nforward(j,i),nbackward(j,i),curr(j,i)*ptypl(j)%chg,currave(j,i)*ptypl(j)%chg,i=1,cntpts)
   write(iuncnt,'(a)') trim(ln)
 enddo
 write(ln,*) 'TOT ',icyst,float(icyst)*dt,(zcont(i),sum(curr(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%chg),sum(currave(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%chg),i=1,cntpts)

@@ -73,15 +73,15 @@ srfe=0.0
 reff=0.0
 !     Main loop by atoms
 do i=nelenuc+1,nele
-  if (x(i).le.xbcen3+tranx3.and.x(i).ge.xbcen3-tranx3.and. &
-      y(i).le.ybcen3+trany3.and.y(i).ge.ybcen3-trany3.and. &
-      z(i).le.zbcen3+tranz3.and.z(i).ge.zbcen3-tranz3) then
+  if (r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
+      r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
+      r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3) then
     ik=i-nelenuc
-    itype = abs(typei(i))
+    itype = et(i)
     if (Qrfpsin) then
       ifir=0
     else
-      ifir=(itype-nold-1)*ncel3
+      ifir=(itype-netnuc-1)*ncel3
     endif
     aux1=0.0e0
     aux1dx=0.0e0
@@ -91,9 +91,9 @@ do i=nelenuc+1,nele
     aux2dx=0.0e0
     aux2dy=0.0e0
     aux2dz=0.0e0
-    xi=x(i)+tranx3-xbcen3
-    yi=y(i)+trany3-ybcen3
-    zi=z(i)+tranz3-zbcen3
+    xi=r(i)%x+tranx3-xbcen3
+    yi=r(i)%y+trany3-ybcen3
+    zi=r(i)%z+tranz3-zbcen3
     ix=int(xi*idcel3)
     iy=int(yi*idcel3)
     iz=int(zi*idcel3)
@@ -158,10 +158,10 @@ do i=nelenuc+1,nele
       reffdy(ik)=aux2dy
       reffdz(ik)=aux2dz            
     endif
-    tau = celec*cg(itype)
+    tau = celec*etypl(itype)%chg
   
   ! self reaction field energy minus Born energy
-      aux = tau*cg(itype)*srfe(ik)
+      aux = tau*etypl(itype)%chg*srfe(ik)
       ! reaction field energy 
       erfpar = erfpar + 0.5*aux*srfe(ik)
   
@@ -169,20 +169,20 @@ do i=nelenuc+1,nele
       if(Qforces)then
         ! forces caused by variation of srfe(j)
         de = -aux
-        fx(i) = fx(i) + de*srfedx(ik)
-        fy(i) = fy(i) + de*srfedy(ik)
-        fz(i) = fz(i) + de*srfedz(ik)
+        f(i)%x = f(i)%x + de*srfedx(ik)
+        f(i)%y = f(i)%y + de*srfedy(ik)
+        f(i)%z = f(i)%z + de*srfedz(ik)
       endif
       do j=1+nelenuc,i-1
         jk=j-nelenuc
         if (srfe(jk).ne.0.0) then
-          jtype = abs(typei(j))
-          dist2 = (x(j)-x(i))**2+(y(j)-y(i))**2+(z(j)-z(i))**2
+          jtype = et(j)
+          dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
           srfeij = srfe(jk)*srfe(ik)
           reffij = reff(jk)*reff(ik)
           rfdn = 1.0/sqrt(reffij*reffij+dist2)
           rfcf = reffij*rfdn
-          aux0 = tau*cg(jtype)
+          aux0 = tau*etypl(jtype)%chg
           aux1 = aux0*rfcf
           ! reaction field energy 
           erfpar = erfpar + aux1*srfeij
@@ -192,31 +192,31 @@ do i=nelenuc+1,nele
             aux2 = aux0*srfeij*rfdn**3
             ! forces due to variation of srfe(i) and srfe(j)
             de = -aux1*srfe(ik)
-            fx(j) = fx(j) + de*srfedx(jk)
-            fy(j) = fy(j) + de*srfedy(jk)
-            fz(j) = fz(j) + de*srfedz(jk)
+            f(j)%x = f(j)%x + de*srfedx(jk)
+            f(j)%y = f(j)%y + de*srfedy(jk)
+            f(j)%z = f(j)%z + de*srfedz(jk)
             de = -aux1*srfe(jk)
-            fx(i) = fx(i) + de*srfedx(ik)
-            fy(i) = fy(i) + de*srfedy(ik)
-            fz(i) = fz(i) + de*srfedz(ik)
+            f(i)%x = f(i)%x + de*srfedx(ik)
+            f(i)%y = f(i)%y + de*srfedy(ik)
+            f(i)%z = f(i)%z + de*srfedz(ik)
             ! forces due to variation of reff(i) and reff(j)
             aux3=-aux2*(dist2+reff(jk)*reff(ik)*0.5)
             de = aux3*reff(ik)
-            fx(j) = fx(j) + de*reffdx(jk)
-            fy(j) = fy(j) + de*reffdy(jk)
-            fz(j) = fz(j) + de*reffdz(jk)
+            f(j)%x = f(j)%x + de*reffdx(jk)
+            f(j)%y = f(j)%y + de*reffdy(jk)
+            f(j)%z = f(j)%z + de*reffdz(jk)
             de = aux3*reff(jk)
-            fx(i) = fx(i) + de*reffdx(ik)
-            fy(i) = fy(i) + de*reffdy(ik)
-            fz(i) = fz(i) + de*reffdz(ik)
+            f(i)%x = f(i)%x + de*reffdx(ik)
+            f(i)%y = f(i)%y + de*reffdy(ik)
+            f(i)%z = f(i)%z + de*reffdz(ik)
             ! forces due to variation of ion positions 
             de = aux2*reffij
-            fx(j) = fx(j) + de*(x(j)-x(i))
-            fy(j) = fy(j) + de*(y(j)-y(i))
-            fz(j) = fz(j) + de*(z(j)-z(i))
-            fx(i) = fx(i) - de*(x(j)-x(i))
-            fy(i) = fy(i) - de*(y(j)-y(i))
-            fz(i) = fz(i) - de*(z(j)-z(i))
+            f(j)%x = f(j)%x + de*(r(j)%x-r(i)%x)
+            f(j)%y = f(j)%y + de*(r(j)%y-r(i)%y)
+            f(j)%z = f(j)%z + de*(r(j)%z-r(i)%z)
+            f(i)%x = f(i)%x - de*(r(j)%x-r(i)%x)
+            f(i)%y = f(i)%y - de*(r(j)%y-r(i)%y)
+            f(i)%z = f(i)%z - de*(r(j)%z-r(i)%z)
           endif
         endif
       enddo
@@ -295,18 +295,18 @@ do i=nelenuc+1,nele
     ok=.true.
   else
     itype = abs(typei(i))
-    xi=x(i)+tranx3-xbcen3
-    yi=y(i)+trany3-ybcen3
-    zi=z(i)+tranz3-zbcen3
-    ok=x(i).le.xbcen3+tranx3.and.x(i).ge.xbcen3-tranx3.and. &
-       y(i).le.ybcen3+trany3.and.y(i).ge.ybcen3-trany3.and. &
-       z(i).le.zbcen3+tranz3.and.z(i).ge.zbcen3-tranz3
+    xi=r(i)%x+tranx3-xbcen3
+    yi=r(i)%y+trany3-ybcen3
+    zi=r(i)%z+tranz3-zbcen3
+    ok=r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
+       r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
+       r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3
   endif
   if (ok) then
     if (Qrfpsin) then
       ifir=0
     else
-      ifir=(itype-nold-1)*ncel3
+      ifir=(itype-netnuc-1)*ncel3
     endif
     ix=int(xi*idcel3)
     iy=int(yi*idcel3)
@@ -346,21 +346,21 @@ do i=nelenuc+1,nele
   reff(ik)=aux2
 enddo
 
-tau = celec*cg(jtype)
+tau = celec*etypl(jtype)%chg
 jk=j-nelenuc
 ! self reaction field energy minus Born energy
 ! reaction field energy 
-erfpar = erfpar + 0.5*tau*cg(jtype)*srfe(jk)**2
+erfpar = erfpar + 0.5*tau*etypl(jtype)%chg*srfe(jk)**2
 
 do i=nelenuc+1,nele
   if (i.ne.j) then 
     ik=i-nelenuc
     if (srfe(ik).ne.0.0) then
-      itype = abs(typei(i))
-      dist2 = (x(i)-xj)**2+(y(i)-yj)**2+(z(i)-zj)**2
+      itype = et(i)
+      dist2 = (r(i)%x-xj)**2+(r(i)%y-yj)**2+(r(i)%z-zj)**2
       reffij = reff(jk)*reff(ik)
       ! reaction field energy 
-      erfpar=erfpar+tau*cg(itype)*reffij*srfe(jk)*srfe(ik)/sqrt(reffij**2+dist2)
+      erfpar=erfpar+tau*etypl(itype)%chg*reffij*srfe(jk)*srfe(ik)/sqrt(reffij**2+dist2)
     endif
   endif
 enddo
@@ -420,7 +420,7 @@ if (Qrfpsin) then
   niont=1
 else
   if (nion.ne.unn) call error('rfpar','Number of ion types differ from number of RFPAR types',faterr)
-  niont=nion
+  niont=netyp-netnuc
 endif
 if (.not.allocated(radion)) allocate (radion(niont))
 
@@ -444,7 +444,7 @@ do itype=1,niont
     write(outu,'(6x,a)') 'Single Map will be considered for all types'
     write(outu,'(6x,a,i0,a)') 'Data from unit ',iunit,' is assigned to all particle types'
   else
-    write(outu,103) 'Data from unit ',iunit,' is assigned to particle type ',atnam2(itype+ndna)
+    write(outu,103) 'Data from unit ',iunit,' is assigned to particle type ',etypl(itype+netnuc)%nam
   endif
   write(outu,102) 'Born radius                        = ',radion(itype)
   write(outu,101) 'Number of grid point in X   (NCLX) = ',nclx 

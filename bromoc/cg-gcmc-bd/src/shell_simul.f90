@@ -75,11 +75,9 @@ integer    ntras
 real       vfbs,scald,scaldd
 !for security outputfile
 integer    nsec
-
+type(car) :: rr, rs
 !for TEST order
 real       tol, delta, maxl,minl,maxlg,minlg
-! temporary coordinates
-type(car) rtmp
 
 !for MEMBRANE and ION-ION orders
 !for effective dielectric constant for DNA
@@ -150,7 +148,6 @@ doions       = .false.
 dodna        = .false.
 iseed        = 3141593
 ntype        = 0
-nold         = 0
 netnuc         = 0
 nbuffer      = 0
 nsites       = 0
@@ -569,7 +566,6 @@ do while (.not. logfinal)
        if (Qexpl2nd) deallocate (secstr)
        call updateptypchg(nptyp)
      endif
-     nold = ntype           
      fctn=celec*cgnuc**2/cdie
   
      write(outu,*)
@@ -1581,81 +1577,6 @@ do while (.not. logfinal)
      Qsrpmf = logsrpmf 
      Qrfpar = logrfpar
   ! **********************************************************************
-  elseif (wrd5.eq.'inter') then 
-  !        ---------------
-    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'INTERACT order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
-    ! atom type [integer,default=1]
-    call gtipar(com,'atom',iat,1) 
-    ! default values
-    ! Qnobond = Qnonbond =.true.
-    ! Qmemb = Qmmij = Qphix = Qphiv = Qsrpmf = .false.         
-    Qnobond  = .not.check(com,'nobond')
-    Qnonbond = .not.check(com,'nononbond')
-    if (check(com,'membrane')) then
-      if (.not.Qmemb) call error ('shell_simul', 'Planar membrane has not be defined before INTERACT order', faterr)
-    else
-      logmemb = Qmemb
-      Qmemb = .false.
-    endif
-    if (check(com,'mmij')) then
-      if (.not.Qmmij) call error ('shell_simul', 'Reaction Field has not be defined before INTERACT order', faterr)
-    else
-      logmmij = Qmmij
-      Qmmij = .false.
-    endif
-    if (check(com,'phix')) then
-      if (.not.Qphix) call error ('shell_simul', 'Static Field has not be defined before INTERACT order', faterr)
-    else
-     logphix = Qphix
-     Qphix = .false.
-    endif
-    if (check(com,'phiv')) then
-      if (.not.Qphiv) call error ('shell_simul', 'Repulsive term has not be defined before INTERACT order', faterr)
-    else
-      logphiv = Qphiv
-      Qphiv = .false.
-    endif
-    if (check(com,'srpmf')) then
-      if (.not.Qsrpmf) call error ('shell_simul', 'Short-range interaction term has not be defined before INTERACT order', faterr)
-    else
-      logsrpmf = Qsrpmf
-      Qsrpmf = .false.
-    endif
-    if (check(com,'rfpar')) then
-      if (.not.Qrfpar) call error ('shell_simul', 'Reaction Field Parameter term has not be defined before INTERACT order', faterr)
-    else
-      logrfpar = Qrfpar
-      Qrfpar = .false.
-    endif
-  
-    write(outu,*)
-    write(outu,'(6x,a)') 'INTERACT calculation'
-    write(outu,'(6x,a)') '--------------------'         
-    if (Qnobond)  write(outu,'(6x,a)') 'Bonding Energy Term' 
-    if (Qnonbond) write(outu,'(6x,a)') 'Nonbonding Energy Term'
-    if (Qmemb)    write(outu,'(6x,a)') 'Planar membrane Term'
-    if (Qmmij)    write(outu,'(6x,a)') 'Reaction Field Energy Term'
-    if (Qphix)    write(outu,'(6x,a)') 'External Field Energy Term'
-    if (Qphiv)    write(outu,'(6x,a)') 'Repulsive Energy Term'
-    if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
-    if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
-  
-    ! Calculate the interaction of particle "iat" with the rest of
-    ! the system
-    if (iat.le.nelenuc) then
-      itype = typenuc(iat)
-    else 
-      itype = abs(typei(iat))
-    endif
-    call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
-    write(outu,'(6x,a,f12.6)') 'Interaction of particle ',iat,dener
-    Qmemb = logmemb 
-    Qmmij = logmmij 
-    Qphix = logphix 
-    Qphiv = logphiv 
-    Qsrpmf = logsrpmf
-    Qrfpar = logrfpar
-  ! **********************************************************************
   elseif (wrd5.eq.'membr') then
   !        ---------------
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'MEMBRANE order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
@@ -1682,15 +1603,12 @@ do while (.not. logfinal)
      if (ionstr.le.0.0) call error ('shell_simul', 'Ion Strength cannot be lower or equal zero. Define it in SYSTEM.', faterr)
      ! Setup constant
      afact = epsm*voltage/(2.0*epsm+cdie*ikappa*tmemb) ! Eq. (32) paper
-
      ceps=cdie/epsm
-  
      ampl1 = 0.0
      p1 = 1.0
      ampl2 = 0.0
      p2 = 1.0
      rcylinder = 1.0
-   
      endlog = .false.
      do while (.not.endlog)
        call getlin(com,inpu,outu) ! new commands line
@@ -1698,7 +1616,7 @@ do while (.not. logfinal)
        if (.not.endlog) then
          ! Obtention of ion type     
          call getfirst(com,wrd4)
-         itype=getptyp(wrd4)
+         itype=getetyp(wrd4)
          ! Repulsive membrane potential [real*8,default=0]
          call gtdpar(com,'amplmemb',ampl1(itype),0.0)
          if (ampl1(itype).lt.0.0) call error ('shell_simul', 'Repulsive membrane potential has a negative value', faterr)
@@ -2105,7 +2023,7 @@ do while (.not. logfinal)
            do z1i = -90, 90, 1
              z1 = real(z1i)
              call switch3(r1,r2,z1,plength2,p3(itype),pcenter)
-             write(iunit,'(2f13.5)') z1,diffusion(itype)*(ampl3(itype)+(1.0-ampl3(itype))*r1)
+             write(iunit,'(2f13.5)') z1,etypl(itype)%dif*(ampl3(itype)+(1.0-ampl3(itype))*r1)
            enddo
          endif
        endif  
@@ -2432,18 +2350,18 @@ do while (.not. logfinal)
        if (Qnucl) then
          do i = 1, nelenuc
            read(iunit,'(a)') com
-           read (com,'(x6,I5,x,x5,x5,I4,4x,3F8.3)') jtype,itype,rtmp%x,rtmp%y,rtmp%z
-           call putcoorinpar(itype,jtype,rtmp%x,rtmp%y,rtmp%z)
+           read (com,'(x6,I5,x,x5,x5,I4,4x,3F8.3)') jtype,itype,rr%x,rr%y,rr%z
+           call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
          enddo
        endif
        if (Qpar) then
          read(iunit,'(a)') com
          do while (trim(adjustl(com))(1:3).ne.'END')
-           read (com,'(x6,I5,x,A5,x5,I4,4x,3F8.3,F6.2)') jtype,wrd4,itype,rtmp%x,rtmp%y,rtmp%z,ibuf
+           read (com,'(x6,I5,x,A5,x5,I4,4x,3F8.3,F6.2)') jtype,wrd4,itype,rr%x,rr%y,rr%z,ibuf
            if (ilast.ne.itype) then
              call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuf))
            endif
-           call putcoorinpar(itype,jtype,rtmp%x,rtmp%y,rtmp%z)
+           call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
            ilast=itype
            read(iunit,'(a)') com
          enddo
@@ -2476,11 +2394,9 @@ do while (.not. logfinal)
          do ib = 1, nbuffer
            itype = ibfftyp(ib)
            do i = ifirst, ilast
-             typei(i) = itype
-             call insert(ib,rtmp%x,rtmp%y,rtmp%z) ! find new center of particle
+             call insert(ib,rr%x,rr%y,rr%z) ! find new center of particle
              call addpar(itype,kind=3,ibuf=ib) ! add particle to list
-             call insertpar(npar,rtmp) ! locate and rotate
-             if(rtmp%z.lt.cz) typei(i) = -itype
+             call insertpar(npar,rr) ! locate and rotate
            enddo
            ifirst = ifirst + nat(ib)
            ilast = ifirst + nat(ib+1) - 1
@@ -2604,13 +2520,23 @@ do while (.not. logfinal)
        enddo
        write(outu,'(6x,a,3(f12.6,a))')'DNA geometric center is now at  (',xm,',',ym,',',zm,')'
      endif
+     kBTdt = dt * ikbt
+     do i=1,netyp
+       if (i.le.netnuc) then
+         fact1a(i)=etypl(i)%dif*kbtdna*dt
+       else
+         fact1a(i)=etypl(i)%dif*kBTdt
+       endif
+       fact2a(i)=sqrt(2.0*dt*etypl(i)%dif)
+     enddo
+     if (Qproxdiff) fact2pd=sqrt(2.0*dt*diff0)
      if (Qnucl) then
        write(outu,'(6x,a)') 'Native structure for B isoform of DNA'
        write(outu,*)
-       write(outu,'(6x,a,1x,a,1x,a,1x,a)') 'STRAND','NUCLEOT','SITE','CARTESIAN COORDINATES (X,Y,Z)'
-       write(outu,'(6x,a,1x,a,1x,a,1x,a)') '------','-------','----','-----------------------------'
+       write(outu,'(6x,a,1x,a,1x,a,1x,a)') 'STRAND','SITE','CARTESIAN COORDINATES (X,Y,Z)'
+       write(outu,'(6x,a,1x,a,1x,a,1x,a)') '------','----','-----------------------------'
        do i = 1, nelenuc
-        write(outu,'(6x,i1,1x,a1,1x,a2,3(1x,f15.8))') strand(i), namnucl(i),namsite(i), r(i)%x, r(i)%y, r(i)%z
+        write(outu,'(6x,i1,1x,a4,3(1x,f15.8))') pe(i), etypl(et(i))%nam, r(i)%x, r(i)%y, r(i)%z
        enddo
      endif
      if (Qpar) then
@@ -2623,78 +2549,6 @@ do while (.not. logfinal)
      endif
      write(outu,*)
   ! **********************************************************************
-  elseif (wrd5.eq.'test') then
-  !        ---------------
-     if (Qnucl) call error ('shell_simul', 'DNA sites cannot uses in TEST order', faterr)
-     if (.not.Qpar) call error ('shell_simul', 'Particles have to be defined before TEST order', faterr)
-     ! tolerance in force test
-     call gtdpar(com,'tol',tol,0.001)
-     if (tol.le.0.0) call error ('shell_simul', 'Tolerance is negative or null in TEST order', faterr)
-     call gtdpar(com,'delta',delta,0.0005)
-     if (delta.le.0.0) call error ('shell_simul', 'Time step is negative or null in TEST order', faterr)
-     Qnobond  = .not.check(com,'nobond')
-     Qnonbond = .not.check(com,'nononbond')
-     if (check(com,'membrane')) then
-       if (.not.Qmemb) call error ('shell_simul', 'Planar membrane has not be defined before ENERGY order', faterr)
-     else
-       logmemb = Qmemb
-       Qmemb = .false.
-     endif
-     if (check(com,'mmij')) then
-       if (.not.Qmmij) call error ('shell_simul', 'Reaction Field has not be defined before TEST order', faterr)
-     else
-       logmmij = Qmmij
-       Qmmij = .false.
-     endif
-     if (check(com,'phix')) then
-       if (.not.Qphix) call error ('shell_simul', 'Static Field has not be defined before TEST order', faterr)
-     else
-      logphix = Qphix
-      Qphix = .false.
-     endif
-     if (check(com,'phiv')) then
-       if (.not.Qphiv) call error ('shell_simul', 'Repulsive term has not be defined before TEST order', faterr)
-     else
-       logphiv = Qphiv
-       Qphiv = .false.
-     endif
-     if (check(com,'srpmf')) then
-       if (.not.Qsrpmf) call error ('shell_simul', 'Short-range interaction term has not be defined before TEST order', faterr)
-     else
-       logsrpmf = Qsrpmf
-       Qsrpmf = .false.
-     endif
-     if (check(com,'rfpar')) then
-       if (.not.Qrfpar) call error ('shell_simul', 'Reaction Field Parameter term has not be defined before TEST order', faterr)
-     else
-       logrfpar = Qrfpar
-       Qrfpar = .false.
-     endif
-     write(outu,*)
-     write(outu,'(6x,a)') 'TEST calculation'
-     write(outu,'(6x,a)') '----------------'
-     if (Qnobond)  write(outu,'(6x,a)') 'Bonding Energy Term'
-     if (Qnonbond) write(outu,'(6x,a)') 'Nonbonding Energy Term'
-     if (Qmemb)    write(outu,'(6x,a)') 'Planar membrane Term'
-     if (Qmmij)    write(outu,'(6x,a)') 'Reaction Field Energy Term'
-     if (Qphix)    write(outu,'(6x,a)') 'External Field Energy Term'
-     if (Qphiv)    write(outu,'(6x,a)') 'Repulsive Energy Term'
-     if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
-     if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
-     write(outu,'(6x,a,1x,e11.4)') 'Tolerance in force test',tol
-     write(outu,'(6x,a,1x,e11.4)') 'Time step in force test',delta
-  
-     call energy
-     write(outu,'(6x,a,f12.6)') 'Total energy (from ENERGY)      ',ener
-     ener = 0.0 ! initialization
-     do iat = nelenuc, nele
-       call interact(dener,r(iat)%x,r(iat)%y,r(iat)%z,et(iat),iat,.true.)
-       ener = ener + dener
-     enddo
-     ener = ener*0.5
-     write(outu,'(6x,a,f12.6)') 'Total energy (from INTERACTION) ',ener
-     call testfirst(tol,delta)         
-  ! **************************************************************************
   elseif (wrd5.eq.'gsbp') then !  generalized solvent boundary potential
   !        ---------------
   !REPULSIVE POTENTIAL
@@ -2720,15 +2574,8 @@ do while (.not. logfinal)
        if (Qnmcden) then
          write(outu,*)
          write(outu,'(6x,a)') 'Different ion-accessible space is used for different ions and sites'
-         if (Qnucl .and. Qpar) then
-           if (istrs.eq.1) numb = inuc
-           if (istrs.eq.2) numb = 2*inuc
-           totnumb = ntype - numb + 6    
-         else if (Qnucl) then
-           totnumb = 6
-         else if (Qpar) then
-           totnumb = ntype
-         else
+         totnumb=netyp
+         if (.not.Qnucl .and. .not. Qpar) then
            call error ('shell_simul', 'GSBP order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
          endif
          if (totnumb.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)

@@ -60,6 +60,7 @@ end type eletype
 !! Particles List
 integer                                 :: npar       !! Number of Particles 
 type(parpro), allocatable, dimension(:) :: parl       !! Particles List Description :: Size of Number of Particles (npar)
+real, allocatable, dimension(:)         :: parz       !! z coordinate for particles
 
 !! Element-Type List
 integer                                  :: netyp     !! Number of Element Types
@@ -85,6 +86,9 @@ integer, allocatable, dimension(:)   :: pe !! Particle List of nele size
 !! Used Element Types List
 integer nuet                      !! Total Number of Used Element Types in et
 integer, allocatable, dimension(:) :: uetl
+
+!! Nucleotides
+integer nptnuc,netnuc,nelenuc,nparnuc
 
 contains
 
@@ -199,6 +203,7 @@ end subroutine
 subroutine updatetypels()
 implicit none
 integer newsize,i,j,ne,sr,ptype
+if (allocated(et)) deallocate (et)
 if (allocated(pt)) deallocate (pt)
 if (allocated(pe)) deallocate (pe)
 newsize=size(r)
@@ -213,6 +218,40 @@ do i=1,npar
     pe(sr+j)=i
   enddo
 enddo
+end subroutine
+
+subroutine getparz()
+implicit none
+integer i, pls
+if (.not.allocated(parz)) then
+  allocate(parz(size(parl)))
+else
+  pls=size(parl)
+  if (size(parz).lt.pls) then
+    deallocate(parz)
+    allocate(parz(pls))
+  endif
+endif
+do i=1+nparnuc,npar
+  parz(i)=iparz(i)
+enddo
+end subroutine
+
+function iparz(i)
+implicit none
+integer i, j, ne, sr
+real iparz
+ne=parl(i)%ne
+sr=parl(i)%sr
+if (ne.eq.1) then
+  iparz=r(sr+1)%z
+else
+  iparz=0.0
+  do j=1,ne
+    iparz=iparz+r(sr+j)%z
+  enddo
+  iparz=iparz/ne
+endif
 end subroutine
 
 subroutine resizeetypl(newsize)

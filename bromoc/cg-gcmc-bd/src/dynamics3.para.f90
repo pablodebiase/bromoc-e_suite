@@ -26,7 +26,6 @@ use sevalmod
 
 implicit none
 integer itype,i,ninit,nfinal
-integer nfloc(1:ntype-nold,cntpts),nbloc(1:ntype-nold,cntpts)
 real fact1, fact2
 real rgauss
 external rgauss
@@ -35,18 +34,15 @@ real zold
 real idiffusion, didiffusion
 real ebet,idist
 
-!$omp parallel private(i,itype,zold,ebet,idiffusion,didiffusion,idist,fact1,fact2,deldx,deldy,deldz,delx,dely,delz,nfloc,nbloc)
-nfloc=0
-nbloc=0
+!$omp parallel private(i,itype,zold,ebet,idiffusion,didiffusion,idist,fact1,fact2,deldx,deldy,deldz,delx,dely,delz)
 !$omp do
 do i=ninit,nfinal
-  itype = abs(typei(i))
-  zold=z(i)
+  itype = et(i)
   if (dids(1,i).gt.0.0.and.dids(1,i).le.diffcutoff) then
 ! dna proximity-dependent diffusion constant
     ebet=exp(-dids(1,i)*ibeta)
-    idiffusion = diffusion(itype)-(diffusion(itype)-diff0)*ebet
-    didiffusion = (diffusion(itype)-diff0)*ibeta*ebet
+    idiffusion = etypl(itype)%dif-(etypl(itype)%dif-diff0)*ebet
+    didiffusion = (etypl(itype)%dif-diff0)*ibeta*ebet
     idist=1.0/dids(2,i)
     fact1 = idiffusion*kBTdt
     fact2 = sqrt(2.0*dt*idiffusion)
@@ -62,25 +58,17 @@ do i=ninit,nfinal
     delDy=0.0
     delDz=0.0
   endif
-  delx = fx(i)*fact1
-  dely = fy(i)*fact1
-  delz = fz(i)*fact1
+  delx  = f(i)%x*fact1
+  dely  = f(i)%y*fact1
+  delz  = f(i)%z*fact1
   if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
   if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
   if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-  x(i)=x(i)+delx+fact2*rgauss()+delDx
-  y(i)=y(i)+dely+fact2*rgauss()+delDy
-  z(i)=z(i)+delz+fact2*rgauss()+delDz
-! Keep track of the net flux of particle
-  if (Qcountion) call countions(zold,z(i),itype-nold,nfloc,nbloc)
-  call fixcoor(x(i),y(i),z(i))
+  r(i)%x=r(i)%x+delx+fact2*rgauss()+delDx
+  r(i)%y=r(i)%y+dely+fact2*rgauss()+delDy
+  r(i)%z=r(i)%z+delz+fact2*rgauss()+delDz
+  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
 !$omp end do
-!$omp critical
-nforward = nforward + nfloc
-nbackward = nbackward + nbloc
-!$omp end critical
 !$omp end parallel
-
-return
-end
+end subroutine

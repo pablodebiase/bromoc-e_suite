@@ -96,11 +96,9 @@ CONTRANS     enable/disable constrains DNA centroid and/or sites translation
 CHDEN        enable computing charge density (use in combination with chden keyword in SIMUL and PRINT)
 SIMULATION   run simulation
 ENERGY       compute energy
-INTERACTION  compute energy for single particles
 OPEN         open file
 PRINT        print coordinates, iseed, title, DNA centroid, system info
 COUNT        Count all the particles and assign them to their appropriate buffer
-TEST         Compare the analytical forces with the finite-difference forces
 CLOSE        Close file
 # * !        Comment symbol headers
 EXIT         End program
@@ -1053,7 +1051,7 @@ CLOSE unit 1
 
 
 ******************************************************************************
-*** ENERGY & INTERACTION: Total energy and Interaction energy calculations ***
+*** ENERGY: Total energy calculations ***
 ******************************************************************************
 
    The program allows one to calculate the total energy and the 
@@ -1064,9 +1062,6 @@ syntax:
 
 ENERGY {noenergy} {nononbond} {nomembrane} {mmij} {phix} {phiv} {srpmf} {rfpar}
 
-INTERACTION atom (integer) {noenergy} {nononbond} {nomembrane} {mmij} {phix} {phiv} {srpmf} {rfpar}
-
-atom         |1| : atom number
 {noenergy}       : turn off total energy
 {nononbond}      : turn off nonbond energy
 {nomembrane}     : turn off membrane repulsive energy
@@ -1080,7 +1075,7 @@ atom         |1| : atom number
 example:
 
   open read unit 15 name ../conf_111/crd@1
-  coor read unit 15 CHARMM
+  coor read unit 15 
   
   energy mmij nononbond
 
@@ -1090,34 +1085,19 @@ example:
 *** COORDINATES ***
 *******************
 
- This keyword generates initial coordinates for ions and DNA. It can also read a file with initial coordinates for DNA and ions, fix ion positions, and rotate and translate DNA. 
+ This keyword generates initial coordinates for ions and DNA. It can also read a file with initial coordinates for DNA and ions, and rotate and translate DNA. 
 COOR gener/read must be called at least once before SIMUL/ENER/INTER and after PARTICLES/NUCLEOTIDES. 
-A CHARMM coordinate file can be read by specifying [CHARMM] otherwise will use the default format 
 (see PRINT below). Can be called several times.
 
 syntax: 
   The following cases cannot be used together in a same line.
 
   * case 1:
-  COOR fixion nfix (integer)
-  <ion-type> [xcor (real)] [ycor (real)] [zcor (real)]
-  END
-
-  <ion-type>            : ion type (should be less than 4 characters)
-  nfix            [ 0 ] : fix first nfix number of ions. 
-                          The first default is 0, the second is previous nfix.
-  xcor            [0.0] : set x fixed position
-  ycor            [0.0] : set y fixed position
-  zcor            [0.0] : set z fixed position
-
-
-  COOR gener [all] [dna] [ions]  [nfix (integer)]
+  COOR gener [all] [dna] [ions] 
   gener       : generates DNA and/or ions initial position
   all         : generates DNA and ions (if this is not present dna and/or ions must be present)
   dna         : generates DNA (useful when reading only ions)
   ions        : generates ions (useful when reading only DNA)
-  nfix  [ 0 ] : fix first nfix number of generated ions
-                The first default is 0, the second is previous nfix.
 
   * case 2:
   COOR tras [xtras (real)] [ytras (real)] [ztras (real)]
@@ -1138,11 +1118,9 @@ syntax:
                 align site1-site2 along z axis and site2-site3 to x axis
 
   * case 4:
-  COOR read unit (integer) [CHARMM] nfix (integer)
+  COOR read unit (integer) 
 
   read        : read DNA and ions initial position
-  nfix  [ 0 ] : fix first nfix number of read ions
-                The first default is 0, the second is previous nfix.
 
   * case 5:
   COOR setori [x (real)] [y (real)] [z (real)]
@@ -1156,7 +1134,6 @@ syntax:
 example1: coor gener 
 
 example2: open read unit 12 name ions.crd
-          coor read unit 12 CHARMM
           close unit 12
 
 
@@ -1193,8 +1170,8 @@ syntax:
 *** PRINT ***
 *************
 
-  Prints a coordinate file and other information. The supported coordinate file formats are BCO (BROMOC Coordinates), XYZ, PDB or CHARMM. Other information that can print include system information; input title; iseed number; DNA geometric center; charge density and electric field in CHARMM PBEQ Binary Potential Map format; and finally static field, repulsion field and reaction field values along a defined vector.
-If none of above format is specified it will use the default format. Default format is BCO. BCO and CHARMM format can be read as input under COOR read.
+  Prints a coordinate file and other information. The supported coordinate file formats are BCO (BROMOC Coordinates), XYZ or PDB. Other information that can print include system information; input title; iseed number; DNA geometric center; charge density and electric field in CHARMM PBEQ Binary Potential Map format; and finally static field, repulsion field and reaction field values along a defined vector.
+If none of above format is specified it will use the default format. Default format is BCO. BCO format can be read as input under COOR read.
 
 syntax:
   The following cases cannot be used combined.
@@ -1203,7 +1180,7 @@ syntax:
         [PRINT] {system} 
 
   Prints coordinates:
-        [PRINT] {coor} unit (integer) [XYZ/PDB/CHARMM] 
+        [PRINT] {coor} unit (integer) [XYZ/PDB] 
 
   Prints title:
         [PRINT] {title} 
@@ -1266,16 +1243,6 @@ example4:
 Count all the particles and assign them to their appropriate buffer.
 
 syntax: [COUNT]
-
-
-************
-*** TEST ***
-************
-
-Compare the analytical forces with the finite-difference forces
-
-syntax: 
-  [TEST] [noenergy] [nononbond] [nomembrane] [mmij] [phix] [phiv] [srpmf] [qrep] [rfpar] 
 
 
 ****************

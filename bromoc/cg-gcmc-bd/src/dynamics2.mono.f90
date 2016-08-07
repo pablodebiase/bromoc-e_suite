@@ -36,9 +36,9 @@ real sw,dsw, idiffusion, didiffusion
 real zz
 
 do i=ninit,nfinal
-  itype = abs(typei(i))
+  itype = et(i)
 ! space-dependent diffusion constant
-  zz = z(i)
+  zz = r(i)%z
   if(xs(1).lt.xs(nspline)) then 
     if(zz.lt.xs(1)) then
       sw=ys(1)
@@ -64,26 +64,26 @@ do i=ninit,nfinal
   endif
 !   sw  = seval (nspline,zz,xs,ys,b,c,d)
 !   dsw = sevald(nspline,zz,xs,b,c,d)
-  idiffusion = diffusion(itype)*sw
-  didiffusion = diffusion(itype)*dsw
+  idiffusion = etypl(itype)%dif*sw
+  didiffusion = etypl(itype)%dif*dsw
   fact1 = idiffusion*kBTdt
-  delx  = fx(i)*fact1
-  dely  = fy(i)*fact1
-  delz  = fz(i)*fact1
+  delx  = f(i)%x*fact1
+  dely  = f(i)%y*fact1
+  delz  = f(i)%z*fact1
   fact2 = sqrt(2.0*dt*idiffusion)
   delDz = didiffusion*dt
+
   if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
   if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
   if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-  x(i)=x(i)+delx+fact2*rgauss()
-  y(i)=y(i)+dely+fact2*rgauss()
-  zold=z(i)
-  z(i)=z(i)+delz+fact2*rgauss()+delDz
+
+  r(i)%x = r(i)%x + delx + fact2*rgauss()
+  r(i)%y = r(i)%y + dely + fact2*rgauss()
+  r(i)%z = r(i)%z + delz + fact2*rgauss() + delDz
 
 ! Keep track of the net flux of particle
-  if (Qcountion) call countions(zold,z(i),itype-nold,nforward,nbackward)
+  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 
-  call fixcoor(x(i),y(i),z(i))
 enddo
 return
 end

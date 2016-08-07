@@ -45,7 +45,7 @@ integer   npoints,iseed,pncross(nptnuc+1:nptyp,cntpts)
 parameter (npoints = 10000)
 real    idr, dr, idelz,delz, zmini, dist
 real    gr(nptyp,npoints), rho(nptyp,npoints), rDNA(6,npoints), sgr(nptyp)
-real    r,flux 
+real    rd,flux 
 real,parameter :: i3 = 1.0/3.0
 type(car) rr,rs
 
@@ -340,15 +340,6 @@ if (Qdiffuse.and.Qprofile) then
   call error('simul1','Cannot use DIFFUSION and PROFILE',faterr)
 endif
 
-kbtdt = dt * ikbt
-fact0n1=diffnuc*kbtdna*dt
-fact0n2=sqrt(2.0*dt*diffnuc)
-do ii=1+netnuc,netyp
-  fact1a(ii)=diffusion(ii)*kBTdt
-  fact2a(ii)=sqrt(2.0*dt*diffusion(ii))
-enddo
-if (Qproxdiff) fact2pd=sqrt(2.0*dt*diff0)
- 
 do icycle = 1, ncycle
 
   if (ngcmc.gt.0) then
@@ -379,6 +370,7 @@ do icycle = 1, ncycle
         pres=pres+(nele-vir*i3*ikbt)*itvol*kba3bar*temp
       endif
       if (Qpar) then
+        if (Qcountion) call getparz()
         if (Qdiffuse) then
           call dynamics1(nelenuc+1,nele) ! using non-uniform diffusion constant
         elseif (Qprofile) then
@@ -386,15 +378,17 @@ do icycle = 1, ncycle
         elseif (Qproxdiff) then
           call dynamics3(nelenuc+1,nele) ! using dna proximity diffusion constant
         else
-          call dynamics0(nelenuc+1,nele)
+          call dynamics0(nelenuc+1,nele) ! using uniform diffusion constant
         endif
+        ! Count ions
+        if (Qcountion) call countallions()
       endif
       if (Qnucl) then
         call dynamics0nuc(1,nelenuc)
         if (Qnotrans) then
-          if (Qnotrx) x(1:nelenuc)=x(1:nelenuc)-sum(x(1:nelenuc))*inelenuc+notrx
-          if (Qnotry) y(1:nelenuc)=y(1:nelenuc)-sum(y(1:nelenuc))*inelenuc+notry
-          if (Qnotrz) z(1:nelenuc)=z(1:nelenuc)-sum(z(1:nelenuc))*inelenuc+notrz
+          if (Qnotrx) r(1:nelenuc)%x=r(1:nelenuc)%x-sum(r(1:nelenuc)%x)*inelenuc+notrx
+          if (Qnotry) r(1:nelenuc)%y=r(1:nelenuc)%y-sum(r(1:nelenuc)%y)*inelenuc+notry
+          if (Qnotrz) r(1:nelenuc)%z=r(1:nelenuc)%z-sum(r(1:nelenuc)%z)*inelenuc+notrz
         endif
       endif ! Qnucl
     enddo
@@ -431,7 +425,7 @@ do icycle = 1, ncycle
             logvab = typenuc(i1).eq.(ipos+inuc)
           endif
           if (logvab) then
-            dist = sqrt((x(i1)-x(i2))**2 + (y(i1)-y(i2))**2 + (z(i1)-z(i2))**2)
+            dist = sqrt((r(i1)%x-r(i2)%x)**2 + (r(i1)%y-r(i2)%y)**2 + (r(i1)%z-r(i2)%z)**2)
             if (dist.ge.(sgbp(i)+2.0)) ibond = ibond + 1.0
           endif
         endif
@@ -453,14 +447,14 @@ do icycle = 1, ncycle
         zgpore = czmax
       endif 
       do ii = 1, nelenuc 
-        if (z(ii).ge.zlpore .and. z(ii).le.zgpore) then
+        if (r(ii)%z.ge.zlpore .and. r(ii)%z.le.zgpore) then
           nmemb = nmemb + 1
           if (Qmemb) then
-            radius = sqrt(x(ii)**2+y(ii)**2)
-            itype = typtyp(ii)
+            radius = sqrt(r(ii)%x**2+r(ii)%y**2)
+            itype = et(ii)
             if (radius.gt.rcylinder(itype)) then
               call error ('simul1', 'DNA sites are insides of membrane', warning)
-              write(outu,*) '**site--name--x,y,z',ii,namnucl(ii),x(ii),y(ii),z(ii)
+              write(outu,*) '**site--name--x,y,z',ii,etypl(itype)%nam,r(ii)%x,r(ii)%y,r(ii)%z
             endif 
           endif
         endif 
@@ -521,14 +515,12 @@ do icycle = 1, ncycle
   !  channel
     ok = .not.Qmemb .and. czmin.eq.0.0.and.czmax.eq.0.0
     if (.not.ok) then
-      ncount = 0 
+      ncount = 0
       do iat = nparnuc+1, npar
         itype = parl(iat)%ptyp
-        call getcentroid(ia, rr)
+        call getcentroid(iat, rr)
         if (Qmemb) then ! cylindrical channel
-          r = sqrt(rr%x**2+rr%y**2)
           ok = rr%z.ge.zmemb1.and.rr%z.le.zmemb2
-          if (ok) ok = rcylinder(itype).gt.0.0.and.r.le.rcylinder(itype)
         else ! otherwise
           ok = rr%z.ge.czmin.and.rr%z.le.czmax
         endif

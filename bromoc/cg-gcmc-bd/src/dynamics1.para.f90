@@ -32,16 +32,13 @@ real delx, dely, delz, delDz
 real zold
 real sw, dsw, idiffusion, didiffusion
 real zz, pp3, pore1, pore2,ipp3
-integer nfloc(1:ntype-nold,cntpts),nbloc(1:ntype-nold,cntpts)
 
-!$omp parallel private(i,itype,zz,pp3,pore1,pore2,sw,dsw,ipp3,idiffusion,didiffusion,fact1,fact2,delDz,zold,delx,dely,delz,nfloc,nbloc)
-nfloc=0
-nbloc=0
+!$omp parallel private(i,itype,zz,pp3,pore1,pore2,sw,dsw,ipp3,idiffusion,didiffusion,fact1,fact2,delDz,zold,delx,dely,delz)
 !$omp do
 do i = ninit,nfinal
-  itype=abs(typei(i))
+  itype=et(i)
 ! space-dependent diffusion constant
-  zz = z(i)
+  zz = r(i)%z
   pp3 = p3(itype)
   pore1 = -plength2 + pcenter
   pore2 =  plength2 + pcenter
@@ -67,33 +64,27 @@ do i = ninit,nfinal
     sw = 1.0
     dsw = 0.0
   endif
-  idiffusion = diffusion(itype)*(ampl3(itype)+(1.0-ampl3(itype))*sw)
-  didiffusion = diffusion(itype)*(1.0-ampl3(itype))*dsw
+  idiffusion = etypl(itype)%dif*(ampl3(itype)+(1.0-ampl3(itype))*sw)
+  didiffusion = etypl(itype)%dif*(1.0-ampl3(itype))*dsw
   fact1 = idiffusion*kBTdt
-  delx  = fx(i)*fact1
-  dely  = fy(i)*fact1
-  delz  = fz(i)*fact1
+  delx  = f(i)%x*fact1
+  dely  = f(i)%y*fact1
+  delz  = f(i)%z*fact1
   fact2 = sqrt(2.0*dt*idiffusion)
   delDz = didiffusion*dt
-
+  
   if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
   if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
   if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-
-  x(i) = x(i) + delx + fact2*rgauss()
-  y(i) = y(i) + dely + fact2*rgauss()
-  zold = z(i)
-  z(i) = z(i) + delz + fact2*rgauss() + delDz
+  
+  r(i)%x = r(i)%x + delx + fact2*rgauss()
+  r(i)%y = r(i)%y + dely + fact2*rgauss()
+  r(i)%z = r(i)%z + delz + fact2*rgauss() + delDz
 
 ! Keep track of the net flux of particle
-  if (Qcountion) call countions(zold,z(i),itype-nold,nfloc,nbloc)
-  call fixcoor(x(i),y(i),z(i))
+  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
 !$omp end do
-!$omp critical
-nforward = nforward + nfloc
-nbackward = nbackward + nbloc
-!$omp end critical
 !$omp end parallel
 return
 end subroutine
