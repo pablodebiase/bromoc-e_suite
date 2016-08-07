@@ -2139,7 +2139,7 @@ do while (.not. logfinal)
        if (Qrfpsin) then 
          call rfparplot(x1,y1,z1,x2,y2,z2,resol,iunit,Qnohead,1)
        else
-         call rfparplot(x1,y1,z1,x2,y2,z2,resol,iunit,Qnohead,nion)
+         call rfparplot(x1,y1,z1,x2,y2,z2,resol,iunit,Qnohead,netyp-netnuc)
        endif
      elseif (check(com,'statxd')) then
 !  Prints static field values in x,y,z,pot format in an ASCII file. Allows to generate 3D,2D,1D Plots.
@@ -2544,7 +2544,7 @@ do while (.not. logfinal)
        write(outu,'(6x,a,1x,a)') 'ION','CARTESIAN COORDINATES (X,Y,Z)'
        write(outu,'(6x,a,1x,a)') '---','-----------------------------'
        do i = nelenuc+1, nele
-         write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,et(i),r(i)%x,r(i)%y,r(i)%z,parl(pt(i))%ibuf
+         write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,et(i),r(i)%x,r(i)%y,r(i)%z,parl(pe(i))%ibuf
        enddo
      endif
      write(outu,*)

@@ -18,40 +18,49 @@
 
 subroutine metropolis(nmcm)
 ! Perform nmcm of metropolis monte carlo with constant number of particle
-
 use grandmod
 use constamod
+use listmod
 implicit none
 integer nmcm
-integer iat, imove
+integer iat, imove, ne, sr, pne
 !real*16 bltz,eold, enew
 real bltz,eold, enew
-real xnew, ynew, znew
+type(car) :: rr
+type(car),allocatable,dimension(:) :: rrori
 
+pne = 0
 do imove = 1, nmcm
 
-!pick one atom and move it 
-   call move(iat,xnew,ynew,znew)
+   !pick one atom and new position 
+   call move(iat,rr)
 
-!calculate new energy
-   call interact(eold,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.)
-   call interact(enew,xnew,ynew,znew,abs(typei(iat)),iat,.false.)
+   ! backup previous position
+   ne = parl(iat)%ne
+   sr = parl(iat)%sr
+   if (allocated(rrori).and.ne.ne.pne) deallocate (rrori)
+   if (.not.allocated(rrori)) allocate (rrori(ne))
+   rrori = r(sr+1:sr+ne)
+   call insertpar(iat,rr)
 
-   if (enew.le.eold) then    
-      x(iat) = xnew       !accept the move
-      y(iat) = ynew
-      z(iat) = znew
+   !calculate new energy
+   call interact(eold,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.) ! adapt
+   call interact(enew,xnew,ynew,znew,abs(typei(iat)),iat,.false.)      ! adapt
+
+   if (enew.le.eold) then
+      !accept the move
       ener = ener + (enew-eold)
    else                            
       bltz = exp(-(enew-eold)*ikbt)
       if (rndm().lt.bltz) then
-         x(iat) = xnew    !accept the move
-         y(iat) = ynew
-         z(iat) = znew
+         !accept the move
          ener = ener + (enew-eold)
+      else
+         ! restore original position
+         r(sr+1:sr+ne) = rrori
       endif
    endif 
-
+   pne = ne
 enddo
 
 return

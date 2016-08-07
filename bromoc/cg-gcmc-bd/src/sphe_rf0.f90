@@ -20,12 +20,12 @@ subroutine sphe_rf0(xj,yj,zj,j,jtype)
 ! -----------------------------------------------------------------------
 ! this subroutine computes only the reaction field energy difference
 ! due to jth ion in subroutine interact in simul.f
-
 use ioxmod
 use constamod
 use grandmod
 use nucleotmod
 use gsbpmod
+use listmod
 
 implicit none
 !input variables
@@ -52,12 +52,12 @@ do i = nelenuc+1, nele
       ydiff = yj            
       zdiff = zj            
     else
-      itype = abs(typei(i))
-      xdiff = x(i)          
-      ydiff = y(i)          
-      zdiff = z(i)          
+      itype = et(i)
+      xdiff = r(i)%x          
+      ydiff = r(i)%y          
+      zdiff = r(i)%z          
     endif
-    charge = cg(itype)
+    charge = etypl(itype)%chg
     r2 = xdiff*xdiff+ydiff*ydiff+zdiff*zdiff
     if (r2.le.srdist2) then
       r = sqrt(r2)
@@ -82,12 +82,10 @@ do i = nelenuc+1, nele
         cp = xdiff*ir
         sp = ydiff*ir
       endif
-
       call rpowerl2(i,lmax,r,ar)           !  fill ar  (r^l   ) array
       call cosmphi2(i,mmax,cp,ac)          !  fill ac  (cos.. ) array
       call sinmphi2(i,mmax,cp,sp,as)       !  fill as  (sin.. ) array
       call alpol2(i,lmax,mmax,ct,ap)       !  fill ap  (p(lm) ) array
-
       do ii = 1, ntpol
         l = lstpl(ii)
         m = lstpm(ii)
@@ -105,7 +103,7 @@ do i = nelenuc+1, nele
 enddo
 
 !calculate Q_{m} coefficients for nele- (jth ion)
-charge = cg(jtype)
+charge = etypl(jtype)%chg
 do ii = 1, ntpol
   l = lstpl(ii)
   m = lstpm(ii)

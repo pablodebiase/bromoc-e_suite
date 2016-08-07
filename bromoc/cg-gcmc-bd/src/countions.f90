@@ -23,7 +23,7 @@ use grandmod
 implicit none
 integer i
 do i=1+nparnuc,npar
-  call countions(parz(i),iparz(i),pt(i))
+  call countions(parz(i),iparz(i),parl(i)%ptyp)
 enddo
 end subroutine
 

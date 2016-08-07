@@ -636,17 +636,21 @@ real ine
 integer,intent(in)    :: parn ! Particle Number 
 type(car),intent(out) :: rc  ! Particle Centroid
 ne=parl(parn)%ne
-ine=1.0/ne
 sr=parl(parn)%sr
-! Compute Actual Centroid
-! Zero vector
-call setcarzero(rc)
-! Add each position vector to rc
-do i=1,ne
-   call addcar(rc,r(sr+i))
-enddo
-! divide rc by number of elements
-call mulcar(rc,ine)
+if (ne.eq.1)
+  rc=r(sr+1)
+else
+  ine=1.0/ne
+  ! Compute Actual Centroid
+  ! Zero vector
+  call setcarzero(rc)
+  ! Add each position vector to rc
+  do i=1,ne
+     call addcar(rc,r(sr+i))
+  enddo
+  ! divide rc by number of elements
+  call mulcar(rc,ine)
+endif
 end subroutine
 
 subroutine putcoorinptyp(ptypn,elen,x,y,z)

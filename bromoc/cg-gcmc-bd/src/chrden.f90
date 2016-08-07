@@ -44,27 +44,18 @@ if (Qchdenorm) then
   chitp=0.0
   chitn=0.0
   do i=1,nele
-    if (i.le.nelenuc.or.i.gt.nelenuc) then
-      ok = .false.
-      if (i.le.nelenuc) then
-        if (namsite(i).eq.'P ') then
-          chi = cgnuc
-          ok = .true.
-        endif
-      else if (i.gt.nelenuc) then
-        itype = abs(typei(i))
-        chi = cg(itype)
-        ok = .true.
-      endif
-      if (ok) ok=x(i).le.xbcen4+tranx4.and.x(i).ge.xbcen4-tranx4.and. &
-                 y(i).le.ybcen4+trany4.and.y(i).ge.ybcen4-trany4.and. &
-                 z(i).le.zbcen4+tranz4.and.z(i).ge.zbcen4-tranz4
-      if (ok) then
-        if (chi.gt.0.0) then
-           chitp=chitp+chi
-        else
-           chitn=chitn+chi
-        endif
+    ok = .true.
+    itype=et(i)
+    chi=etypl(itype)%chg
+    if (chi.eq.0.0) ok = .false.
+    if (ok) ok=x(i).le.xbcen4+tranx4.and.x(i).ge.xbcen4-tranx4.and. &
+               y(i).le.ybcen4+trany4.and.y(i).ge.ybcen4-trany4.and. &
+               z(i).le.zbcen4+tranz4.and.z(i).ge.zbcen4-tranz4
+    if (ok) then
+      if (chi.gt.0.0) then
+         chitp=chitp+chi
+      else
+         chitn=chitn+chi
       endif
     endif
   enddo
@@ -73,38 +64,29 @@ if (Qchdenorm) then
 endif
 
 do i = 1, nele
-  if (i.le.nelenuc .or. i.gt.nelenuc) then 
-    ok = .false.
-    if (i.le.nelenuc) then
-      if (namsite(i).eq.'P ') then
-        chi = cgnuc
-        ok = .true.
-      endif
-    else if (i.gt.nelenuc) then
-      itype = abs(typei(i))
-      chi = cg(itype)
-      ok = .true.
+  ok = .true.
+  itype=et(i)
+  chi=etypl(itype)%chg
+  if (chi.eq.0.0) ok = .false.
+  if (ok) ok=x(i).le.xbcen4+tranx4.and.x(i).ge.xbcen4-tranx4.and. &
+             y(i).le.ybcen4+trany4.and.y(i).ge.ybcen4-trany4.and. &
+             z(i).le.zbcen4+tranz4.and.z(i).ge.zbcen4-tranz4
+  if (ok) then
+!    ion cartesian coordinates in the local grid system  
+    xi = r(i)%x + tranx4-xbcen4
+    yi = r(i)%y + trany4-ybcen4
+    zi = r(i)%z + tranz4-zbcen4
+    ix = int(xi*idcel4) 
+    iy = int(yi*idcel4) 
+    iz = int(zi*idcel4)
+!   Atom charge distribution by 8 adjacent grid points
+    in3 = ix*ncyz + iy*nclz4 + iz + 1
+    if (chi.gt.0.0) then 
+      chden(in3)=chden(in3)+sng(chi*ichitp)
+    else
+      chden(in3)=chden(in3)+sng(chi*ichitn)
     endif
-    if (ok) ok=x(i).le.xbcen4+tranx4.and.x(i).ge.xbcen4-tranx4.and. &
-               y(i).le.ybcen4+trany4.and.y(i).ge.ybcen4-trany4.and. &
-               z(i).le.zbcen4+tranz4.and.z(i).ge.zbcen4-tranz4
-    if (ok) then
-!      ion cartesian coordinates in the local grid system  
-      xi = x(i) + tranx4-xbcen4
-      yi = y(i) + trany4-ybcen4
-      zi = z(i) + tranz4-zbcen4
-      ix = int(xi*idcel4) 
-      iy = int(yi*idcel4) 
-      iz = int(zi*idcel4)
-!     Atom charge distribution by 8 adjacent grid points
-      in3 = ix*ncyz + iy*nclz4 + iz + 1
-      if (chi.gt.0.0) then 
-        chden(in3)=chden(in3)+sng(chi*ichitp)
-      else
-        chden(in3)=chden(in3)+sng(chi*ichitn)
-      endif
-    endif ! ok  
-  endif  
+  endif ! ok  
 enddo ! i = 1,...,nele
 
 return

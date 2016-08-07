@@ -32,54 +32,49 @@ real  xj, yj, zj
 !local variables
 integer ncyz,ix,iy,iz,n1,n2,n3,in3
 real  chi,xi,yi,zi,ai,bi,ci,fi
-logical*1 Beion, Besite, ok
+logical*1 ok
 
 egsbpa = 0.0
-Beion = Qpar .and. j.gt.nelenuc
-Besite = .false.
-if (Qnucl) then 
-  if (j.le.nelenuc) Besite = namsite(j).eq.'P '
-endif
-ok = Beion .or. Besite
 
-if (Beion) chi = cg(jtype)
-if (Besite) chi = cgnuc
-if (ok) ok=xj.le.xbcen1+tranx1.and.xj.ge.xbcen1-tranx1.and. &
-           yj.le.ybcen1+trany1.and.yj.ge.ybcen1-trany1.and. &
-           zj.le.zbcen1+tranz1.and.zj.ge.zbcen1-tranz1
-if (ok) then
-  ncyz = ncly1*nclz1
+chi = etypl(jtype)%chg
+if (chi.eq.0.0) return
+
+ok=xj.le.xbcen1+tranx1.and.xj.ge.xbcen1-tranx1.and. &
+   yj.le.ybcen1+trany1.and.yj.ge.ybcen1-trany1.and. &
+   zj.le.zbcen1+tranz1.and.zj.ge.zbcen1-tranz1
+if (.not.ok) return
+
+ncyz = ncly1*nclz1
 !  ion cartesian coordinates in the local grid system              
-  xi = xj + tranx1-xbcen1
-  yi = yj + trany1-ybcen1
-  zi = zj + tranz1-zbcen1
+xi = xj + tranx1-xbcen1
+yi = yj + trany1-ybcen1
+zi = zj + tranz1-zbcen1
 !  integer*4 counter for ion cartesian coordinates        
-  ix = int(xi*idcel1)
-  iy = int(yi*idcel1)
-  iz = int(zi*idcel1)
-  if (ix.eq.nclx1-1) ix=nclx1-2
-  if (iy.eq.ncly1-1) iy=ncly1-2
-  if (iz.eq.nclz1-1) iz=nclz1-2
+ix = int(xi*idcel1)
+iy = int(yi*idcel1)
+iz = int(zi*idcel1)
+if (ix.eq.nclx1-1) ix=nclx1-2
+if (iy.eq.ncly1-1) iy=ncly1-2
+if (iz.eq.nclz1-1) iz=nclz1-2
 
 !Atom charge distribution by 8 adjacent grid points
 
-  do n1 = ix, ix+1
-    ai = xi - n1*dcel1
-    ai = 1.0 - abs(ai)*idcel1
-    do n2 = iy, iy+1
-      bi = yi - n2*dcel1
-      bi = 1.0 - abs(bi)*idcel1
-      do n3 = iz, iz+1
-        ci = zi - n3*dcel1
-        ci = 1.0 - abs(ci)*idcel1
-        fi = ai*bi*ci
-        in3 = n1*ncyz + n2*nclz1 + n3 + 1
+do n1 = ix, ix+1
+  ai = xi - n1*dcel1
+  ai = 1.0 - abs(ai)*idcel1
+  do n2 = iy, iy+1
+    bi = yi - n2*dcel1
+    bi = 1.0 - abs(bi)*idcel1
+    do n3 = iz, iz+1
+      ci = zi - n3*dcel1
+      ci = 1.0 - abs(ci)*idcel1
+      fi = ai*bi*ci
+      in3 = n1*ncyz + n2*nclz1 + n3 + 1
 !Electrostatic Energy 
-        egsbpa = egsbpa + (fi*chi*phix(in3)*celec)
-      enddo ! n3
-    enddo ! n2
-  enddo ! n1
-endif ! ok
+      egsbpa = egsbpa + (fi*chi*phix(in3)*celec)
+    enddo ! n3
+  enddo ! n2
+enddo ! n1
 
 return
-end
+end subroutine

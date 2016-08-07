@@ -118,7 +118,7 @@ OBJECTS = extramod.o apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o
 	help.o insert.o interact.o membrane.o metropolis.o move.o native_structure.o rfpar.o feedseed.o\
 	random.o readmmij.o chrden.o readphi.o rect_rf0.o rect_rf1.o rgauss.o staefield.o shell_simul.o\
 	simul1.o simul.o sphe_rf0.o sphe_rf1.o spline.o staticf0.o staticf1.o switch1.o switch2.o switch3.o\
-	testfirst.o vdwgd0spln.o vdwgd0trln.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o reasig.o\
+	vdwgd0spln.o vdwgd0trln.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o reasig.o\
 	polynom.o readpsf.o readcharmm.o exclude.o cmapc.o cmapg.o psf_bend.o psf_bond.o psf_cmap.o\
 	psf_dih.o psf_imp.o test_bond.o cmapspline.o bcucof.o
 

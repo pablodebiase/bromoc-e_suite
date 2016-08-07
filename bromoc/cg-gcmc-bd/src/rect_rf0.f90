@@ -26,6 +26,7 @@ use constamod
 use grandmod
 use nucleotmod
 use gsbpmod
+use listmod
 !Inputs
 implicit none
 integer j,jtype
@@ -49,12 +50,12 @@ do i = nelenuc+1, nele
     yg = yj
     zg = zj
   else
-    itype = abs(typei(i))
-    xg = x(i)             
-    yg = y(i)             
-    zg = z(i)             
+    itype = et(i)
+    xg = r(i)%x             
+    yg = r(i)%y             
+    zg = r(i)%z             
   endif
-  charge = cg(itype)
+  charge = etypl(itype)%chg
   if (zg.ge.zmin.and.zg.le.zmax .and.xg.ge.xmin.and.xg.le.xmax .and.yg.ge.ymin.and.yg.le.ymax) then
     xxs = xscal*xg
     yys = yscal*yg
@@ -88,7 +89,7 @@ do i = nelenuc+1, nele
 enddo
 
 !calculate Q_{m} coefficients for nele- (jth ion)
-charge = cg(jtype)
+charge = etypl(jtype)%chg
 do ii = 1, ntpol
   xpol = lstpx(ii)
   ypol = lstpy(ii)

@@ -78,8 +78,6 @@
 ! Qrot                  -> Logical variable which indicates if there is a rotation of DNA
 !                          sites positions
 !                        -> These integer vectors are used in wrtrraj routine
-! nion                  -> number of ion types
-! nfc                   -> number of explicit atom and ion types
 ! nparnuc               -> nucleotides in npar 
 ! nelenuc               -> nucleotides in nele
 ! netnuc                -> nucleotides in netyp
@@ -95,7 +93,7 @@ character*2,allocatable :: namsite(:)
 real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 real        cgnuc, diffnuc, epsnuc, epsolv, fctn, scalepairing
 real        notrx,notry,notrz,inelenuc  ! NOTRAN
-integer     nion,ndnaxnion,nfc,ndnaxnfc,setframes
+integer     setframes
 !CONTRA
 real        xcon,ycon,zcon
 real,allocatable :: kx(:),ky(:),kz(:),contrx(:),contry(:),contrz(:) 

@@ -28,7 +28,7 @@ use efpmod
 use listmod
 implicit none
 
-integer i, j, itype, itype2, jtype, jtype2, is
+integer i, j, itype, jtype, is
 real dist, dist2, dist6, idist, idist2, idistkd
 real de, dc
 
@@ -76,9 +76,9 @@ econ     = 0.0
 if (Qenergy) then
   ! Initializations
   if (Qforces) then
-    fx(1:nele) = 0.0
-    fy(1:nele) = 0.0
-    fz(1:nele) = 0.0
+    f(1:nele)%x = 0.0
+    f(1:nele)%y = 0.0
+    f(1:nele)%z = 0.0
   endif
 
   ! membrane contribution
@@ -119,7 +119,7 @@ if (Qenergy) then
 
   dids(1:5,nelenuc+1:nele)=0.0
   aa=(nele-nelenuc)*(nele-nelenuc-1)/2
-  !$omp parallel private(ang,ang0,av,bb,bv,cofo,cte1,dc,dd,de,didstmp,dihe,dihe0,dist,dist12,dist2,dist6,eangloc,ebondloc,ebploc,ediheloc,eefp,eefpotloc,eefpotmxloc,eelecloc,eexloc,epsln,eqqloc,eqqmxloc,esolvloc,esrpmf0,esrpmf1,esrpmf2,esrpmf3,esrpmfloc,esrpmfmxloc,estackloc,evdwloc,evdwmxloc,f1,f2,f3,f4,fdf,fdv,fin,fxloc,fyloc,fzloc,i,idist,idist2,idistkd,ini,is,isite1,isite2,isite3,isite4,itype,itype2,iv22,j,jtype,jtype2,m1,m2,m3,modval,n1,n1v,n2,n2v,nth,ok,ok2,Qdeby,sgex2,tid,v1,v12,v2,v22,v23,v2v,v3,varang,vard,vard2,vardihe)
+  !$omp parallel private(ang,ang0,av,bb,bv,cofo,cte1,dc,dd,de,didstmp,dihe,dihe0,dist,dist12,dist2,dist6,eangloc,ebondloc,ebploc,ediheloc,eefp,eefpotloc,eefpotmxloc,eelecloc,eexloc,epsln,eqqloc,eqqmxloc,esolvloc,esrpmf0,esrpmf1,esrpmf2,esrpmf3,esrpmfloc,esrpmfmxloc,estackloc,evdwloc,evdwmxloc,f1,f2,f3,f4,fdf,fdv,fin,fxloc,fyloc,fzloc,i,idist,idist2,idistkd,ini,is,isite1,isite2,isite3,isite4,itype,iv22,j,jtype,m1,m2,m3,modval,n1,n1v,n2,n2v,nth,ok,ok2,Qdeby,sgex2,tid,v1,v12,v2,v22,v23,v2v,v3,varang,vard,vard2,vardihe)
   ebploc=0.0
   eexloc=0.0
   eqqloc=0.0
@@ -158,13 +158,11 @@ if (Qenergy) then
     if (Qnonbond) then
       do j=ini,fin
 !     do j = nelenuc+1, nele
-        jtype  = abs(typei(j))
-        jtype2 = nwtype(jtype) ! convert atnam to atnam2
+        jtype  = et(j)
         do i = nelenuc+1, j-1
-          itype = abs(typei(i))
-          itype2=nwtype(itype) ! convert atnam to atnam2
-          is=etpidx(itype2,jtype2)
-          dist2 = ((x(i)-x(j))**2+(y(i)-y(j))**2+(z(i)-z(j))**2)
+          itype = et(i)
+          is=etpidx(itype,jtype)
+          dist2 = ((r(i)%x-r(j)%x)**2+(r(i)%y-r(j)%y)**2+(r(i)%z-r(j)%z)**2)
           if (Qefpot(is)) then
             if (Qforces) then
               call getyd(is,dist2,eefp,de,dist)
@@ -220,13 +218,13 @@ if (Qenergy) then
             endif
             if (de.ne.0.0) then 
               if (i.gt.nelenuc) then
-                fxloc(i) = fxloc(i) + de*(x(i)-x(j))
-                fyloc(i) = fyloc(i) + de*(y(i)-y(j))
-                fzloc(i) = fzloc(i) + de*(z(i)-z(j))
+                fxloc(i) = fxloc(i) + de*(r(i)%x-r(j)%x)
+                fyloc(i) = fyloc(i) + de*(r(i)%y-r(j)%y)
+                fzloc(i) = fzloc(i) + de*(r(i)%z-r(j)%z)
               endif
-              fxloc(j) = fxloc(j) - de*(x(i)-x(j))
-              fyloc(j) = fyloc(j) - de*(y(i)-y(j))
-              fzloc(j) = fzloc(j) - de*(z(i)-z(j))
+              fxloc(j) = fxloc(j) - de*(r(i)%x-r(j)%x)
+              fyloc(j) = fyloc(j) - de*(r(i)%y-r(j)%y)
+              fzloc(j) = fzloc(j) - de*(r(i)%z-r(j)%z)
             endif
           endif
         enddo ! i = nelenuc+1,...,(j-1)
@@ -248,9 +246,9 @@ if (Qenergy) then
         isite1 = sitebond(i,1)
         isite2 = sitebond(i,2)
         dd = distbond(i) ! natural bond length
-        v1(1)=x(isite2)-x(isite1)
-        v1(2)=y(isite2)-y(isite1)
-        v1(3)=z(isite2)-z(isite1)
+        v1(1)=r(isite2)%x-r(isite1)%x
+        v1(2)=r(isite2)%y-r(isite1)%y
+        v1(3)=r(isite2)%z-r(isite1)%z
         dist = sqrt(dot_product(v1,v1))
         vard = dist - dd
         vard2 = vard**2 
@@ -282,12 +280,12 @@ if (Qenergy) then
         isite2 = siteangle(i,2) ! central site
         isite3 = siteangle(i,3) 
         ang0 = valangle(i) ! natural bond angle
-        v1(1) = x(isite1) - x(isite2)
-        v2(1) = x(isite3) - x(isite2)
-        v1(2) = y(isite1) - y(isite2)
-        v2(2) = y(isite3) - y(isite2)
-        v1(3) = z(isite1) - z(isite2)
-        v2(3) = z(isite3) - z(isite2)
+        v1(1) = r(isite1)%x - r(isite2)%x
+        v2(1) = r(isite3)%x - r(isite2)%x
+        v1(2) = r(isite1)%y - r(isite2)%y
+        v2(2) = r(isite3)%y - r(isite2)%y
+        v1(3) = r(isite1)%z - r(isite2)%z
+        v2(3) = r(isite3)%z - r(isite2)%z
         m1=dot_product(v1,v1) 
         m2=dot_product(v2,v2)
         m3=dot_product(v1,v2)
@@ -328,15 +326,15 @@ if (Qenergy) then
         isite3 = sitedihe(i,3)
         isite4 = sitedihe(i,4)
         dihe0 = valdihe(i) ! natural torsion angle
-        v1(1) = x(isite1) - x(isite2)
-        v2(1) = x(isite3) - x(isite2)
-        v3(1) = x(isite3) - x(isite4)
-        v1(2) = y(isite1) - y(isite2)
-        v2(2) = y(isite3) - y(isite2)
-        v3(2) = y(isite3) - y(isite4)
-        v1(3) = z(isite1) - z(isite2)
-        v2(3) = z(isite3) - z(isite2)
-        v3(3) = z(isite3) - z(isite4)
+        v1(1) = r(isite1)%x - r(isite2)%x
+        v2(1) = r(isite3)%x - r(isite2)%x
+        v3(1) = r(isite3)%x - r(isite4)%x
+        v1(2) = r(isite1)%y - r(isite2)%y
+        v2(2) = r(isite3)%y - r(isite2)%y
+        v3(2) = r(isite3)%y - r(isite4)%y
+        v1(3) = r(isite1)%z - r(isite2)%z
+        v2(3) = r(isite3)%z - r(isite2)%z
+        v3(3) = r(isite3)%z - r(isite4)%z
         call cross_product(v1,v2,n1)
         call cross_product(v2,v3,n2)
         v22=dot_product(v2,v2)
@@ -393,9 +391,9 @@ if (Qenergy) then
       do i = 1, nstack
         isite1 = sitestack(i,1)
         isite2 = sitestack(i,2)
-        v1(1)=x(isite2)-x(isite1)
-        v1(2)=y(isite2)-y(isite1)
-        v1(3)=z(isite2)-z(isite1)
+        v1(1)=r(isite2)%x-r(isite1)%x
+        v1(2)=r(isite2)%y-r(isite1)%y
+        v1(3)=r(isite2)%z-r(isite1)%z
         dist2 = dot_product(v1,v1)
         idist2=1.0/dist2
         cte1 = (sgstack(i)**2*idist2)**3   
@@ -428,9 +426,9 @@ if (Qenergy) then
         else  
           epsln = 2.0*epsnuc*scalepairing
         endif
-        v1(1)=x(isite2)-x(isite1)
-        v1(2)=y(isite2)-y(isite1)
-        v1(3)=z(isite2)-z(isite1)
+        v1(1)=r(isite2)%x-r(isite1)%x
+        v1(2)=r(isite2)%y-r(isite1)%y
+        v1(3)=r(isite2)%z-r(isite1)%z
         dist2 = dot_product(v1,v1)
         idist2=1.0/dist2
         cte1 = sgbp(i)*sgbp(i)*idist2
@@ -458,12 +456,12 @@ if (Qenergy) then
       do i = 1, nex
         isite1 = siteex(i,1)
         isite2 = siteex(i,2)
-        v1(1)=x(isite2)-x(isite1)
-        v1(2)=y(isite2)-y(isite1)
-        v1(3)=z(isite2)-z(isite1)
+        v1(1)=r(isite2)%x-r(isite1)%x
+        v1(2)=r(isite2)%y-r(isite1)%y
+        v1(3)=r(isite2)%z-r(isite1)%z
         dist2 = dot_product(v1,v1)
         idist2=1.0/dist2
-        sgex2=sgex(i)**2
+        sgex2=sger(i)%x**2
         if (dist2.lt.sgex2) then
           cte1 = (sgex2*idist2)**3      
           eexloc = eexloc + 4.0*epsnuc*cte1*(cte1-1.0) + epsnuc
@@ -491,13 +489,13 @@ if (Qenergy) then
       do i = 1, nqq
         isite1 = siteqq(i,1)
         isite2 = siteqq(i,2)
-        v1(1)=x(isite2)-x(isite1)
-        v1(2)=y(isite2)-y(isite1)
-        v1(3)=z(isite2)-z(isite1)
+        v1(1)=r(isite2)%x-r(isite1)%x
+        v1(2)=r(isite2)%y-r(isite1)%y
+        v1(3)=r(isite2)%z-r(isite1)%z
         dist=sqrt(dot_product(v1,v1)) 
         idist=1.0/dist
         if (Qdebyhyb) then
-          if(outbox(x(isite1),y(isite1),z(isite1)).and.outbox(x(isite2),y(isite2),z(isite2))) Qdeby=.true.
+          if(outbox(r(isite1)%x,r(isite1)%y,r(isite1)%z).and.outbox(r(isite2)%x,r(isite2)%y,r(isite2)%z)) Qdeby=.true.
         endif
         if (Qdeby) then
           idistkd=exp(-dist*ikappa)
@@ -545,9 +543,9 @@ if (Qenergy) then
         do i = 1, nsolv
           isite1 = siteslv(i,1)
           isite2 = siteslv(i,2)
-          v1(1)=x(isite2)-x(isite1)
-          v1(2)=y(isite2)-y(isite1)
-          v1(3)=z(isite2)-z(isite1)
+          v1(1)=r(isite2)%x-r(isite1)%x
+          v1(2)=r(isite2)%y-r(isite1)%y
+          v1(3)=r(isite2)%z-r(isite1)%z
           dist=sqrt(dot_product(v1,v1)) 
           cte1 = exp((13.38-dist)*0.1875)
           esolvloc = esolvloc + epsolv*(1.0-cte1)**2 - epsolv
@@ -575,70 +573,70 @@ if (Qenergy) then
         do i=1,afn
           j=sn(i)
           if (Qforces.and.stfree(j)) then
-            fx(j)=fx(j)+af(1,i)
-            fy(j)=fy(j)+af(2,i)
-            fz(j)=fz(j)+af(3,i)
+            f(j)%x=f(j)%x+af(1,i)
+            f(j)%y=f(j)%y+af(2,i)
+            f(j)%z=f(j)%z+af(3,i)
           endif
         enddo
       endif
       if (Qcontrans) then
         do i=1,ctn
           j=csn(i)
-          if (kx(i).ne.0.0) then
+          if (kr(i)%x.ne.0.0) then
             if (j.eq.0) then
               if (Qunsplit) then
-                xcon=sum(x(1:nelenuc1st))*inelenuc*2.0-contrx(i)
-                fx(1:nelenuc1st)=fx(1:nelenuc1st)-kx(i)*xcon*inelenuc*2.0
-                econ = econ + 0.5*kx(i)*xcon**2
+                xcon=sum(x(1:nelenuc1st))*inelenuc*2.0-contrr(i)%x
+                f(1:nelenuc1st)%x=f(1:nelenuc1st)%x-kr(i)%x*xcon*inelenuc*2.0
+                econ = econ + 0.5*kr(i)%x*xcon**2
                 xcon=sum(x(1+nelenuc1st:nelenuc))*inelenuc*2.0-contrx(ctn+1)
-                fx(1+nelenuc1st:nelenuc)=fx(1+nelenuc1st:nelenuc)-kx(i)*xcon*inelenuc*2.0
-                econ = econ + 0.5*kx(i)*xcon**2
+                f(1+nelenuc1st:nelenuc)%x=f(1+nelenuc1st:nelenuc)%x-kr(i)%x*xcon*inelenuc*2.0
+                econ = econ + 0.5*kr(i)%x*xcon**2
               else
-                xcon=sum(x(1:nelenuc))*inelenuc-contrx(i)
-                fx(1:nelenuc)=fx(1:nelenuc)-kx(i)*xcon*inelenuc
-                econ = econ + 0.5*kx(i)*xcon**2
+                xcon=sum(x(1:nelenuc))*inelenuc-contrr(i)%x
+                f(1:nelenuc)%x=f(1:nelenuc)%x-kr(i)%x*xcon*inelenuc
+                econ = econ + 0.5*kr(i)%x*xcon**2
               endif
             else
-              fx(j)=fx(j)-kx(i)*(x(j)-contrx(i))
-              econ = econ + 0.5*kx(i)*(x(j)-contrx(i))**2
+              f(j)%x=f(j)%x-kr(i)%x*(r(j)%x-contrr(i)%x)
+              econ = econ + 0.5*kr(i)%x*(r(j)%x-contrr(i)%x)**2
             endif 
           endif
-          if (ky(i).ne.0.0) then
+          if (kr(i)%y.ne.0.0) then
             if (j.eq.0) then
               if (Qunsplit) then
-                ycon=sum(y(1:nelenuc1st))*inelenuc*2.0-contry(i)
-                fy(1:nelenuc1st)=fy(1:nelenuc1st)-ky(i)*ycon*inelenuc*2.0
-                econ = econ + 0.5*ky(i)*ycon**2
+                ycon=sum(y(1:nelenuc1st))*inelenuc*2.0-contrr(i)%y
+                f(1:nelenuc1st)%y=f(1:nelenuc1st)%y-kr(i)%y*ycon*inelenuc*2.0
+                econ = econ + 0.5*kr(i)%y*ycon**2
                 ycon=sum(y(1+nelenuc1st:nelenuc))*inelenuc*2.0-contry(ctn+1)
-                fy(1+nelenuc1st:nelenuc)=fy(1+nelenuc1st:nelenuc)-ky(i)*ycon*inelenuc*2.0
-                econ = econ + 0.5*ky(i)*ycon**2
+                f(1+nelenuc1st:nelenuc)%y=f(1+nelenuc1st:nelenuc)%y-kr(i)%y*ycon*inelenuc*2.0
+                econ = econ + 0.5*kr(i)%y*ycon**2
               else
-                ycon=sum(y(1:nelenuc))*inelenuc-contry(i)
-                fy(1:nelenuc)=fy(1:nelenuc)-ky(i)*ycon*inelenuc
-                econ = econ + 0.5*ky(i)*ycon**2
+                ycon=sum(y(1:nelenuc))*inelenuc-contrr(i)%y
+                f(1:nelenuc)%y=f(1:nelenuc)%y-kr(i)%y*ycon*inelenuc
+                econ = econ + 0.5*kr(i)%y*ycon**2
               endif
             else
-              fy(j)=fy(j)-ky(i)*(y(j)-contry(i))
-              econ = econ + 0.5*ky(i)*(y(j)-contry(i))**2
+              f(j)%y=f(j)%y-kr(i)%y*(r(j)%y-contrr(i)%y)
+              econ = econ + 0.5*kr(i)%y*(r(j)%y-contrr(i)%y)**2
             endif
           endif
-          if (kz(i).ne.0.0) then
+          if (kr(i)%z.ne.0.0) then
             if (j.eq.0) then
               if (Qunsplit) then
-                zcon=sum(z(1:nelenuc1st))*inelenuc*2.0-contrz(i)
-                fz(1:nelenuc1st)=fz(1:nelenuc1st)-kz(i)*zcon*inelenuc*2.0
-                econ = econ + 0.5*kz(i)*zcon**2
+                zcon=sum(z(1:nelenuc1st))*inelenuc*2.0-contrr(i)%z
+                f(1:nelenuc1st)%z=f(1:nelenuc1st)%z-kr(i)%z*zcon*inelenuc*2.0
+                econ = econ + 0.5*kr(i)%z*zcon**2
                 zcon=sum(z(1+nelenuc1st:nelenuc))*inelenuc*2.0-contrz(ctn+1)
-                fz(1+nelenuc1st:nelenuc)=fz(1+nelenuc1st:nelenuc)-kz(i)*zcon*inelenuc*2.0
-                econ = econ + 0.5*kz(i)*zcon**2
+                f(1+nelenuc1st:nelenuc)%z=f(1+nelenuc1st:nelenuc)%z-kr(i)%z*zcon*inelenuc*2.0
+                econ = econ + 0.5*kr(i)%z*zcon**2
               else
-                zcon=sum(z(1:nelenuc))*inelenuc-contrz(i)
-                fz(1:nelenuc)=fz(1:nelenuc)-kz(i)*zcon*inelenuc
-                econ = econ + 0.5*kz(i)*zcon**2
+                zcon=sum(z(1:nelenuc))*inelenuc-contrr(i)%z
+                f(1:nelenuc)%z=f(1:nelenuc)%z-kr(i)%z*zcon*inelenuc
+                econ = econ + 0.5*kr(i)%z*zcon**2
               endif
             else
-              fz(j)=fz(j)-kz(i)*(z(j)-contrz(i))
-              econ = econ + 0.5*kz(i)*(z(j)-contrz(i))**2
+              f(j)%z=f(j)%z-kr(i)%z*(r(j)%z-contrr(i)%z)
+              econ = econ + 0.5*kr(i)%z*(r(j)%z-contrr(i)%z)**2
             endif
           endif
         enddo
@@ -649,13 +647,12 @@ if (Qenergy) then
   if (Qpar .and. Qnucl .and. Qnonbond) then
     !$omp do
     do i = nelenuc+1, nele
-      itype = abs(typei(i))
-      itype2 = nwtype(itype)
+      itype = et(i)
       do j = 1, nelenuc
-        jtype2 = typtyp(j)
-        is=etpidx(itype2,jtype2)
+        jtype = et(j)
+        is=etpidx(itype,jtype)
   ! Compute distances dna fragment-ion
-        dist2 = (x(i)-x(j))**2 + (y(i)-y(j))**2 + (z(i)-z(j))**2
+        dist2 = (r(i)%x-r(j)%x)**2 + (r(i)%y-r(j)%y)**2 + (r(i)%z-r(j)%z)**2
         ok=.false.
         ok2=Qforces .and.(i.gt.nelenuc.or.stfree(j))
         if (Qefpot(is)) then
@@ -670,17 +667,17 @@ if (Qenergy) then
               if (j.eq.1) then 
                 dids(1,i)=dist-efp(is)%xl
                 dids(2,i)=dist 
-                dids(3,i)=x(i)-x(j)
-                dids(4,i)=y(i)-y(j)
-                dids(5,i)=z(i)-z(j)
+                dids(3,i)=r(i)%x-r(j)%x
+                dids(4,i)=r(i)%y-r(j)%y
+                dids(5,i)=r(i)%z-r(j)%z
               else
                 didstmp=dist-efp(is)%xl
                 if (didstmp.lt.dids(1,i)) then
                   dids(1,i)=didstmp
                   dids(2,i)=dist
-                  dids(3,i)=x(i)-x(j)
-                  dids(4,i)=y(i)-y(j)
-                  dids(5,i)=z(i)-z(j)
+                  dids(3,i)=r(i)%x-r(j)%x
+                  dids(4,i)=r(i)%y-r(j)%y
+                  dids(5,i)=r(i)%z-r(j)%z
                 endif
               endif
             endif
@@ -736,14 +733,14 @@ if (Qenergy) then
           endif
           if (de.ne.0.0) then 
             if (i.gt.nelenuc) then
-              fx(i) = fx(i) + de*(x(i)-x(j))
-              fy(i) = fy(i) + de*(y(i)-y(j))
-              fz(i) = fz(i) + de*(z(i)-z(j))
+              f(i)%x = f(i)%x + de*(r(i)%x-r(j)%x)
+              f(i)%y = f(i)%y + de*(r(i)%y-r(j)%y)
+              f(i)%z = f(i)%z + de*(r(i)%z-r(j)%z)
             endif
             if (stfree(j)) then
-              fxloc(j) = fxloc(j) - de*(x(i)-x(j))
-              fyloc(j) = fyloc(j) - de*(y(i)-y(j))
-              fzloc(j) = fzloc(j) - de*(z(i)-z(j))
+              fxloc(j) = fxloc(j) - de*(r(i)%x-r(j)%x)
+              fyloc(j) = fyloc(j) - de*(r(i)%y-r(j)%y)
+              fzloc(j) = fzloc(j) - de*(r(i)%z-r(j)%z)
             endif
           endif
         endif
@@ -768,9 +765,9 @@ if (Qenergy) then
   edihe=edihe+ediheloc
   ebond=ebond+ebondloc
   eang=eang+eangloc
-  fx(1:nele)=fx(1:nele)+fxloc(1:nele)
-  fy(1:nele)=fy(1:nele)+fyloc(1:nele)
-  fz(1:nele)=fz(1:nele)+fzloc(1:nele)
+  f(1:nele)%x=f(1:nele)%x+fxloc(1:nele)
+  f(1:nele)%y=f(1:nele)%y+fyloc(1:nele)
+  f(1:nele)%z=f(1:nele)%z+fzloc(1:nele)
   !$omp end critical
   !$omp end parallel
   ener = ener + eelec + evdw + esrpmf + esrpmfmx + ebond + eang + edihe + estack + ebp + eex + eqq + esolv + eqqmx + evdwmx + eefpot + eefpotmx + econ

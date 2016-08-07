@@ -25,6 +25,7 @@ use constamod
 use grandmod
 use nucleotmod
 use gsbpmod
+use listmod
 
 implicit none
 !local variables
@@ -48,11 +49,11 @@ do ii =1,ntpol
   coef(ii) = 0.0
 enddo
 do i = nelenuc+1, nele
-  itype = abs(typei(i))
-  charge = cg(itype)
-  xdiff = x(i) 
-  ydiff = y(i) 
-  zdiff = z(i) 
+  itype = et(i)
+  charge = etypl(itype)%chg
+  xdiff = r(i)%x 
+  ydiff = r(i)%y 
+  zdiff = r(i)%z 
   r2 = xdiff*xdiff+ydiff*ydiff+zdiff*zdiff
   if (r2.le.srdist2) then
     r = sqrt(r2)
@@ -86,7 +87,6 @@ do i = nelenuc+1, nele
     cpj(i) = cp
     stj(i) = st
     ctj(i) = ct
-
     do ii=1,ntpol
       l = lstpl(ii)
       m = lstpm(ii)
@@ -122,11 +122,11 @@ egsbpb = egsbpb*celec
 !reaction field force calculations     
 if (Qforces) then
   do mm = nelenuc+1, nele
-    itype = abs(typei(mm))
-    charge = cg(itype)
-    xdiff = x(mm) 
-    ydiff = y(mm) 
-    zdiff = z(mm) 
+    itype = et(mm)
+    charge = etypl(itype)%chg
+    xdiff = r(mm)%x 
+    ydiff = r(mm)%y 
+    zdiff = r(mm)%z 
     r2 = xdiff*xdiff+ydiff*ydiff+zdiff*zdiff
     if (r2.le.srdist2) then
       rxnbfx = 0.0
@@ -177,9 +177,9 @@ if (Qforces) then
         rxnbfy = rxnbfy-dy*mq(ii)
         rxnbfz = rxnbfz-dz*mq(ii)
       enddo
-      fx(mm) = fx(mm)+rxnbfx*ccc
-      fy(mm) = fy(mm)+rxnbfy*ccc
-      fz(mm) = fz(mm)+rxnbfz*ccc
+      f(mm)%x = f(mm)%x+rxnbfx*ccc
+      f(mm)%y = f(mm)%y+rxnbfy*ccc
+      f(mm)%z = f(mm)%z+rxnbfz*ccc
     endif
   enddo
 endif

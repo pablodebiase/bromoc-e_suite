@@ -16,33 +16,35 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine move(iat,xnew,ynew,znew)
+subroutine move(iat,rr)
 use grandmod
 use nucleotmod
+use listmod
 
 implicit none
 integer iat
-real xnew, ynew, znew
-real radius,natom
+real radius,nremovablepar
 logical*1 endok
+type(car) :: rr, rs
 
 !Pick one atom randomly and move it (if it moves outside the 
 !limits, pick a different atom)
 
 endok = .true.  
-natom = float(nele - nelenuc)
+nremovablepar = float(npar - nparnuc)
 do while (endok)
-  iat = nelenuc + int(natom*rndm()) + 1 ! [nelenuc+1,nele]
-  xnew = x(iat) + mcmax*(rndm()-0.5)
-  ynew = y(iat) + mcmax*(rndm()-0.5)
-  znew = z(iat) + mcmax*(rndm()-0.5)
+  iat = nparnuc + int(nremovablepar*rndm()) + 1 ! [nelenuc+1,nele]
+  call getcentroid(iat, rs)
+  rr%x = rs%x + mcmax*(rndm()-0.5)
+  rr%y = rs%y + mcmax*(rndm()-0.5)
+  rr%z = rs%z + mcmax*(rndm()-0.5)
   if (Qsphere) then
-    radius = (xnew-cx)**2+(ynew-cy)**2+(znew-cz)**2
+    radius = (rr%x-cx)**2+(rr%y-cy)**2+(rr%z-cz)**2
     endok = radius.gt.Rsphe2
   elseif (Qecyl) then
-    endok = (((xnew-cx)*iecx)**2+((ynew-cy)*iecy)**2).gt.1.0.or.znew.lt.lz2m.or.znew.gt.lz2p
+    endok = (((rr%x-cx)*iecx)**2+((rr%y-cy)*iecy)**2).gt.1.0.or.rr%z.lt.lz2m.or.rr%z.gt.lz2p
   else
-    endok = xnew.lt.lx2m.or.xnew.gt.lx2p.or.ynew.lt.ly2m.or.ynew.gt.ly2p.or.znew.lt.lz2m.or.znew.gt.lz2p
+    endok = rr%x.lt.lx2m.or.rr%x.gt.lx2p.or.rr%y.lt.ly2m.or.rr%y.gt.ly2p.or.rr%z.lt.lz2m.or.rr%z.gt.lz2p
   endif
 enddo 
   

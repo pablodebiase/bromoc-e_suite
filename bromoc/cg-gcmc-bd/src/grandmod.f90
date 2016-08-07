@@ -31,9 +31,6 @@ real    ikbt,ikbtdna
 real    temp,kbt,kBTdt,dnatemp,kbtdna
 real*8 runtime
 integer nbuffer
-
-integer typei(datom)
-
 integer,allocatable :: warn(:)
 integer     ibfftyp(dbuff),nat(dtype),idtype(dtype)
 integer     nremove(dtype),ninsert(dtype),ntotat(dtype)

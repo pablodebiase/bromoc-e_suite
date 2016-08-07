@@ -21,70 +21,61 @@ subroutine count()
 !     nbuffer: the number of buffers in the system
 !     nele: number of elements in the system
 !     buffer number ib concerns ions of type ibfftyp(ib)
-!     particle i belongs to the buffer number ibuffer(i) 
-!     (note that if ibuffer(i) is zero, then particle does not belong to any buffer
+!     particle i belongs to the buffer number ibuf 
+!     (note that if ibuf is zero, then particle does not belong to any buffer
 !      or is a fix ion)
 use grandmod
 use constamod
 use stdiomod
 use errormod
 use nucleotmod
+use listmod
 implicit none
 
 integer ib,itype,i
 real  radius2
 logical*1 endlog
+type(car) :: rr
 
 !     Initializations
 do ib = 1, nbuffer
    nat(ib) = 0 
 enddo
-do i = nelenuc+1, nele
+do i = nparnuc+1, npar
 ! To which buffer does a particle of type (i) at this location belongs?
-  ibuffer(i) = 0
-  if (i.gt.nelenuc) then
-    itype = abs(typei(i))
-    endlog = .false.
-    ib = 1
-    do while (ib.le.nbuffer .and. .not.endlog)    
-      if (itype.eq.ibfftyp(ib)) then
-        if (z(i).ge.LZmin(ib) .and. z(i).le.LZmax(ib)) then
-          if (Qsphere) then
-            radius2 = (x(i)-cx)**2+(y(i)-cy)**2+(z(i)-cz)**2
-            if (radius2.gt.Rsphe2) call error ('count', 'particles outside main system', faterr)      
-            if ((radius2.ge.Rmin(ib)**2).and.(radius2.le.Rmax(ib)**2)) then
-              ibuffer(i) = ib
-              nat(ib) = nat(ib) + 1
-              if (z(i).lt.cz) then
-                typei(i) = -abs(typei(i))
-              else
-                typei(i) =  abs(typei(i))
-              endif
-               endlog = .true.
-            endif
-          else
-            if (Qecyl) then
-              radius2=((x(i)-cx)*iecx)**2+((y(i)-cy)*iecy)**2
-              if (radius2.gt.1.0) call error ('count', 'particle/s outside main system', faterr)
-            else
-              if (x(i).lt.lx2m.or.x(i).gt.lx2p) call error ('count', 'particles outside main system', faterr)
-              if (y(i).lt.ly2m.or.y(i).gt.ly2p) call error ('count', 'particles outside main system', faterr)
-            endif
-            if (z(i).lt.lz2m.or.z(i).gt.lz2p) call error ('count', 'particles outside main system', faterr)
-            ibuffer(i) = ib
+  parl(i)%ibuf = 0
+  itype = parl(i)%ptyp
+  endlog = .false.
+  ib = 1
+  do while (ib.le.nbuffer .and. .not.endlog)
+    if (itype.eq.ibfftyp(ib)) then
+      call getcentroid(i,rr)
+      if (rr%z.ge.LZmin(ib) .and. rr%z.le.LZmax(ib)) then
+        if (Qsphere) then
+          radius2 = (rr%x-cx)**2+(rr%y-cy)**2+(rr%z-cz)**2
+          if (radius2.gt.Rsphe2) call error ('count', 'particles outside main system', faterr)      
+          if ((radius2.ge.Rmin(ib)**2).and.(radius2.le.Rmax(ib)**2)) then
+            parl(i)%ibuf = ib
             nat(ib) = nat(ib) + 1
-            if (z(i).lt.cz) then
-              typei(i) = -abs(typei(i))
-            else
-              typei(i) =  abs(typei(i))
-            endif
             endlog = .true.
           endif
+        else
+          if (Qecyl) then
+            radius2=((rr%x-cx)*iecx)**2+((rr%y-cy)*iecy)**2
+            if (radius2.gt.1.0) call error ('count', 'particle/s outside main system', faterr)
+          else
+            if (rr%x.lt.lx2m.or.rr%x.gt.lx2p) call error ('count', 'particles outside main system', faterr)
+            if (rr%y.lt.ly2m.or.rr%y.gt.ly2p) call error ('count', 'particles outside main system', faterr)
+          endif
+          if (rr%z.lt.lz2m.or.rr%z.gt.lz2p) call error ('count', 'particles outside main system', faterr)
+          parl(i)%ibuf = ib
+          nat(ib) = nat(ib) + 1
+          endlog = .true.
         endif
       endif
-      ib = ib + 1
-    enddo
-  endif   
+    endif
+    ib = ib + 1
+  enddo
 enddo
 
 do ib = 1, nbuffer

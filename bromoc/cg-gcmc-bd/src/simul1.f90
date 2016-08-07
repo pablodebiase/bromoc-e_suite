@@ -332,7 +332,7 @@ if (Qpres) pres=0.0
 
 if (Qbuf) then
   do ib = 1, nbuffer
-    neleat(ib) = nint(avnum(ib))
+    ntotat(ib) = nint(avnum(ib))
   enddo
 endif  
 

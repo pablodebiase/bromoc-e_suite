@@ -39,6 +39,5 @@ do while (.not.ok)
     ok = (((xnew-cx)*iecx)**2+((ynew-cy)*iecy)**2).lt.1.0
   endif
 enddo
-
 return
 end

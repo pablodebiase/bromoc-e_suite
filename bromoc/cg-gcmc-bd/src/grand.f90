@@ -23,6 +23,7 @@ use constamod
 use stdiomod
 use nucleotmod
 use errormod
+use listmod
 implicit none
 
 ! NOTE: RANDOM IS A REA FUNCTION
@@ -33,22 +34,24 @@ integer*8 icycle
 integer igrand, ib, ip, iat, itype
 !real*16 dener
 real dener
-real  rate, xnew, ynew, znew, nbufferr
+real  rate, nbufferr
+type(car) :: rr
 nbufferr=float(nbuffer)
 
 !Loop over number of steps for GCMC, ngcmc      
 do igrand = 1, ngcmc
-
   if (rndm().lt.0.5) then 
     !Try to insert a particle into one of the buffers
     ib = int(nbufferr*rndm()) + 1 ! [1,nbuferr+1]
     if (ib.le.nbuffer .and. avnum(ib).gt.0.0) then
       itype = ibfftyp(ib) ! ion type
-      call insert(ib,xnew,ynew,znew)
-      call interact(dener,xnew,ynew,znew,itype,nele+1,.false.)
+      call insert(ib,rr%x,rr%y,rr%z)
+      call addpar(itype,3,ib)
+      call insertpar(npar,rr)
+      call interact(dener,rr%x,rr%y,rr%z,itype,npar+1,.false.) ! adapt
 
       if (Qbufferbias(ib)) then
-        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(neleat(ib)/icycle)))
+        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib)+1)
       else
         rate = (avnum(ib)/float(nat(ib)+1))*exp(-(dener-mu(ib))*ikBT)
@@ -62,13 +65,9 @@ do igrand = 1, ngcmc
         ! probability                   
         ener = ener + dener
         nat(ib) = nat(ib) + 1
-        x(nele) = xnew
-        y(nele) = ynew
-        z(nele) = znew
-        typei(nele) = itype
-        if (znew.lt.cz) typei(nele) = -itype
-        ibuffer(nele) = ib
         ninsert(ib) = ninsert(ib) + 1
+      else
+        call delpar(npar)
       endif
     endif 
   else
@@ -77,11 +76,11 @@ do igrand = 1, ngcmc
     ip    = int(float(nat(ib))*rndm())+1 ! number of particle [1,nat(ib)+1]
     if (ib.le.nbuffer .and. ip.le.nat(ib)) then
       itype = ibfftyp(ib) ! ion type
-      call find(ibuffer,ib,nelenuc,nele,ip,iat)
-      call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
+      call find(ib,ip,iat)
+      call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.) ! adapt
 
       if (Qbufferbias(ib)) then
-        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(neleat(ib)/icycle)))
+        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib))
       else
         rate = (avnum(ib)/nat(ib))*exp(-(dener-mu(ib))*ikBT)
@@ -94,11 +93,7 @@ do igrand = 1, ngcmc
        ! is less than or equal to destruction transition probability
         ener = ener - dener
         nremove(ib) = nremove(ib) + 1
-        x(iat) = x(nele)  ! copy coordinates of last particle
-        y(iat) = y(nele)
-        z(iat) = z(nele)
-        typei(iat) = typei(nele)
-        ibuffer(iat) = ibuffer(nele)
+        call delpar(iat)
         nat(ib) = nat(ib) - 1
       endif
     endif  

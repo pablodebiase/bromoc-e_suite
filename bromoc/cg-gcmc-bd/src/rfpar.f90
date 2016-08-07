@@ -294,7 +294,7 @@ do i=nelenuc+1,nele
     zi=zj+tranz3-zbcen3
     ok=.true.
   else
-    itype = abs(typei(i))
+    itype = et(i)
     xi=r(i)%x+tranx3-xbcen3
     yi=r(i)%y+trany3-ybcen3
     zi=r(i)%z+tranz3-zbcen3
@@ -419,8 +419,8 @@ if (Qrfpsin) then
   if (unn.ne.1) call error('rfpar','Number maps must be one if rfpsingle is used',faterr)
   niont=1
 else
-  if (nion.ne.unn) call error('rfpar','Number of ion types differ from number of RFPAR types',faterr)
   niont=netyp-netnuc
+  if (niont.ne.unn) call error('rfpar','Number of ion types differ from number of RFPAR types',faterr)
 endif
 if (.not.allocated(radion)) allocate (radion(niont))
 
