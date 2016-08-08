@@ -18,9 +18,9 @@
 
 subroutine dynamics2(ninit,nfinal)
 use grandmod
+use listmod
 use constamod
 use stdiomod
-use nucleotmod
 use errormod
 use splinemod
 use sevalmod

@@ -19,9 +19,8 @@
 subroutine repwalls(walls)
 !-----------------------------------------------------------------------
 !This subroutine creates sucesive repulsion walls for repulsion map. This will allow particles to avoid entering into closed repulsion bodies (protein).
-
+use listmod
 use gsbpmod
-use nucleotmod
 
 implicit none
 integer*1,allocatable :: phivt(:)

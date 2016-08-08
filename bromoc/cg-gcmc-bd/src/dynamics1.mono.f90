@@ -18,9 +18,9 @@
 
 subroutine dynamics1(ninit,nfinal)
 use grandmod
+use listmod
 use constamod
 use stdiomod
-use nucleotmod
 use errormod
 
 implicit none
@@ -29,7 +29,6 @@ real fact1, fact2
 real rgauss
 external rgauss
 real delx, dely, delz, delDz
-real zold
 real sw, dsw, idiffusion, didiffusion
 real zz, pp3, pore1, pore2,ipp3
 

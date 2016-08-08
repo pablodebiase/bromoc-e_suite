@@ -27,15 +27,15 @@ use ioxmod
 use constamod
 use stdiomod 
 use grandmod
-use nucleotmod
+use listmod
 use gsbpmod     
 implicit none
-integer j, jtype, jtype2
+integer j, jtype
 real  xj, yj, zj
 logical*1 Qalert,ok
 !local
-integer ncyz,ncel3,ix,iy,iz,n1,n2,n3,in3,ifir,numb
-REAL  xi,yi,zi,ai,bi,ci,fi,esvdw
+integer ncyz,ncel3,ix,iy,iz,n1,n2,n3,in3,ifir
+real  xi,yi,zi,ai,bi,ci,fi,esvdw
 real  phisum,phis
 
 ncyz = ncly2*nclz2
@@ -90,7 +90,7 @@ if (ok) then
     evdwgd = 1.0e10
     if (Qalert) then
       warn(jtype)=warn(jtype)+1
-      if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd0trln :: particle inside membrane or protein - ',i,'  '//etypl(jtype)%nam,xj,yj,zj,phisum,thold8
+      if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd0trln :: particle inside membrane or protein - ',j,'  '//etypl(jtype)%nam,xj,yj,zj,phisum,thold8
     endif
   endif
 endif   

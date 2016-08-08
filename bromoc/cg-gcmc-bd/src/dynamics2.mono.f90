@@ -18,9 +18,9 @@
 
 subroutine dynamics2(ninit,nfinal)
 use grandmod
+use listmod
 use constamod
 use stdiomod
-use nucleotmod
 use errormod
 use splinemod
 use sevalmod
@@ -31,7 +31,6 @@ real fact1, fact2
 real rgauss
 external rgauss
 real delx, dely, delz, delDz
-real zold 
 real sw,dsw, idiffusion, didiffusion
 real zz
 

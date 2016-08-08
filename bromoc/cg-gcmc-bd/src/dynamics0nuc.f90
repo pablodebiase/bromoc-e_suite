@@ -17,6 +17,7 @@
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 subroutine dynamics0nuc(ninit,nfinal)
+use listmod
 use grandmod
 use constamod
 use stdiomod

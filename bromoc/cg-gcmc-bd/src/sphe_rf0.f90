@@ -34,7 +34,7 @@ real  xj,yj,zj
 !local
 integer i,ii,jj,ij,l,m,itype,lmax,mmax
 real  norm,coefi,coefj,coef2(ntpol), charge, ir
-real  sp,cp,st,ct,r,r2,xdiff,ydiff,zdiff,srdist2,ist
+real  sp,cp,st,ct,r1,r2,xdiff,ydiff,zdiff,srdist2,ist
 real  ar(nele,0:24),ac(nele,0:24),as(nele,0:24),ap(nele,0:24,0:24)
 
 lmax = lstpl(ntpol)
@@ -60,8 +60,8 @@ do i = nelenuc+1, nele
     charge = etypl(itype)%chg
     r2 = xdiff*xdiff+ydiff*ydiff+zdiff*zdiff
     if (r2.le.srdist2) then
-      r = sqrt(r2)
-      ir = 1.0/r
+      r1 = sqrt(r2)
+      ir = 1.0/r1
       ct = zdiff*ir
       st = sqrt(1.0-ct*ct)
       ist=1.0/st
@@ -82,7 +82,7 @@ do i = nelenuc+1, nele
         cp = xdiff*ir
         sp = ydiff*ir
       endif
-      call rpowerl2(i,lmax,r,ar)           !  fill ar  (r^l   ) array
+      call rpowerl2(i,lmax,r1,ar)          !  fill ar  (r^l   ) array
       call cosmphi2(i,mmax,cp,ac)          !  fill ac  (cos.. ) array
       call sinmphi2(i,mmax,cp,sp,as)       !  fill as  (sin.. ) array
       call alpol2(i,lmax,mmax,ct,ap)       !  fill ap  (p(lm) ) array

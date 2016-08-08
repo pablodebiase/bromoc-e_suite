@@ -19,7 +19,7 @@
 subroutine wrttraj
 use grandmod
 use stdiomod
-use nucleotmod
+use listmod
 use charfuncmod, only: sng   !command parser
 
 implicit none

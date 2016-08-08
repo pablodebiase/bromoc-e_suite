@@ -109,14 +109,14 @@ opt      = -ip -O3 -xHost # -static
 
 OBJECTS = extramod.o apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o errormod.o\
 	nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o alpol2.o dalpol2.o splinemod.o sevalmod.o\
-	charman.o cputime.o error.o fatnam.o discretize.o splinepot.o cosmphi2.o sinmphi2.o\
+	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmphi2.o\
 	getopt.o ioinit.o lualloc.o lunalloc.o m3.o dm3.o rpowerl2.o rect_norm.o sphe_norm.o\
 	sphe_svpol.o cross_product.o factori.o angles.o bonds.o count.o dihedral.o countions.o\
 	dynamics0nuc.o find.o repwalls.o fixcoor.o go_qq.o grand.o header.o mapsplot.o help.o insert.o\
 	interact.o membrane.o metropolis.o move.o native_structure.o rfpar.o feedseed.o random-i.o readmmij.o\
 	chrden.o readphi.o rect_rf0.o rect_rf1.o rgauss.o staefield.o shell_simul.o simul1.o simul.o sphe_rf0.o\
 	sphe_rf1.o spline.o staticf0.o staticf1.o switch1.o switch2.o switch3.o vdwgd0spln.o\
-	vdwgd0trln.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o reasig.o polynom.o
+	vdwgd0trln.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o polynom.o
 
 OBJECTSMONO = dynamics0.mono.o dynamics1.mono.o dynamics2.mono.o dynamics3.mono.o energy.mono.o
 

@@ -27,11 +27,11 @@ use ioxmod
 use constamod
 use stdiomod
 use grandmod
-use nucleotmod
+use listmod
 use gsbpmod     
 !local variables
 implicit none
-integer ncyz,ncel3,i,ix,iy,iz,n1,n2,n3,in3,ifir,numb,itype2
+integer ncyz,ncel3,i,ix,iy,iz,n1,n2,n3,in3,ifir
 real  vdwfx,vdwfy,vdwfz
 real  xi,yi,zi,ai,bi,ci,fi
 real  aisign,bisign,cisign,prefac
@@ -49,14 +49,14 @@ esvdw = svdw
 
 do i = 1, nele
   if (i.le.nelenuc .or. i.gt.nelenuc) then
-    ok=x(i).le.xbcen2+tranx2.and.x(i).ge.xbcen2-tranx2.and. &
-       y(i).le.ybcen2+trany2.and.y(i).ge.ybcen2-trany2.and. &
-       z(i).le.vzmax.and.z(i).ge.vzmin
+    ok=r(i)%x.le.xbcen2+tranx2.and.r(i)%x.ge.xbcen2-tranx2.and. &
+       r(i)%y.le.ybcen2+trany2.and.r(i)%y.ge.ybcen2-trany2.and. &
+       r(i)%z.le.vzmax        .and.r(i)%z.ge.vzmin
     if (ok) then
       !ion cartesian coordinates in the local grid system                 
-      xi = x(i) + tranx2-xbcen2
-      yi = y(i) + trany2-ybcen2
-      zi = z(i) + tranz2-zbcen2
+      xi = r(i)%x + tranx2-xbcen2
+      yi = r(i)%y + trany2-ybcen2
+      zi = r(i)%z + tranz2-zbcen2
 !      if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
       if (Qnmcden) then
         ifir = (et(i)-1)*ncel3

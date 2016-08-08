@@ -252,7 +252,7 @@ else
   enddo
   iparz=iparz/ne
 endif
-end subroutine
+end function
 
 subroutine resizeetypl(newsize)
 implicit none
@@ -637,7 +637,7 @@ integer,intent(in)    :: parn ! Particle Number
 type(car),intent(out) :: rc  ! Particle Centroid
 ne=parl(parn)%ne
 sr=parl(parn)%sr
-if (ne.eq.1)
+if (ne.eq.1) then
   rc=r(sr+1)
 else
   ine=1.0/ne

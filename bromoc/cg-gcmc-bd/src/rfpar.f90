@@ -51,7 +51,7 @@ subroutine rfparion
 !
 use constamod
 use grandmod
-use nucleotmod
+use listmod
 use gsbpmod
 implicit none
 
@@ -159,68 +159,67 @@ do i=nelenuc+1,nele
       reffdz(ik)=aux2dz            
     endif
     tau = celec*etypl(itype)%chg
-  
+
   ! self reaction field energy minus Born energy
-      aux = tau*etypl(itype)%chg*srfe(ik)
-      ! reaction field energy 
-      erfpar = erfpar + 0.5*aux*srfe(ik)
-  
+    aux = tau*etypl(itype)%chg*srfe(ik)
+    ! reaction field energy 
+    erfpar = erfpar + 0.5*aux*srfe(ik)
+
   ! forces related to the reaction field energy                  
-      if(Qforces)then
-        ! forces caused by variation of srfe(j)
-        de = -aux
-        f(i)%x = f(i)%x + de*srfedx(ik)
-        f(i)%y = f(i)%y + de*srfedy(ik)
-        f(i)%z = f(i)%z + de*srfedz(ik)
-      endif
-      do j=1+nelenuc,i-1
-        jk=j-nelenuc
-        if (srfe(jk).ne.0.0) then
-          jtype = et(j)
-          dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
-          srfeij = srfe(jk)*srfe(ik)
-          reffij = reff(jk)*reff(ik)
-          rfdn = 1.0/sqrt(reffij*reffij+dist2)
-          rfcf = reffij*rfdn
-          aux0 = tau*etypl(jtype)%chg
-          aux1 = aux0*rfcf
-          ! reaction field energy 
-          erfpar = erfpar + aux1*srfeij
-    
-          ! forces related to the reaction field energy                  
-          if(Qforces)then
-            aux2 = aux0*srfeij*rfdn**3
-            ! forces due to variation of srfe(i) and srfe(j)
-            de = -aux1*srfe(ik)
-            f(j)%x = f(j)%x + de*srfedx(jk)
-            f(j)%y = f(j)%y + de*srfedy(jk)
-            f(j)%z = f(j)%z + de*srfedz(jk)
-            de = -aux1*srfe(jk)
-            f(i)%x = f(i)%x + de*srfedx(ik)
-            f(i)%y = f(i)%y + de*srfedy(ik)
-            f(i)%z = f(i)%z + de*srfedz(ik)
-            ! forces due to variation of reff(i) and reff(j)
-            aux3=-aux2*(dist2+reff(jk)*reff(ik)*0.5)
-            de = aux3*reff(ik)
-            f(j)%x = f(j)%x + de*reffdx(jk)
-            f(j)%y = f(j)%y + de*reffdy(jk)
-            f(j)%z = f(j)%z + de*reffdz(jk)
-            de = aux3*reff(jk)
-            f(i)%x = f(i)%x + de*reffdx(ik)
-            f(i)%y = f(i)%y + de*reffdy(ik)
-            f(i)%z = f(i)%z + de*reffdz(ik)
-            ! forces due to variation of ion positions 
-            de = aux2*reffij
-            f(j)%x = f(j)%x + de*(r(j)%x-r(i)%x)
-            f(j)%y = f(j)%y + de*(r(j)%y-r(i)%y)
-            f(j)%z = f(j)%z + de*(r(j)%z-r(i)%z)
-            f(i)%x = f(i)%x - de*(r(j)%x-r(i)%x)
-            f(i)%y = f(i)%y - de*(r(j)%y-r(i)%y)
-            f(i)%z = f(i)%z - de*(r(j)%z-r(i)%z)
-          endif
-        endif
-      enddo
+    if(Qforces)then
+      ! forces caused by variation of srfe(j)
+      de = -aux
+      f(i)%x = f(i)%x + de*srfedx(ik)
+      f(i)%y = f(i)%y + de*srfedy(ik)
+      f(i)%z = f(i)%z + de*srfedz(ik)
     endif
+    do j=1+nelenuc,i-1
+      jk=j-nelenuc
+      if (srfe(jk).ne.0.0) then
+        jtype = et(j)
+        dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
+        srfeij = srfe(jk)*srfe(ik)
+        reffij = reff(jk)*reff(ik)
+        rfdn = 1.0/sqrt(reffij*reffij+dist2)
+        rfcf = reffij*rfdn
+        aux0 = tau*etypl(jtype)%chg
+        aux1 = aux0*rfcf
+        ! reaction field energy 
+        erfpar = erfpar + aux1*srfeij
+  
+        ! forces related to the reaction field energy                  
+        if(Qforces)then
+          aux2 = aux0*srfeij*rfdn**3
+          ! forces due to variation of srfe(i) and srfe(j)
+          de = -aux1*srfe(ik)
+          f(j)%x = f(j)%x + de*srfedx(jk)
+          f(j)%y = f(j)%y + de*srfedy(jk)
+          f(j)%z = f(j)%z + de*srfedz(jk)
+          de = -aux1*srfe(jk)
+          f(i)%x = f(i)%x + de*srfedx(ik)
+          f(i)%y = f(i)%y + de*srfedy(ik)
+          f(i)%z = f(i)%z + de*srfedz(ik)
+          ! forces due to variation of reff(i) and reff(j)
+          aux3=-aux2*(dist2+reff(jk)*reff(ik)*0.5)
+          de = aux3*reff(ik)
+          f(j)%x = f(j)%x + de*reffdx(jk)
+          f(j)%y = f(j)%y + de*reffdy(jk)
+          f(j)%z = f(j)%z + de*reffdz(jk)
+          de = aux3*reff(jk)
+          f(i)%x = f(i)%x + de*reffdx(ik)
+          f(i)%y = f(i)%y + de*reffdy(ik)
+          f(i)%z = f(i)%z + de*reffdz(ik)
+          ! forces due to variation of ion positions 
+          de = aux2*reffij
+          f(j)%x = f(j)%x + de*(r(j)%x-r(i)%x)
+          f(j)%y = f(j)%y + de*(r(j)%y-r(i)%y)
+          f(j)%z = f(j)%z + de*(r(j)%z-r(i)%z)
+          f(i)%x = f(i)%x - de*(r(j)%x-r(i)%x)
+          f(i)%y = f(i)%y - de*(r(j)%y-r(i)%y)
+          f(i)%z = f(i)%z - de*(r(j)%z-r(i)%z)
+        endif
+      endif
+    enddo
   endif
 enddo
 
@@ -254,8 +253,8 @@ subroutine rfparionj(xj,yj,zj,j,jtype)
 !     Calls:   rfparion              
 !
 use constamod
+use listmod
 use grandmod
-use nucleotmod
 use gsbpmod
 implicit none
 
@@ -395,8 +394,8 @@ subroutine readrfpar(unitfi,unn,outu,adjust)
 !
 use gsbpmod
 use grandmod
-use nucleotmod
 use errormod
+use listmod
 
 implicit none
 integer unn

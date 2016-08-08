@@ -25,7 +25,7 @@ subroutine staticf1
 
 use constamod
 use grandmod
-use nucleotmod
+use listmod
 use gsbpmod
 !local variables
 implicit none
@@ -108,4 +108,4 @@ do i = 1, nele
 enddo ! i = 1,...,nele
 
 return
-end
+end subroutine

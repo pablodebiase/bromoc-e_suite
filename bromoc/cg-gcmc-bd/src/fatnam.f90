@@ -16,23 +16,17 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine cosmphi2(j,m,cc0,ac)
-!------------------------------------------------------------------------
-!     cos(M*phi) calculation (M > 0)
-!
-use listmod
+subroutine fatnam(atnam,ntype,wrd4,itype)
+use stdiomod
+use charfuncmod
 implicit none
-
-integer   m,i,j
-real    cc0,ac(nele,0:m)
-
-ac(j,0) = 1.0
-ac(j,1) = cc0
-ac(j,2) = 2.0*cc0*cc0-1.0
-ac(j,3) = (2.0*ac(j,2)-1.0)*cc0
-do i = 4, m
-  ac(j,i) = 2.0*cc0*ac(j,i-1)-ac(j,i-2)
+character*4 atnam(*),wrd4
+integer itype,ntype
+ 
+do itype = 1, ntype
+  if (lcase(wrd4).eq.lcase(atnam(itype))) return
 enddo
-
+write(outu,'(a,a4,a)') ' * error atom ',wrd4,' not found'
+stop
 return
 end

@@ -20,8 +20,7 @@ subroutine dalpol2(j,lmax,mmax,xc,ap,adp)
 !------------------------------------------------------------------------
 !Derivatives of Associate Legendre Polynomials (From Smythe's BOOK)
 !This is different from FUNCTION DALPOL because we don't consider xc > 1 here.
-
-use grandmod
+use listmod
 implicit none
 
 integer lmax,mmax,j

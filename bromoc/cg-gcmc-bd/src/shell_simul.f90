@@ -43,13 +43,11 @@ integer, allocatable :: nxf(:)
 logical*1, allocatable :: Qefpotread(:)
 character*1,allocatable :: secstr(:),sitenam(:)
 character com*2048,word*1024,fnam*80,wrd5*5
-integer unvec(maxopen), numb, totnumb, nions, kode, maxpart, ncl3, in1, in2
+integer unvec(maxopen), totnumb, nions, kode, maxpart, ncl3, in1, in2
 character*80 title
-character*4 wrd4,ionname
+character*4 wrd4
 character*4,allocatable,dimension(:) :: nucnam
 character*6 wrd6
-!real*16 dener
-real dener
 real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
@@ -75,9 +73,9 @@ integer    ntras
 real       vfbs,scald,scaldd
 !for security outputfile
 integer    nsec
-type(car) :: rr, rs
+type(car) :: rr
 !for TEST order
-real       tol, delta, maxl,minl,maxlg,minlg
+real       maxl,minl,maxlg,minlg
 
 !for MEMBRANE and ION-ION orders
 !for effective dielectric constant for DNA
@@ -90,8 +88,8 @@ integer      isite
 real       sum1, sum2, sum3
 real       xold, yold, zold
 !forgotten to declare
-integer r1i,z1i,itype,jtype,i,j,k,iat,ib,ifirst,ii,ij,ik,ilast
-integer iunit,lfnam,ngcmc,nmcm,nbd,ntypold
+integer r1i,z1i,itype,jtype,i,j,k,ib,ifirst,ii,ij,ik,ilast
+integer iunit,lfnam,ngcmc,nmcm,nbd,ntypold,ntype
 integer*8 ncycle,nsave,nsfbs
 integer,allocatable :: iunitv(:)
 real cc0,cc1,cc2,cc3,cc4
@@ -685,9 +683,9 @@ do while (.not. logfinal)
       endlog = check(com,'end')
       if (.not.endlog) then
         ! name ion type [character*4]
-        call getfirst(com,wd4)
+        call getfirst(com,wrd4)
         ! Add mono particle with element
-        itype=getptyp(wd4)
+        itype=getptyp(wrd4)
         if (itype.eq.0) then
           call addmonoptyp(wrd4)
           itype=nptyp
@@ -804,9 +802,9 @@ do while (.not. logfinal)
     Qnotrz=check(com,'z')
     if (.not.(Qnotrx.or.Qnotry.or.Qnotrz)) Qnotrans=.false.
     inelenuc=1.0/nelenuc
-    notrx=sum(x(1:nelenuc))*inelenuc
-    notry=sum(y(1:nelenuc))*inelenuc
-    notrz=sum(z(1:nelenuc))*inelenuc
+    notrx=sum(r(1:nelenuc)%x)*inelenuc
+    notry=sum(r(1:nelenuc)%y)*inelenuc
+    notrz=sum(r(1:nelenuc)%z)*inelenuc
     if (Qnotrans) then 
       write(outu,'(6x,a)') 'NOTRANSLATION is on'
       if (Qnotrx) write(outu,'(6x,a,f9.3)') '  DNA centroid will be fixed at x =',notrx
@@ -844,21 +842,21 @@ do while (.not. logfinal)
       if (csn(i).eq.0) then
         inelenuc=1.0/nelenuc
         if (Qunsplit) then
-          contrx(i)=2.0*sum(x(1:nelenuc1st))*inelenuc
-          contry(i)=2.0*sum(y(1:nelenuc1st))*inelenuc
-          contrz(i)=2.0*sum(z(1:nelenuc1st))*inelenuc
-          contrx(ctn+1)=2.0*sum(x(nelenuc1st+1:nelenuc))*inelenuc
-          contry(ctn+1)=2.0*sum(y(nelenuc1st+1:nelenuc))*inelenuc
-          contrz(ctn+1)=2.0*sum(z(nelenuc1st+1:nelenuc))*inelenuc
+          contrx(i)=2.0*sum(r(1:nelenuc1st)%x)*inelenuc
+          contry(i)=2.0*sum(r(1:nelenuc1st)%y)*inelenuc
+          contrz(i)=2.0*sum(r(1:nelenuc1st)%z)*inelenuc
+          contrx(ctn+1)=2.0*sum(r(nelenuc1st+1:nelenuc)%x)*inelenuc
+          contry(ctn+1)=2.0*sum(r(nelenuc1st+1:nelenuc)%y)*inelenuc
+          contrz(ctn+1)=2.0*sum(r(nelenuc1st+1:nelenuc)%z)*inelenuc
         else
-          contrx(i)=sum(x(1:nelenuc))*inelenuc
-          contry(i)=sum(y(1:nelenuc))*inelenuc
-          contrz(i)=sum(z(1:nelenuc))*inelenuc
+          contrx(i)=sum(r(1:nelenuc)%x)*inelenuc
+          contry(i)=sum(r(1:nelenuc)%y)*inelenuc
+          contrz(i)=sum(r(1:nelenuc)%z)*inelenuc
         endif
       else
-        contrx(i)=x(csn(i))
-        contry(i)=y(csn(i))
-        contrz(i)=z(csn(i))
+        contrx(i)=r(csn(i))%x
+        contry(i)=r(csn(i))%y
+        contrz(i)=r(csn(i))%z
       endif
       call gtdpar(com,'x',contrx(i),contrx(i))
       call gtdpar(com,'y',contry(i),contry(i))
@@ -1568,7 +1566,7 @@ do while (.not. logfinal)
      if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
      if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
   
-     call ENERGY
+     call energy
      write(outu,'(6x,a,f12.6)') 'Total energy ',ener
      Qmemb = logmemb 
      Qmmij = logmmij 
@@ -2081,9 +2079,9 @@ do while (.not. logfinal)
          ym=0.0
          zm=0.0
          do i=1,nelenuc
-           xm=xm+x(i)
-           ym=ym+y(i)
-           zm=zm+z(i)
+           xm=xm+r(i)%x
+           ym=ym+r(i)%y
+           zm=zm+r(i)%z
          enddo
          xm=xm/nelenuc
          ym=ym/nelenuc
@@ -2350,14 +2348,14 @@ do while (.not. logfinal)
        if (Qnucl) then
          do i = 1, nelenuc
            read(iunit,'(a)') com
-           read (com,'(x6,I5,x,x5,x5,I4,4x,3F8.3)') jtype,itype,rr%x,rr%y,rr%z
+           read(com,'(6x,I5,x,5x,5x,I4,4x,3F8.3)') jtype,itype,rr%x,rr%y,rr%z
            call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
          enddo
        endif
        if (Qpar) then
          read(iunit,'(a)') com
-         do while (trim(adjustl(com))(1:3).ne.'END')
-           read (com,'(x6,I5,x,A5,x5,I4,4x,3F8.3,F6.2)') jtype,wrd4,itype,rr%x,rr%y,rr%z,ibuf
+         do while (trim(adjustl(com)).ne.'END')
+           read (com,'(6x,I5,x,A5,5x,I4,4x,3F8.3,F6.2)') jtype,wrd4,itype,rr%x,rr%y,rr%z,ibuf
            if (ilast.ne.itype) then
              call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuf))
            endif
@@ -2415,14 +2413,14 @@ do while (.not. logfinal)
          call gtipar(com,'s2',s2,nelenuc)
          call gtipar(com,'s3',s3,2)
          write(outu,'(6x,3(a,x,i0,x))') 'Rotating using references: s1=',s1,'s2=',s2,'s3=',s3
-         vc3(1)=x(s1)-x(s2)
-         vc3(2)=y(s1)-y(s2)
-         vc3(3)=z(s1)-z(s2)
+         vc3(1)=r(s1)%x-r(s2)%x
+         vc3(2)=r(s1)%y-r(s2)%y
+         vc3(3)=r(s1)%z-r(s2)%z
          x3=sqrt(dot_product(vc3,vc3))
          vc3=vc3/x3
-         vc1(1)=x(s3)-x(s2)
-         vc1(2)=y(s3)-y(s2)
-         vc1(3)=z(s3)-z(s2)
+         vc1(1)=r(s3)%x-r(s2)%x
+         vc1(2)=r(s3)%y-r(s2)%y
+         vc1(3)=r(s3)%z-r(s2)%z
          x1=sqrt(dot_product(vc1,vc1))
          vc1=vc1/x1
          call cross_product(vc3,vc1,vc2)
@@ -2463,13 +2461,12 @@ do while (.not. logfinal)
        enddo
        if (abs(sum1).ge.1.0e-8 .or. abs(sum2).ge.1.0e-8 .or.abs(sum3).ge.1.0e-8) call error ('shel_simul', 'rotation matrix for DNA sites is not orthogonal in COOR order', faterr)
        do i = 1, nelenuc
-         xold = x(i)
-         yold = y(i)
-         zold = z(i)
-         x(i) = xold*rot(1,1) + yold*rot(1,2) + zold*rot(1,3)
-         y(i) = xold*rot(2,1) + yold*rot(2,2) + zold*rot(2,3)
-         z(i) = xold*rot(3,1) + yold*rot(3,2) + zold*rot(3,3)
-         call setcar(r(i),x(i),y(i),z(i))
+         xold = r(i)%x
+         yold = r(i)%y
+         zold = r(i)%z
+         r(i)%x = xold*rot(1,1) + yold*rot(1,2) + zold*rot(1,3)
+         r(i)%y = xold*rot(2,1) + yold*rot(2,2) + zold*rot(2,3)
+         r(i)%z = xold*rot(3,1) + yold*rot(3,2) + zold*rot(3,3)
        enddo
        write(outu,'(6x,a)') 'Coordinates for DNA sites have been rotated. Rotation matrix:'
        do i = 1, 3
@@ -2485,10 +2482,9 @@ do while (.not. logfinal)
        ! traslation in z direction of DNA B isoform coordinate 
        call gtdpar(com,'ztras',ztras,0.0)
        do i = 1, nelenuc
-         x(i) = x(i) + xtras
-         y(i) = y(i) + ytras
-         z(i) = z(i) + ztras
-         call setcar(r(i),x(i),y(i),z(i))
+         r(i)%x = r(i)%x + xtras
+         r(i)%y = r(i)%y + ytras
+         r(i)%z = r(i)%z + ztras
        enddo
        write(outu,'(6x,a,1x,a,3(f12.6,a))')'Coordinates for DNA sites have been moved by','(',xtras,',',ytras,',',ztras,')'
      elseif (check(com,'setori').and.Qnucl) then
@@ -2496,30 +2492,29 @@ do while (.not. logfinal)
        ym=0.0
        zm=0.0
        do i=1,nelenuc
-         xm=xm+x(i)
-         ym=ym+y(i)
-         zm=zm+z(i)
+         xm=xm+r(i)%x
+         ym=ym+r(i)%y
+         zm=zm+r(i)%z
        enddo
        xm=xm/nelenuc
        ym=ym/nelenuc
        zm=zm/nelenuc
        do i = 1, nelenuc
-         x(i) = x(i) - xm
-         y(i) = y(i) - ym
-         z(i) = z(i) - zm
-         call setcar(r(i),x(i),y(i),z(i))
+         r(i)%x = r(i)%x - xm
+         r(i)%y = r(i)%y - ym
+         r(i)%z = r(i)%z - zm
        enddo
        call gtdpar(com,'x',xm,xm)
        call gtdpar(com,'y',ym,ym)
        call gtdpar(com,'z',zm,zm)
        do i = 1, nelenuc
-         x(i) = x(i) + xm
-         y(i) = y(i) + ym
-         z(i) = z(i) + zm
-         call setcar(r(i),x(i),y(i),z(i))
+         r(i)%x = r(i)%x + xm
+         r(i)%y = r(i)%y + ym
+         r(i)%z = r(i)%z + zm
        enddo
        write(outu,'(6x,a,3(f12.6,a))')'DNA geometric center is now at  (',xm,',',ym,',',zm,')'
      endif
+     ! Set precalculated diffusion coefficient factors
      kBTdt = dt * ikbt
      do i=1,netyp
        if (i.le.netnuc) then
@@ -2530,6 +2525,7 @@ do while (.not. logfinal)
        fact2a(i)=sqrt(2.0*dt*etypl(i)%dif)
      enddo
      if (Qproxdiff) fact2pd=sqrt(2.0*dt*diff0)
+     ! Print out data
      if (Qnucl) then
        write(outu,'(6x,a)') 'Native structure for B isoform of DNA'
        write(outu,*)

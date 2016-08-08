@@ -124,9 +124,9 @@ if (Qenergy) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
-          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
-          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
+          xcon=sum(r(1:nelenuc)%x)*inelenuc-contrx(ii)
+          ycon=sum(r(1:nelenuc)%y)*inelenuc-contry(ii)
+          zcon=sum(r(1:nelenuc)%z)*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
@@ -166,12 +166,12 @@ if (Qenergy) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
-          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
-          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
+          xcon=sum(r(1:nelenuc)%x)*inelenuc-contrx(ii)
+          ycon=sum(r(1:nelenuc)%y)*inelenuc-contry(ii)
+          zcon=sum(r(1:nelenuc)%z)*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
-          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',x(j)-contrx(ii),' dy=',y(j)-contry(ii),' dz=',z(j)-contrz(ii)
+          write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,etypl(j)%nam,' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
         endif
       enddo
     endif 
@@ -318,9 +318,9 @@ endif
 
 !xii. forces        
 do ii = 1, nele
-  fx(ii) = 0.0
-  fy(ii) = 0.0
-  fz(ii) = 0.0
+  f(ii)%x = 0.0
+  f(ii)%y = 0.0
+  f(ii)%z = 0.0
 enddo
 
 
@@ -366,7 +366,7 @@ do icycle = 1, ncycle
     do istep = 1, nbd
       call energy
       if (Qpres) then
-        vir=dot_product(fx(1:nele),x(1:nele))+dot_product(fy(1:nele),y(1:nele))+dot_product(fz(1:nele),z(1:nele))
+        vir=dot_product(f(1:nele)%x,r(1:nele)%x)+dot_product(f(1:nele)%y,r(1:nele)%y)+dot_product(f(1:nele)%z,r(1:nele)%z)
         pres=pres+(nele-vir*i3*ikbt)*itvol*kba3bar*temp
       endif
       if (Qpar) then
@@ -474,7 +474,7 @@ do icycle = 1, ncycle
       write(iuntsc,'(2x,a,1x,i15,1x,a,1x,i10)') 'nele',nele,'seed number',iseed
       write(iuntsc,'(2x,a)') 'Coordinates:atom--x--y--z'
       do ii = 1, nele
-        write(iuntsc,'(2x,i15,1x,f10.5,1x,f10.5,1x,f10.5)') ii,x(ii), y(ii), z(ii)
+        write(iuntsc,'(2x,i15,1x,f10.5,1x,f10.5,1x,f10.5)') ii,r(ii)%x, r(ii)%y, r(ii)%z
       enddo
     endif 
   endif
@@ -483,7 +483,7 @@ do icycle = 1, ncycle
   if (Qrho) then
     do iat = nparnuc+1, npar
       itype = parl(iat)%ptyp
-      call getcentroid(ia, rr)
+      call getcentroid(iat, rr)
       iz = int((rr%z-zmini)*idelz) + 1
       if (iz.le.nzmax) rho(itype,iz) = rho(itype,iz) + 1.0
     enddo
@@ -555,10 +555,10 @@ do icycle = 1, ncycle
               do jat = nparnuc+1, npar
                 call getcentroid(jat, rs)
                 if (parl(jat)%ptyp.ne.itype.and.abs(rr%x-rs%x).le.s2.and.abs(rr%y-rs%y).le.s2.and.abs(rr%z-rs%z).le.s2) then
-                  r = sqrt((rr%x-rs%x)**2 + (rr%y-rs%y)**2 + (rr%z-rs%z)**2)
-                  if (r.le.s1) then
+                  rd = sqrt((rr%x-rs%x)**2 + (rr%y-rs%y)**2 + (rr%z-rs%z)**2)
+                  if (rd.le.s1) then
                     np1 = np1 + 1
-                  else if (r.gt.s1.and.r.le.s2) then
+                  else if (rd.gt.s1.and.rd.le.s2) then
                     np2 = np2 + 1
                   endif
                 endif   
@@ -619,9 +619,9 @@ do icycle = 1, ncycle
         do ii=1,ctn
           j=csn(ii)
           if (j.eq.0) then
-            xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
-            ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
-            zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
+            xcon=sum(r(1:nelenuc)%x)*inelenuc-contrx(ii)
+            ycon=sum(r(1:nelenuc)%y)*inelenuc-contry(ii)
+            zcon=sum(r(1:nelenuc)%z)*inelenuc-contrz(ii)
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
           else
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
@@ -640,9 +640,9 @@ do icycle = 1, ncycle
         do ii=1,ctn
           j=csn(ii)
           if (j.eq.0) then
-            xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
-            ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
-            zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
+            xcon=sum(r(1:nelenuc)%x)*inelenuc-contrx(ii)
+            ycon=sum(r(1:nelenuc)%y)*inelenuc-contry(ii)
+            zcon=sum(r(1:nelenuc)%z)*inelenuc-contrz(ii)
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
           else
             write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
@@ -679,9 +679,9 @@ if (nprint.eq.0) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
-          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
-          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
+          xcon=sum(r(1:nelenuc)%x)*inelenuc-contrx(ii)
+          ycon=sum(r(1:nelenuc)%y)*inelenuc-contry(ii)
+          zcon=sum(r(1:nelenuc)%z)*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
@@ -700,9 +700,9 @@ if (nprint.eq.0) then
       do ii=1,ctn
         j=csn(ii)
         if (j.eq.0) then
-          xcon=sum(x(1:nelenuc))*inelenuc-contrx(ii)
-          ycon=sum(y(1:nelenuc))*inelenuc-contry(ii)
-          zcon=sum(z(1:nelenuc))*inelenuc-contrz(ii)
+          xcon=sum(r(1:nelenuc)%x)*inelenuc-contrx(ii)
+          ycon=sum(r(1:nelenuc)%y)*inelenuc-contry(ii)
+          zcon=sum(r(1:nelenuc)%z)*inelenuc-contrz(ii)
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,'cent',' dx=',xcon,' dy=',ycon,' dz=',zcon
         else
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)

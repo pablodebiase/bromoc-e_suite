@@ -24,7 +24,7 @@ subroutine dihedral
 use constamod
 use stdiomod
 use errormod
-use grandmod
+use listmod
 use nucleotmod
 implicit none 
 !     Local variables     

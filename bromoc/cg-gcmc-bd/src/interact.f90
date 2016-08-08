@@ -155,7 +155,7 @@ if (Qenergy) then ! total energy
 
   !static external field contribution
   if (Qphix) then
-    call staticf0(xj,yj,zj,j,jtype)
+    call staticf0(xj,yj,zj,jtype)
     dener = dener + egsbpa
   endif ! Qphix
 

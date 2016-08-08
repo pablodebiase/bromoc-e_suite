@@ -16,18 +16,18 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine staticf0(xj,yj,zj,j,jtype)
+subroutine staticf0(xj,yj,zj,jtype)
 !-----------------------------------------------------------------------
 !This subroutine computes only the external static field energy
 !for one particle used in subroutine INTERACT in simul.f   
 
 use constamod
 use grandmod
-use nucleotmod
+use listmod
 use gsbpmod
 implicit none
 !input variables
-integer j, jtype
+integer jtype
 real  xj, yj, zj
 !local variables
 integer ncyz,ix,iy,iz,n1,n2,n3,in3

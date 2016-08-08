@@ -19,7 +19,7 @@
 subroutine sinmphi2(j,m,cc0,s0,as)
 !------------------------------------------------------------------------
 !sin(M*phi) calculation (M > 0)
-use grandmod
+use listmod
 implicit none
 
 integer   m,i,j

@@ -21,8 +21,7 @@ subroutine alpol2(j,lmax,mmax,xc,ap)
 !The Associate Legendre Polynomials 
 !(Numerical recipes in Fortran 77: 6.8. Spherical Harmonics) 
 !This is different from FUNCTION ALPOL because we don't consider xc > 1 here.
-
-use grandmod
+use listmod
 implicit none
 
 integer lmax,mmax,J

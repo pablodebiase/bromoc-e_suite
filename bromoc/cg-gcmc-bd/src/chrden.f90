@@ -25,7 +25,7 @@ subroutine chrden
 
 use constamod
 use grandmod
-use nucleotmod
+use listmod
 use gsbpmod
 use charfuncmod, only: sng   !command parser
 
@@ -48,9 +48,9 @@ if (Qchdenorm) then
     itype=et(i)
     chi=etypl(itype)%chg
     if (chi.eq.0.0) ok = .false.
-    if (ok) ok=x(i).le.xbcen4+tranx4.and.x(i).ge.xbcen4-tranx4.and. &
-               y(i).le.ybcen4+trany4.and.y(i).ge.ybcen4-trany4.and. &
-               z(i).le.zbcen4+tranz4.and.z(i).ge.zbcen4-tranz4
+    if (ok) ok=r(i)%x.le.xbcen4+tranx4.and.r(i)%x.ge.xbcen4-tranx4.and. &
+               r(i)%y.le.ybcen4+trany4.and.r(i)%y.ge.ybcen4-trany4.and. &
+               r(i)%z.le.zbcen4+tranz4.and.r(i)%z.ge.zbcen4-tranz4
     if (ok) then
       if (chi.gt.0.0) then
          chitp=chitp+chi
@@ -68,9 +68,9 @@ do i = 1, nele
   itype=et(i)
   chi=etypl(itype)%chg
   if (chi.eq.0.0) ok = .false.
-  if (ok) ok=x(i).le.xbcen4+tranx4.and.x(i).ge.xbcen4-tranx4.and. &
-             y(i).le.ybcen4+trany4.and.y(i).ge.ybcen4-trany4.and. &
-             z(i).le.zbcen4+tranz4.and.z(i).ge.zbcen4-tranz4
+  if (ok) ok=r(i)%x.le.xbcen4+tranx4.and.r(i)%x.ge.xbcen4-tranx4.and. &
+             r(i)%y.le.ybcen4+trany4.and.r(i)%y.ge.ybcen4-trany4.and. &
+             r(i)%z.le.zbcen4+tranz4.and.r(i)%z.ge.zbcen4-tranz4
   if (ok) then
 !    ion cartesian coordinates in the local grid system  
     xi = r(i)%x + tranx4-xbcen4

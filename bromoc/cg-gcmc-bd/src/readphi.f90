@@ -23,16 +23,16 @@ subroutine readphi(unit,outu,wrd4,adjust)
 use ioxmod
 use gsbpmod
 use grandmod
-use nucleotmod
+use listmod
 use errormod
 !Input
 implicit none
 integer unit, outu
 character*4  wrd4
 !Local variables
-integer i, ncel3, numb, j, k, x1, x2, y1, y2, z1, z2
+integer i, ncel3, j, k, x1, x2, y1, y2, z1, z2
 integer*4 nclx, ncly, nclz, nxo, nyo, nzo, pos, posn
-integer ifir, ilas, ifir0, isite, itype
+integer ifir, ilas, itype
 real tranx, trany, tranz
 real*8  xbcen, ybcen, zbcen, dcel,xmmn,xmmm,ymmn,ymmm,zmmn,zmmm
 real*8  epsw, epspp, conc
@@ -176,76 +176,32 @@ if (wrd4.eq.'PHIV') then
   if (Qnmcden) then
     if (adjust) write(outu,'(6x,a)') 'Warning: Cannot resize map, not implemented for nmcden'
     ifir=1
-    ifir0=0
-    numb=0
-    if (Qnucl) then
-      ilas = (6-1)*ncel3 + ncel3
-      ifir0 = ilas
-    endif
-    if (Qpar) then
-      if (Qnucl .and. istrs.eq.1) numb = inuc + 1
-      if (Qnucl .and. istrs.eq.2) numb = 2*inuc + 1
-      ilas = ifir0 + (ntype-numb)*ncel3 + ncel3 
-    endif
+    ilas=netyp*ncel3
     if (allocated(phiv)) deallocate (phiv)
     if (allocated(phivt)) deallocate (phivt)
     allocate (phiv(ifir:ilas),phivt(ifir:ilas))
-    if (Qnucl) then 
-      do isite = 1, 6 ! sites (S,P,Ab,Tb,Cb,Gb)
-        ifir = (isite-1)*ncel3 + 1
-        ilas = (isite-1)*ncel3 + ncel3
-        unit = vecphiv(isite) 
-        if (ifir.eq.1) then
-          read(unit) (phivt(i),i=ifir,ilas)
+    do itype=1,netyp
+      ifir = (itype-1)*ncel3 + 1
+      ilas = itype*ncel3 
+      unit = vecphiv(itype) 
+      if (ifir.eq.1) then
+        read(unit) (phivt(i),i=ifir,ilas)
+      else
+        read(unit) nclx,ncly,nclz,dcel,xbcen,ybcen,zbcen
+        read(unit) epsw,epspp,conc,tmembr,zmemb1r,epsmr
+        tmemb=tmembr
+        zmemb1=zmemb1r
+        epsm=epsmr
+        read(unit) (phivt(i),i=ifir,ilas)
+      endif      
+      do i = ifir, ilas
+        if (phivt(i).ne.0.0) then
+          phiv(i) = 0
         else
-          read(unit) nclx,ncly,nclz,dcel,xbcen,ybcen,zbcen
-          read(unit) epsw,epspp,conc,tmembr,zmemb1r,epsmr
-          tmemb=tmembr
-          zmemb1=zmemb1r
-          epsm=epsmr
-          read(unit) (phivt(i),i=ifir,ilas)
-        endif      
-        do i = ifir, ilas
-          if (phivt(i).ne.0.0) then ! BAJO CHISTERA!!!
-            phiv(i) = 0
-          else
-            phiv(i) = 1
-          endif
-        enddo                
-      enddo
-      ifir0 = ilas
-    endif ! Qnucl
-    if (Qpar) then
-      numb = 1   
-      if (Qnucl .and. istrs.eq.1) numb = inuc + 1
-      if (Qnucl .and. istrs.eq.2) numb = 2*inuc + 1  
-      j = 0
-      if (Qnucl) j = 6
-      do itype = numb, ntype
-        j = j + 1
-        ifir = ifir0 + (itype-numb)*ncel3 + 1
-        ilas = ifir0 + (itype-numb)*ncel3 + ncel3
-        unit = vecphiv(j)  
-        if (ifir.eq.1) then
-          read(unit) (phivt(i),i=ifir,ilas)
-        else
-          read(unit) nclx,ncly,nclz,dcel,xbcen,ybcen,zbcen
-          read(unit) epsw,epspp,conc,tmembr,zmemb1r,epsmr
-          tmemb=tmembr
-          zmemb1=zmemb1r
-          epsm=epsmr
-          read(unit) (phivt(i),i=ifir,ilas)
+          phiv(i) = 1
         endif
-        ! BAJO CHISTERA
-        do i = ifir, ilas
-          if (phivt(i).ne.0.0) then
-            phiv(i) = 0
-          else
-            phiv(i) = 1
-          endif
-        enddo
-      enddo
-    endif ! Qpar
+      enddo                
+    enddo
     deallocate (phivt)
   else
     ifir = 1

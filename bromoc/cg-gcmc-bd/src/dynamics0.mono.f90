@@ -18,6 +18,7 @@
 
 subroutine dynamics0(ninit,nfinal)
 use grandmod
+use listmod
 use constamod
 use stdiomod
 use errormod

@@ -18,9 +18,9 @@
 
 subroutine dynamics3(ninit,nfinal)
 use grandmod
+use listmod
 use constamod
 use stdiomod
-use nucleotmod
 use errormod
 use sevalmod
 
