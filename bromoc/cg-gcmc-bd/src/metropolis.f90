@@ -44,8 +44,8 @@ do imove = 1, nmcm
    call insertpar(iat,rr)
 
    !calculate new energy
-   call interact(eold,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.) ! adapt
-   call interact(enew,xnew,ynew,znew,abs(typei(iat)),iat,.false.)      ! adapt
+!   call interact(eold,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.) ! adapt
+!   call interact(enew,xnew,ynew,znew,abs(typei(iat)),iat,.false.)      ! adapt
 
    if (enew.le.eold) then
       !accept the move

@@ -55,7 +55,7 @@ real*4 idv
 real resol,ibuf
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
-logical*1 logmemb, logmmij, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
+logical*1 logmemb, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
 logical*1 Qexpl2nd,Qinputpar,Qonlychden
 real*8 zero
 !for time
@@ -129,7 +129,6 @@ Qnobond      = .true.
 Qecyl        = .false.
 Qnonbond     = .true.
 Qgr          = .false.
-Qmmij        = .false.
 Qphix        = .false.
 Qphiv        = .false.
 Qlsprmf      = .false.
@@ -1514,7 +1513,7 @@ do while (.not. logfinal)
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'ENERGY order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
      ! default values 
      ! Qnobond = Qnonbond =.true.
-     ! Qmemb = Qmmij = Qphix = Qphiv = Qsrpmf = .false.
+     ! Qmemb = Qphix = Qphiv = Qsrpmf = .false.
      Qnobond  = .not.check(com,'nobond')
      Qnonbond = .not.check(com,'nononbond')
      if (check(com,'membrane')) then
@@ -1522,12 +1521,6 @@ do while (.not. logfinal)
      else
        logmemb = Qmemb
        Qmemb = .false.
-     endif
-     if (check(com,'mmij')) then
-       if (.not.Qmmij) call error ('shell_simul', 'Reaction Field has not be defined before ENERGY order', faterr)
-     else
-       logmmij = Qmmij
-       Qmmij = .false.
      endif
      if (check(com,'phix')) then
        if (.not.Qphix) call error ('shell_simul', 'Static Field has not be defined before ENERGY order', faterr)
@@ -1560,16 +1553,14 @@ do while (.not. logfinal)
      if (Qnobond)  write(outu,'(6x,a)') 'Bonding Energy Term'
      if (Qnonbond) write(outu,'(6x,a)') 'Nonbonding Energy Term'
      if (Qmemb)    write(outu,'(6x,a)') 'Planar membrane Term'
-     if (Qmmij)    write(outu,'(6x,a)') 'Reaction Field Energy Term'
      if (Qphix)    write(outu,'(6x,a)') 'External Field Energy Term'
      if (Qphiv)    write(outu,'(6x,a)') 'Repulsive Energy Term'
      if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
      if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
   
-     call energy
+!     call energy
      write(outu,'(6x,a,f12.6)') 'Total energy ',ener
      Qmemb = logmemb 
-     Qmmij = logmmij 
      Qphix = logphix 
      Qphiv = logphiv 
      Qsrpmf = logsrpmf 
@@ -2621,60 +2612,6 @@ do while (.not. logfinal)
          write(outu,'(6x,a,i0)') 'REPWALLS deactivated. Strongly recommended to be used.'
        endif
      endif ! Qhiv
-    !REACTION FIELD
-    Qmmij = check(com,'mmij')
-    if (Qmmij) then 
-     !RECTBOX => RECTANGULAR BOX FOR REACTION FIELD
-     ! Maximum (minimum) positions in XYZ of a region where Legrende
-     ! polynomial basis functions are applied for the reaction field 
-     ! calculation [default=0]  
-      call gtdpar(com,'xmax',rbxmax,0.0)
-      call gtdpar(com,'xmin',rbxmin,0.0)
-      call gtdpar(com,'ymax',rbymax,0.0)
-      call gtdpar(com,'ymin',rbymin,0.0)
-      call gtdpar(com,'zmax',rbzmax,0.0)
-      call gtdpar(com,'zmin',rbzmin,0.0)
-      if ((rbxmax-rbxmin).gt.0.0 .and. (rbymax-rbymin).gt.0.0.and. (rbzmax-rbzmin).gt.0.0) then    
-        xscal = 2.0/(rbxmax-rbxmin)
-        yscal = 2.0/(rbymax-rbymin)
-        zscal = 2.0/(rbzmax-rbzmin)
-        xmin=-1.0/xscal
-        xmax= 1.0/xscal
-        ymin=-1.0/yscal
-        ymax= 1.0/yscal
-        zmin=-1.0/zscal
-        zmax= 1.0/zscal
-        write(outu,'(6x,a)') 'Reaction field will be calculated following region;'
-        write(outu,'(6x,2(a,f10.5))') 'X from ',rbxmin,' to ',rbxmax
-        write(outu,'(6x,2(a,f10.5))') 'Y from ',rbymin,' to ',rbymax
-        write(outu,'(6x,2(a,f10.5))') 'Z from ',rbzmin,' to ',rbzmax
-        call gtdpar(com,'rfscal',rfscal,1.0)
-        if(rfscal.ne.1.0) write(outu,'(6x,f5.2,a)') rfscal,' scaling factor will be applied for MMIJ rxnfld energy'
-      endif
-      !SPHERE => SPHERE FOR REACTION FIELD
-      call gtdpar(com,'srdist',srdist,0.0)
-      if (srdist.lt.0.0) then
-        call error ('shell_simul', 'srdist is a negative number',warning)
-        srdist = abs(srdist)
-      endif
-      if (srdist.ne.0.0) then
-        write(outu,'(6x,a)') 'Reaction field will be calculated following region;'
-        write(outu,'(6x,a,f10.5)') 'A sphere of radius ',srdist
-      endif
-      call gtipar(com,'mmijunit',iunit,1)
-      if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
-      if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
-      if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in GSBP order', faterr)
-      iunit = unvec(iunit)
-      write(outu,*)
-      write(outu,'(6x,a,i3)') 'Reading MMIJ matrix from unit ',iunit
-      call READMMIJ(iunit,outu)
-      if (shapes.EQ.'RECTBOX ') then
-        call RECT_NORM(ntpol,xscal,yscal,zscal,lstpx,lstpy,lstpz,bnorm)
-      else
-        call SPHE_NORM(nmpol,bnorm,srdist)
-      endif
-    endif ! Qmmij
     !STATIC EXTERNAL FIELD
     Qphix = check(com,'phix')
     if (Qphix) then
@@ -2711,7 +2648,6 @@ do while (.not. logfinal)
       call readrfpar(iunitv,nn,outu,Qadj)
       deallocate (iunitv)
     endif
-    if(Qmmij.and.Qrfpar) call error ('shell_simul','Error: MMIJ and RFPAR are not compatibles',faterr)
     write(outu,*)
   ! **************************************************************************
   elseif (wrd5.eq.'svdw') then

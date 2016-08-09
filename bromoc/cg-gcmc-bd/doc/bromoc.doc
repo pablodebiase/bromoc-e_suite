@@ -664,12 +664,12 @@ example:
 ************
 
    The influence of a low-dielectric charged channel protein on the movements
-of ions can be incorporated in terms of either the reaction field [mmij] or
-the reaction field parameters [rfpar] arising from various dielectric boundaries,
-the external static field [phix] arising from the charge distribution of a
-channel protein and the transmembrane potential, and the grid-based repulsive
-potential [phiv]. They depend on the structure and charge distribution of a
-channel. One can use the PB/PNP solver to calculate them (see the PB/PNP solver).
+of ions can be incorporated in terms of the reaction field parameters [rfpar] 
+arising from various dielectric boundaries, the external static field [phix] 
+arising from the charge distribution of a channel protein and the transmembrane 
+potential, and the grid-based repulsive potential [phiv]. They depend on the 
+structure and charge distribution of a channel. One can use the PB/PNP solver 
+to calculate them (see the PB/PNP solver).
 
    If necessary, different (ion-accessible) grid-based repulsive potentials
 {phiv} can be used for different ions with {nmcden}. The separate (binary)
@@ -692,8 +692,7 @@ to aid particles come out from inside a body.
 syntax:
 
   [GSBP] {adjust} {phiv} svdw (real) vzmin (real) vzmax (real) {bspline} {nmcden} phivunit (integer) [thold27 (real)] [thold8 (real)] [repwalls (integer)] -
-         {phix} phixunit (integer) {rfpar} rfparunit (integer,integer,...) [rfparfac (real)] {rfpsingle} -
-         {mmij} mmijunit (integer) xmin (real) ymin (real) zmin (real) xmax (real) ymax (real) zmax (real) [rfscal (real)]
+         {phix} phixunit (integer) {rfpar} rfparunit (integer,integer,...) [rfparfac (real)] {rfpsingle}
 
   {adjust}              : Resize static and repulsion field map to the system size to optimize memory usage
   {phiv}                : Activates repulsion field
@@ -716,31 +715,18 @@ syntax:
                           Works for trilinear, bspline and nmcden. If it is zero, repwalls is deactivated.
   {phix}                : Activates static external field
   phixunit         |-1| : File unit number for static external field
-  {mmij}                : Enables reaction field mmij
-  mmijunit         |-1| : unit for reaction field matrix (MMIJ)
-  xmax,ymax,zmax  |0.0| : maximum positions in XYZ of a region where Legendre polynomial
-                          basis functions are applied for the reaction field calculation
-  xmmin,ymin,zmin |0.0| : minimum positions in XYZ of a region where Legendre polynomial
-                          basis functions are applied for the reaction field calculation
-  rfscal          |1.0| : scaling factor affecting the cross terms of the reaction field
-                          (the bigger rfparfac, the more long range are the cross terms)
-  srdist          |0.0| : Computes the reaction field for a sphere of srdist radius
-  {rfpar}               : Enables Reaction Field Parameters (not compatible with mmij)
+  {rfpar}               : Enables Reaction Field Parameters
   rfparunit  int,int,...: Unit numbers for each rfpar type. Separate unit numbers by comma or any symbol except space. No default values so cannot be ommited. Unit number order must match the ions order defined in PARTICLE.
   rfparfac        |1.5| : factor for effective radius parameters
   {rfpsingle}           : It will read the first map given in rfparunit assuming maps are same for all ions
 
 example 1: one repulsive potential [phiv] for all ion types, static field [phix],
-           and [mmij] reaction field
 
   open read unit 11 file name phiv.bin
   open read unit 13 file name phix.bin
-  open read unit 14 file name mmij.bin
 
   gsbp svdw   50.0 phiv vzmin -35.0 vzmax  35.0 phivunit 11  -
-       phix phixunit 13 mmij mmijunit 14 -
-       xmin  -22.25 ymin  -22.25 zmin  -43.25 -
-       xmax   22.25 ymax   22.25 zmax   43.25
+       phix phixunit 13 
 
 example 2: same repulsive potentials [phiv] for the ion types, static field [phix],
            and different reaction field parameters for the ion types
@@ -1060,24 +1046,22 @@ removed for the calculations.
 
 syntax:
 
-ENERGY {noenergy} {nononbond} {nomembrane} {mmij} {phix} {phiv} {srpmf} {rfpar}
+ENERGY {noenergy} {nononbond} {nomembrane} {phix} {phiv} {srpmf} {rfpar}
 
 {noenergy}       : turn off total energy
 {nononbond}      : turn off nonbond energy
 {nomembrane}     : turn off membrane repulsive energy
-{mmij}           : include the reaction field energy 
 {phix}           : include the external static field energy 
 {phiv}           : include the grid-based repulsive energy
 {srpmf}          : include the schort-range ion-ion interaction energy 
 {rfpar}          : include the reaction field parameter energy 
-                   (do not use {rfpar} together with {mmij})  
 
 example:
 
   open read unit 15 name ../conf_111/crd@1
   coor read unit 15 
   
-  energy mmij nononbond
+  energy nononbond
 
 
 

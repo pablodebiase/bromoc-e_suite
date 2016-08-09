@@ -113,20 +113,20 @@ OBJECTS = extramod.o apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o
         nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o explatmod.o charmmmod.o listmod.o\
         alpol2.o dalpol2.o splinemod.o sevalmod.o charman.o cputime.o error.o discretize.o\
         splinepot.o cosmphi2.o sinmphi2.o getopt.o ioinit.o lualloc.o lunalloc.o m3.o dm3.o rpowerl2.o\
-        rect_norm.o sphe_norm.o sphe_svpol.o cross_product.o factori.o angles.o bbonds.o count.o\
+        cross_product.o factori.o angles.o bbonds.o count.o\
         dihedral.o countions.o dynamics0nuc.o find.o repwalls.o fixcoor.o go_qq.o grand.o header.o mapsplot.o\
         help.o insert.o membrane.o metropolis.o move.o native_structure.o rfpar.o feedseed.o\
-        random.o readmmij.o chrden.o readphi.o rect_rf0.o rect_rf1.o rgauss.o staefield.o shell_simul.o\
-        simul1.o simul.o sphe_rf0.o sphe_rf1.o spline.o staticf0.o staticf1.o switch1.o switch2.o switch3.o\
+        random.o chrden.o readphi.o rgauss.o staefield.o shell_simul.o\
+        simul1.o simul.o spline.o staticf0.o staticf1.o switch1.o switch2.o switch3.o\
         vdwgd0spln.o vdwgd0trln.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o\
         polynom.o readpsf.o readcharmm.o exclude.o cmapc.o cmapg.o psf_bend.o psf_bond.o psf_cmap.o\
-        psf_dih.o psf_imp.o test_bond.o cmapspline.o bcucof.o fatnam.o interact.o
+        psf_dih.o psf_imp.o test_bond.o cmapspline.o bcucof.o fatnam.o #interact.o
 
-OBJECTSMONO = dynamics0.mono.o dynamics1.mono.o dynamics2.mono.o dynamics3.mono.o energy.mono.o
+OBJECTSMONO = dynamics0.mono.o dynamics1.mono.o dynamics2.mono.o dynamics3.mono.o #energy.mono.o
 
-OBJECTSPARA = dynamics0.para.o dynamics1.para.o dynamics2.para.o dynamics3.para.o energy.para.o
+OBJECTSPARA = dynamics0.para.o dynamics1.para.o dynamics2.para.o dynamics3.para.o #energy.para.o
 
-FPARAFILES = dynamics0.para.f90 dynamics1.para.f90 dynamics2.para.f90 dynamics3.para.f90 energy.para.f90
+FPARAFILES = dynamics0.para.f90 dynamics1.para.f90 dynamics2.para.f90 dynamics3.para.f90 #energy.para.f90
 
 # Clean objects
 

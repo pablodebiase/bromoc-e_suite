@@ -114,7 +114,7 @@ endif
 
 if (Qenergy) then
   write(outu,*)
-  call energy
+!  call energy
   if (Qpar.and.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
     write(outu,'(5x,i10,6f17.4)') 0,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+evdwmx+esrpmfmx+eefpot+ &
@@ -364,7 +364,7 @@ do icycle = 1, ncycle
   if (nbd.gt.0) then
     Qforces = .true.
     do istep = 1, nbd
-      call energy
+!      call energy
       if (Qpres) then
         vir=dot_product(f(1:nele)%x,r(1:nele)%x)+dot_product(f(1:nele)%y,r(1:nele)%y)+dot_product(f(1:nele)%z,r(1:nele)%z)
         pres=pres+(nele-vir*i3*ikbt)*itvol*kba3bar*temp
@@ -588,7 +588,7 @@ do icycle = 1, ncycle
             iz = int((rr%z-zmini)*idelz) + 1
             if (iz.le.nzmax) then
               nion2(itype,iz) = nion2(itype,iz) + 1
-              call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
+!              call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
               etmp = dener - egsbpa - egsbpb - evdwgd 
               etot(itype,iz) = etot(itype,iz) + dener    ! total interaction energy
               eion(itype,iz) = eion(itype,iz) + etmp     ! ion-ion interaction energy
@@ -609,7 +609,7 @@ do icycle = 1, ncycle
 
   !OUTPUT
   if (nprint.gt.0 .and. mod(icycle,nprint).eq.0) then  
-    if (ncycle*nbd.eq.0) call energy
+!    if (ncycle*nbd.eq.0) call energy
     if (Qpar .and. Qnucl) then
       write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded---------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
       write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+evdwmx+esrpmfmx+eefpot+ &
@@ -668,7 +668,7 @@ enddo ! icycle
 
 if (Qchdencnt) chden=sng(1.0/float(ncycle))*chden
 
-call energy
+!call energy
 if (nprint.eq.0) then
   if (Qpar .and. Qnucl) then
     write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
