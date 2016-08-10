@@ -32,13 +32,11 @@ real  ir
 logical*1 lgiat
 
 ememb = 0.0 ! initilization
+lgiat = Qforces
 
 do iat = 1, nele
-  lgiat = iat.le.nelenuc .or. iat.ge.nelenuc+1
-  lgiat = lgiat .and. Qforces
   itype=et(iat)
   charge=etypl(itype)%chg
-
   ! Nernst transmembrane potential
   if (voltage.ne.0.0.and.charge.ne.0.0) then
     if (r(iat)%z.lt.zmemb1) then ! REGION 1: z=z(iat)-zmemb1 < 0, lim{z->-inf} pot(1) = 0
