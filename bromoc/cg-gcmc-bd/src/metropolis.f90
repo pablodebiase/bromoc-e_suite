@@ -44,6 +44,7 @@ do imove = 1, nmcm
    call insertpar(iat,rr)
 
    !calculate new energy
+   call par_interact(iat, eold)
 !   call interact(eold,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.) ! adapt
 !   call interact(enew,xnew,ynew,znew,abs(typei(iat)),iat,.false.)      ! adapt
 

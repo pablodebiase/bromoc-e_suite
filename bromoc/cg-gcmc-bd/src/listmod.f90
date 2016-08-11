@@ -786,9 +786,9 @@ subroutine delpar(parn)
 implicit none
 integer i,j,ii,jj,n,ne,sr,parn
 ! If parn is out of range exit
-if (parn.gt.npar.or.parn.lt.1) return
+!if (parn.gt.npar.or.parn.lt.1) return
 ! if particle not of kind 3 return
-if (parl(parn)%kind.ne.3) return
+!if (parl(parn)%kind.ne.3) return
 ! if last particle or no more particles
 if (npar .le. 1) then
     nele=0

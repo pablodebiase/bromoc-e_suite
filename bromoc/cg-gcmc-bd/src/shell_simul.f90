@@ -713,12 +713,10 @@ do while (.not. logfinal)
     fct=0.0
     do i=1,netyp
       do j=i,netyp
-        if (j.gt.netnuc) then
-          if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
-            is=etpidx(i,j)
-            fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
-            Qchr(is)=.true.
-          endif
+        if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
+          is=etpidx(i,j)
+          fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
+          Qchr(is)=.true.
         endif
       enddo
     enddo
@@ -1213,15 +1211,13 @@ do while (.not. logfinal)
     call updateuetl()
     do i=1,netyp
       do j=i,netyp
-        if (j.gt.netnuc) then
-          if (etypl(i)%eps.gt.0.0.and.etypl(i)%sig.gt.0.0.and.etypl(j)%eps.gt.0.0.and.etypl(j)%sig.gt.0.0) then
-              is=etpidx(i,j)
-              epp4(is)=4.0*sqrt(etypl(i)%eps*etypl(j)%eps)
-              sgp2(is)=(0.5*(etypl(i)%sig+etypl(j)%sig))**2
-              Qlj(is)=.true.
-          else
-           if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)')'Warning: Missing single LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
-          endif
+        if (etypl(i)%eps.gt.0.0.and.etypl(i)%sig.gt.0.0.and.etypl(j)%eps.gt.0.0.and.etypl(j)%sig.gt.0.0) then
+          is=etpidx(i,j)
+          epp4(is)=4.0*sqrt(etypl(i)%eps*etypl(j)%eps)
+          sgp2(is)=(0.5*(etypl(i)%sig+etypl(j)%sig))**2
+          Qlj(is)=.true.
+        else
+          if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)')'Warning: Missing single LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
         endif
       enddo
     enddo
@@ -1263,26 +1259,25 @@ do while (.not. logfinal)
       epp4=0.0
       sgp2=0.0
     endif
-    do  i = 1, netyp
+    call updateuetl()
+    do i = 1, netyp
       do j = i, netyp
-        if (j.gt.netnuc) then 
-          is=etpidx(i,j)
-          if (epsLJ(is).gt.0.0 .and. sgLJ(is).gt.0.0) then
-            write(outu,'(6x,a,a,2f12.4,$)') etypl(i)%nam,etypl(j)%nam,epsLJ(is),sgLJ(is) 
-            if (Qlj(is)) then
-              write(outu,'(a)') ' (replaced)'
-            else
-              write(outu,*)
-              Qlj(is)=.true.
-            endif
-            epp4(is)=4.0*epsLJ(is)
-            sgp2(is)=sgLJ(is)**2
+        is=etpidx(i,j)
+        if (epsLJ(is).gt.0.0 .and. sgLJ(is).gt.0.0) then
+          write(outu,'(6x,a,a,2f12.4,$)') etypl(i)%nam,etypl(j)%nam,epsLJ(is),sgLJ(is) 
+          if (Qlj(is)) then
+            write(outu,'(a)') ' (replaced)'
           else
-            if (Qlj(is)) then
-              write(outu,'(6x,a,a,2f12.4,a)') etypl(i)%nam,etypl(j)%nam,epp4(is)*0.25,sqrt(sgp2(is)),' (from single LJ)'
-            else
-              write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
-            endif
+            write(outu,*)
+            Qlj(is)=.true.
+          endif
+          epp4(is)=4.0*epsLJ(is)
+          sgp2(is)=sgLJ(is)**2
+        else
+          if (Qlj(is)) then
+            write(outu,'(6x,a,a,2f12.4,a)') etypl(i)%nam,etypl(j)%nam,epp4(is)*0.25,sqrt(sgp2(is)),' (from single LJ)'
+          else
+            if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
           endif
         endif
       enddo
@@ -1749,18 +1744,17 @@ do while (.not. logfinal)
      Qsrpmf = .true.
   
      write(outu,'(6x,a)')'Short-range ion-ion interactions are turn on' 
-     write(outu,'(6x,a,/,6x,a)') 'Coefficients for the short-range ion-ion interactions','NAME----NAME----C0----C1----C2----C3----C4'  
+     write(outu,'(6x,a,/,6x,a)') 'Coefficients for the short-range ion-ion interactions','NAME----NAME----C0----C1----C2----C3----C4' 
+     call updateuetl()
      do i = 1,netyp
        do j=i,netyp
-         if(j.gt.netnuc) then
-           is=etpidx(i,j)
-           if (c2(is).ne.0.0) then
-             write(outu,'(6x,a,1x,a,5f8.3)') etypl(i)%nam,etypl(j)%nam,c0(is),c1(is),c2(is),c3(is),c4(is)
-             c2(is)=1.0/c2(is)
-             Qsrpmfi(is)=.true.
-           else
-              write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing SRPMF parameters for:',etypl(i)%nam,etypl(j)%nam
-           endif
+         is=etpidx(i,j)
+         if (c2(is).ne.0.0) then
+           write(outu,'(6x,a,1x,a,5f8.3)') etypl(i)%nam,etypl(j)%nam,c0(is),c1(is),c2(is),c3(is),c4(is)
+           c2(is)=1.0/c2(is)
+           Qsrpmfi(is)=.true.
+         else
+            if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)') 'Warning: Missing SRPMF parameters for:',etypl(i)%nam,etypl(j)%nam
          endif
        enddo
      enddo
@@ -1865,6 +1859,7 @@ do while (.not. logfinal)
         endif
       endif
     enddo
+    call updateuetl()
     write(outu,'(6x,a)') 'Effective potential was activated for the following pairs:'
     write(*,*) 'Used Element Type-Element Type pairs'
     do i = 1,netyp
@@ -1880,8 +1875,7 @@ do while (.not. logfinal)
             call discretize(is,nnp,mnp,nxf(is))
             write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
           elseif (etul(i).and.etul(j)) then
-            write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',etypl(i)%nam,etypl(j)%nam,' . Using '  &
-                      //' Coulombic and Lennard Jones and/or SRPMF parameters on the fly'
+            write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',etypl(i)%nam,etypl(j)%nam,' . Using Coulombic and Lennard Jones and/or SRPMF parameters on the fly'
           endif
         endif
       enddo
@@ -1890,16 +1884,14 @@ do while (.not. logfinal)
     if (Qepwrt) then
       do i=1,netyp
         do j=i,netyp
-          if (j.gt.netnuc) then
-            is=etpidx(i,j)
-            if (Qefpot(is)) then
-              write(wunit,*) etypl(i)%nam,' - ',etypl(j)%nam
-              do k=int((efp(is)%xl-1.0)*ires*10.0),int((sqrt(efp(is)%xu2)+10.0)*ires*10.0)
-                x1=k*res*0.1
-                call getyd(is,x1**2,x2,x3,r1)
-                write(wunit,*) x1,x2,x3
-              enddo
-            endif
+          is=etpidx(i,j)
+          if (Qefpot(is)) then
+            write(wunit,*) etypl(i)%nam,' - ',etypl(j)%nam
+            do k=int((efp(is)%xl-1.0)*ires*10.0),int((sqrt(efp(is)%xu2)+10.0)*ires*10.0)
+              x1=k*res*0.1
+              call getyd(is,x1**2,x2,x3,r1)
+              write(wunit,*) x1,x2,x3
+            enddo
           endif
         enddo
       enddo

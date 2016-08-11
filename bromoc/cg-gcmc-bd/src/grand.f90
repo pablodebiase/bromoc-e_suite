@@ -48,8 +48,7 @@ do igrand = 1, ngcmc
       call insert(ib,rr%x,rr%y,rr%z)
       call addpar(itype,3,ib)
       call insertpar(npar,rr)
-!      call interact(dener,rr%x,rr%y,rr%z,itype,npar+1,.false.) ! adapt
-
+      call par_interact(npar, dener)
       if (Qbufferbias(ib)) then
         rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib)+1)
@@ -77,8 +76,7 @@ do igrand = 1, ngcmc
     if (ib.le.nbuffer .and. ip.le.nat(ib)) then
       itype = ibfftyp(ib) ! ion type
       call find(ib,ip,iat)
-!      call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.) ! adapt
-
+      call par_interact(iat,dener)
       if (Qbufferbias(ib)) then
         rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib))
@@ -105,5 +103,4 @@ do igrand = 1, ngcmc
 
 enddo
 
-return
 end subroutine
