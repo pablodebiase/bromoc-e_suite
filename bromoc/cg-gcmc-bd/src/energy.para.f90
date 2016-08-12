@@ -85,16 +85,6 @@ if (Qenergy) then
   if (Qmemb) call membrane
   ener = ememb
 
-  ! reaction field contribution
-  if (Qmmij) then
-    if(shapes.EQ.'RECTBOX ') then
-      call rect_rf1
-    else if(shapes.eq.'SPHERE  ') then
-      call sphe_rf1
-    endif
-    ener = ener + egsbpb
-  endif
-
   ! static external field contribution
   if (Qphix) then
     call staticf1

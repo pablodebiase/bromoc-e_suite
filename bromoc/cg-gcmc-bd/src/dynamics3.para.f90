@@ -16,16 +16,14 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine dynamics3(ninit,nfinal)
+subroutine dynamics3()
 use grandmod
 use listmod
 use constamod
-use stdiomod
-use errormod
 use sevalmod
 
 implicit none
-integer itype,i,ninit,nfinal
+integer itype,i
 real fact1, fact2
 real rgauss
 external rgauss
@@ -36,7 +34,7 @@ real ebet,idist
 
 !$omp parallel private(i,itype,zold,ebet,idiffusion,didiffusion,idist,fact1,fact2,deldx,deldy,deldz,delx,dely,delz)
 !$omp do
-do i=ninit,nfinal
+do i=nelenuc+1, nele
   itype = et(i)
   if (dids(1,i).gt.0.0.and.dids(1,i).le.diffcutoff) then
 ! dna proximity-dependent diffusion constant

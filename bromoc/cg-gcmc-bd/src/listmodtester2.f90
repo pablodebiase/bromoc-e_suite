@@ -55,7 +55,7 @@ enddo
 
 ! Randomly move particles and rotate
 do i=1,npar
-   call insertpar(i,getcar((rand()-0.5)*10.0,(rand()-0.5)*10.0,(rand()-0.5)*10.0))
+   call insertpar(i,getcar((rand()-0.5)*10.0,(rand()-0.5)*10.0,(rand()-0.5)*10.0),rot=.true.)
 enddo
 
 write(*,*) '>>>>>>>>>> LISTS'

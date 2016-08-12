@@ -33,7 +33,6 @@ integer ngcmc, nmcm, nbd, ntras, nsec, j,istep,np1,np2,ii
 real    vfbs
 integer   iat, jat, itype, ib, n, iz, ir
 real    naver
-!real*16 dener
 real dener
 real    current, area, zz, vol1, vol2, pres, vir
 integer   ncount(nptnuc+1:nptyp)
@@ -57,9 +56,7 @@ integer   npair3(nptyp,npoints),npair4(nptyp,npoints)
 real    s1,s2,itvol
 
 !energy profiles
-!real*16   etmp,etot(nptyp,npoints),eion(nptyp,npoints) 
-!real*16   erf(nptyp,npoints),esf(nptyp,npoints), egvdw(nptyp,npoints)
-real   etmp,etot(nptyp,npoints),eion(nptyp,npoints) 
+real   etot(nptyp,npoints),eion(nptyp,npoints) 
 real   erf(nptyp,npoints),esf(nptyp,npoints), egvdw(nptyp,npoints)
 
 !fraction of denatured bases 
@@ -372,19 +369,19 @@ do icycle = 1, ncycle
       if (Qpar) then
         if (Qcountion) call getparz()
         if (Qdiffuse) then
-          call dynamics1(nelenuc+1,nele) ! using non-uniform diffusion constant
+          call dynamics1() ! using non-uniform diffusion constant
         elseif (Qprofile) then
-          call dynamics2(nelenuc+1,nele) ! using diffusion constant profile 
+          call dynamics2() ! using diffusion constant profile 
         elseif (Qproxdiff) then
-          call dynamics3(nelenuc+1,nele) ! using dna proximity diffusion constant
+          call dynamics3() ! using dna proximity diffusion constant
         else
-          call dynamics0(nelenuc+1,nele) ! using uniform diffusion constant
+          call dynamics0() ! using uniform diffusion constant
         endif
         ! Count ions
         if (Qcountion) call countallions()
       endif
       if (Qnucl) then
-        call dynamics0nuc(1,nelenuc)
+        call dynamics0nuc()
         if (Qnotrans) then
           if (Qnotrx) r(1:nelenuc)%x=r(1:nelenuc)%x-sum(r(1:nelenuc)%x)*inelenuc+notrx
           if (Qnotry) r(1:nelenuc)%y=r(1:nelenuc)%y-sum(r(1:nelenuc)%y)*inelenuc+notry
@@ -588,10 +585,9 @@ do icycle = 1, ncycle
             iz = int((rr%z-zmini)*idelz) + 1
             if (iz.le.nzmax) then
               nion2(itype,iz) = nion2(itype,iz) + 1
-!              call interact(dener,x(iat),y(iat),z(iat),itype,iat,.true.)
-              etmp = dener - egsbpa - egsbpb - evdwgd 
+              call par_interact(iat,dener)
               etot(itype,iz) = etot(itype,iz) + dener    ! total interaction energy
-              eion(itype,iz) = eion(itype,iz) + etmp     ! ion-ion interaction energy
+              eion(itype,iz) = eion(itype,iz) + enonbond ! ion-ion interaction energy
               esf(itype,iz) = esf(itype,iz) + egsbpa     ! static field energy
               erf(itype,iz) = erf(itype,iz) + egsbpb     ! reaction field energy
               egvdw(itype,iz) = egvdw(itype,iz) + evdwgd ! repulsive energy

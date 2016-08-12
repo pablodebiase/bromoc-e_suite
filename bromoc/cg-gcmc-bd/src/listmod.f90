@@ -525,10 +525,14 @@ if (ptype .gt. 0 .and. ptype .le. nptyp) then
 endif
 end subroutine
 
-subroutine insertpar(parn,rcent)
+subroutine insertpar(parn,rcent,norot)
 implicit none
 type(car) :: rcent,arcent  ! Particle Centroid
 integer parn ! Particle Number 
+logical,optional,intent(in) :: norot
+logical rotate
+rotate = .true.
+if (present(norot)) rotate=.not.norot
 if (parl(parn)%ne .eq. 1) then
   call setcarmonopar(parn,rcent)
 else
@@ -536,31 +540,37 @@ else
   call getcentroid(parn,arcent)
   ! Compute Displacement: Substract Actual Centroid to New Centroid
   call subcar2par(parn,arcent)
+  ! Randomly rotate particle
+  if (rotate) call uranrot(parn,nocenter=.true.)
   ! Add Displacement to all elements position
   call addcar2par(parn,rcent)
-  ! Randomly rotate particle
-  call uranrot(parn)
 endif
 end subroutine
 
-subroutine movepar(parn,rcent)
+! use center true when rotating a particle that is not at the origin
+subroutine movepar(parn,rd,center,norot)
 implicit none
-type(car) :: rcent,arcent  ! Particle Centroid
+type(car) :: rd  ! Vector Shift
 integer parn ! Particle Number 
+logical,optional,intent(in) :: norot,center
+logical rotate, nocenter
+rotate = .true.
+nocenter = .true.
+if (present(norot)) rotate=.not.norot
+if (present(center)) nocenter=.not.center
 if (parl(parn)%ne .eq. 1) then
-  call setcarmonopar(parn,rcent)
+  call setcarmonopar(parn,sumcar(r(parl(parn)%sr+1),rd))
 else
-  ! Compute Actual Centroid
-  call getcentroid(parn,arcent)
-  ! Compute Displacement: Substract Actual Centroid to New Centroid
-  call subcar2par(parn,arcent)
+  ! Randomly rotate particle
+  if (rotate) call uranrot(parn,nocenter=nocenter)
   ! Add Displacement to all elements position
-  call addcar2par(parn,rcent)
+  call addcar2par(parn,rd)
 endif
 end subroutine
 
 ! Randomly rotates a particle
-subroutine uranrot(parn)
+! only use nocenter true when particle is at the origin
+subroutine uranrot(parn,nocenter)
 implicit none
 real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real, parameter :: twopi=2.0*pi
@@ -569,6 +579,10 @@ real,external :: rndm
 real phi, theta, psi, cosp, sinp, ocosp
 real x,y,z,rot(3,3)
 type(car) :: cent
+logical,optional,intent(in) :: nocenter
+logical center
+center = .true.
+if (present(nocenter)) center = .not.nocenter
 if (parl(parn)%ne .lt. 2) return
 theta=acos(2.0*rndm()-1.0) ! from 0 to pi
 phi=twopi*rndm()           ! from 0 to 2*pi
@@ -594,14 +608,18 @@ rot(2,3)=y*z*ocosp-x*sinp
 rot(3,1)=x*z*ocosp-y*sinp
 rot(3,2)=y*z*ocosp+x*sinp
 rot(3,3)=cosp+z*z*ocosp
-! Get Centroid
-call getcentroid(parn,cent)
-! Remove Centroid
-call subcar2par(parn,cent)
+if (center) then
+  ! Get Centroid
+  call getcentroid(parn,cent)
+  ! Remove Centroid
+  call subcar2par(parn,cent)
+endif
 ! Rotate Particle
 call rotatepar(parn,rot)
-! Restore Centroid
-call addcar2par(parn,cent)
+if (center) then 
+  ! Restore Centroid
+  call addcar2par(parn,cent)
+endif
 end subroutine
 
 ! Given a rotation matrix, rotates particle
@@ -658,6 +676,39 @@ implicit none
 integer ptypn,elen
 real x,y,z
 call setcar(ptypl(ptypn)%r(elen),x,y,z)
+end subroutine
+
+subroutine getptypcentroid(ptypn,rc)
+implicit none
+integer,intent(in)    :: ptypn ! Particle Type Number 
+type(car),intent(out) :: rc  ! Particle Type Centroid
+integer i,ne
+real ine
+ne=ptypl(ptypn)%ne
+if (ne.eq.1) then
+  rc=ptypl(ptypn)%r(1)
+else
+  ine=1.0/ne
+  ! Compute Actual Centroid
+  ! Zero vector
+  call setcarzero(rc)
+  ! Add each position vector to rc
+  do i=1,ne
+     call addcar(rc,ptypl(ptypn)%r(i))
+  enddo
+  ! divide rc by number of elements
+  call mulcar(rc,ine)
+endif
+end subroutine
+
+subroutine centerptyp(ptypn)
+implicit none
+integer ptypn,i
+type(car) :: rc
+call getptypcentroid(ptypn,rc)
+do i=1,ptypl(ptypn)%ne
+  call subcar(ptypl(ptypn)%r(i),rc)
+enddo
 end subroutine
 
 subroutine putcoorinpar(parn,elen,x,y,z)
@@ -728,6 +779,15 @@ implicit none
 type(car) :: r
 call setcar(r,0.0,0.0,0.0)
 end subroutine
+
+!sum car
+function sumcar(r1,r2)
+implicit none
+type(car) :: sumcar,r1,r2
+sumcar%x=r1%x+r2%x
+sumcar%y=r1%y+r2%y
+sumcar%z=r1%z+r2%z
+end function
 
 ! Add Second Cartesian Type to first
 subroutine addcar(r1,r2)

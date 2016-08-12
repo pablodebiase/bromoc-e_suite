@@ -16,15 +16,13 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine dynamics1(ninit,nfinal)
+subroutine dynamics1()
 use grandmod
 use listmod
 use constamod
-use stdiomod
-use errormod
 
 implicit none
-integer itype,i,ninit,nfinal
+integer itype,i
 real fact1, fact2
 real rgauss
 external rgauss
@@ -32,7 +30,7 @@ real delx, dely, delz, delDz
 real sw, dsw, idiffusion, didiffusion
 real zz, pp3, pore1, pore2,ipp3
 
-do i = ninit,nfinal
+do i = nelenuc+1, nele
   itype=et(i)
 ! space-dependent diffusion constant
   zz = r(i)%z

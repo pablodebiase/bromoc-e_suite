@@ -2377,7 +2377,7 @@ do while (.not. logfinal)
            do i = ifirst, ilast
              call insert(ib,rr%x,rr%y,rr%z) ! find new center of particle
              call addpar(itype,kind=3,ibuf=ib) ! add particle to list
-             call insertpar(npar,rr) ! locate and rotate
+             call movepar(npar,rr) ! locate and rotate
            enddo
            ifirst = ifirst + nat(ib)
            ilast = ifirst + nat(ib+1) - 1

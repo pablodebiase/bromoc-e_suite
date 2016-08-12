@@ -362,9 +362,11 @@ endif
 do i = 1, nelenuc1st
    call putcoorinptyp(1,i,xnat(i),ynat(i),znat(i))
 enddo
+call centerptyp(1)
 do i = nelenuc1st+1,nelenuc
    call putcoorinptyp(2,i-nelenuc1st,xnat(i),ynat(i),znat(i))
 enddo
+call centerptyp(2)
 
 !OUTPUT
 phPSAbd = phPSAb*icte

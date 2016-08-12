@@ -16,16 +16,16 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine move(iat,rr)
+subroutine move(parn,rm)
 use grandmod
 use nucleotmod
 use listmod
 
 implicit none
-integer iat
+integer parn
 real radius,nremovablepar
 logical*1 endok
-type(car) :: rr, rs
+type(car) :: rr, rs, rm
 
 !Pick one atom randomly and move it (if it moves outside the 
 !limits, pick a different atom)
@@ -33,11 +33,12 @@ type(car) :: rr, rs
 endok = .true.  
 nremovablepar = float(npar - nparnuc)
 do while (endok)
-  iat = nparnuc + int(nremovablepar*rndm()) + 1 ! [nelenuc+1,nele]
-  call getcentroid(iat, rs)
-  rr%x = rs%x + mcmax*(rndm()-0.5)
-  rr%y = rs%y + mcmax*(rndm()-0.5)
-  rr%z = rs%z + mcmax*(rndm()-0.5)
+  parn = nparnuc + int(nremovablepar*rndm()) + 1 ! [nelenuc+1,nele]
+  rm%x = mcmax*(rndm()-0.5)
+  rm%y = mcmax*(rndm()-0.5)
+  rm%z = mcmax*(rndm()-0.5)
+  call getcentroid(parn, rs)
+  rr = sumcar(rs,rm)
   if (Qsphere) then
     radius = (rr%x-cx)**2+(rr%y-cy)**2+(rr%z-cz)**2
     endok = radius.gt.Rsphe2

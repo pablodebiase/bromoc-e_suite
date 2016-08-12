@@ -52,7 +52,7 @@ esrpmf   = 0.0
 esrpmfmx = 0.0
 ememb    = 0.0
 esolve   = 0.0
-egsbpa   = 0.0
+rgsbpa   = 0.0
 egsbpb   = 0.0
 evdwgd   = 0.0
 ebond    = 0.0
@@ -81,16 +81,6 @@ if (Qenergy) then
   ! membrane contribution
   if (Qmemb) call membrane
   ener = ememb
-
-  ! reaction field contribution
-  if (Qmmij) then
-     if(shapes.EQ.'RECTBOX ') then
-        call rect_rf1
-     else if(shapes.eq.'SPHERE  ') then
-        call sphe_rf1
-     endif
-     ener = ener + egsbpb
-  endif
 
   ! static external field contribution
   if (Qphix) then

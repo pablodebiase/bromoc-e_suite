@@ -419,36 +419,36 @@ real,intent(out) :: energy
 integer parm,itype,jtype
 integer nen,srn,nem,srm
 integer i,j,is
-real pener
 real dist, dist2, dist6, idist, idist2
+real pener
 energy = 0.0
 
 ! Membrane
 if (Qmemb) then 
-  call par_membrane(parn, pener) 
-  energy=energy+pener
+  call par_membrane(parn, ememb) 
+  energy=energy+ememb
 endif
 
 !reaction field parameter  
 if (Qrfpar) then
-  call par_rfparion(parn, pener)
-  energy=energy+pener
+  call par_rfparion(parn, egsbpb)
+  energy=energy+egsbpb
 endif ! Qrfpar
 
 !static external field contribution
 if (Qphix) then
-  call par_staticf(parn, pener)
-  energy=energy+pener
+  call par_staticf(parn, egsbpa)
+  energy=energy+egsbpa
 endif ! Qphix
 
 !grid-based repulsive potential
 if (Qphiv) then
   if (Qtrln) then
-    call par_vdwgd_trln(parn, pener)
+    call par_vdwgd_trln(parn, evdwgd)
   else 
-    call par_vdwgd_spln(parn, pener)
+    call par_vdwgd_spln(parn, evdwgd)
   endif
-  energy=energy+pener
+  energy=energy+evdwgd
 endif ! Qphiv
 
 ! Ignore all internal energies of every particle
@@ -456,6 +456,7 @@ endif ! Qphiv
 if (Qnonbond) then
   srn = parl(parn)%sr
   nen = parl(parn)%ne
+  enonbond=0.0
   do parm=1,npar
     if (parm.ne.parn) then
       nem = parl(parm)%ne
@@ -468,24 +469,25 @@ if (Qnonbond) then
           dist2 = dotcar(r(i),r(j))
           if (Qefpot(is)) then
             call gety(is,dist2,pener,dist)
-            energy=energy+pener
+            enonbond=enonbond+pener
           else
             idist2 = 1.0/dist2
             if (Qchr(is).or.Qsrpmfi(is)) idist = sqrt(idist2)
-           !Lennard-Jones 6-12 potential + electrostatic interaction    
-            if (Qchr(is)) energy=energy+fct(is)*idist
+           !electrostatic interaction    
+            if (Qchr(is)) enonbond=enonbond+fct(is)*idist
+           !Lennard-Jones 6-12 potential 
             if (Qlj(is)) then
               dist6 = (sgp2(is)*idist2)**3
-              energy=energy+epp4(is)*dist6*(dist6-1.0)
+              enonbond=enonbond+epp4(is)*dist6*(dist6-1.0)
             endif
             !water-mediated short-range ion-ion interaction  
             if (Qsrpmfi(is)) then
               if (dist2.le.rth) then
                 dist=1.0/idist
                 pener = c0(is)*exp((c1(is)-dist)*c2(is))*cos(c3(is)*pi*(c1(is)-dist))+c4(is)*(c1(is)*idist)**6
-                if (dist.ge.srpx) esrpmf=esrpmf*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
+                if (dist.ge.srpx) pener=pener*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
                 ! Eq. 9 W. Im,and B. Roux J. Mol. Biol. 322:851-869 (2002)
-                energy=energy+pener
+                enonbond=enonbond+pener
               endif
             endif
           endif
@@ -493,5 +495,6 @@ if (Qnonbond) then
       enddo
     endif
   enddo
+  energy=energy+enonbond
 endif !Qnonbond
 end subroutine

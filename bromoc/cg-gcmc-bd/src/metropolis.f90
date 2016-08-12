@@ -23,7 +23,7 @@ use constamod
 use listmod
 implicit none
 integer nmcm
-integer iat, imove, ne, sr, pne
+integer parn, imove, ne, sr, pne
 !real*16 bltz,eold, enew
 real bltz,eold, enew
 type(car) :: rr
@@ -31,23 +31,20 @@ type(car),allocatable,dimension(:) :: rrori
 
 pne = 0
 do imove = 1, nmcm
-
-   !pick one atom and new position 
-   call move(iat,rr)
-
+   !pick one atom and new shift to position
+   call move(parn,rr)
    ! backup previous position
-   ne = parl(iat)%ne
-   sr = parl(iat)%sr
+   ne = parl(parn)%ne
+   sr = parl(parn)%sr
    if (allocated(rrori).and.ne.ne.pne) deallocate (rrori)
    if (.not.allocated(rrori)) allocate (rrori(ne))
    rrori = r(sr+1:sr+ne)
-   call insertpar(iat,rr)
-
+   !calculate old energy
+   call par_interact(parn, eold)
+   !attempt move and rotate
+   call movepar(parn,rr,center=.true.)
    !calculate new energy
-   call par_interact(iat, eold)
-!   call interact(eold,x(iat),y(iat),z(iat),abs(typei(iat)),iat,.true.) ! adapt
-!   call interact(enew,xnew,ynew,znew,abs(typei(iat)),iat,.false.)      ! adapt
-
+   call par_interact(parn, enew)
    if (enew.le.eold) then
       !accept the move
       ener = ener + (enew-eold)
@@ -63,6 +60,4 @@ do imove = 1, nmcm
    endif 
    pne = ne
 enddo
-
-return
-end
+end subroutine

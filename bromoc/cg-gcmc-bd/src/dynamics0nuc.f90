@@ -16,20 +16,18 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine dynamics0nuc(ninit,nfinal)
+subroutine dynamics0nuc()
 use listmod
 use grandmod
 use constamod
-use stdiomod
 use nucleotmod
-use errormod
 
 implicit none
-integer ninit, nfinal, i, itype
+integer i, itype
 real,external :: rgauss
 real delx, dely, delz
 
-do i = ninit, nfinal
+do i = 1,nelenuc
   if (stfree(i)) then
     itype = et(i)
     delx = f(i)%x*fact1a(itype)

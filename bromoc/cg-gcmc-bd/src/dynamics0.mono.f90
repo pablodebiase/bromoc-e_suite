@@ -16,19 +16,17 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine dynamics0(ninit,nfinal)
+subroutine dynamics0()
 use grandmod
 use listmod
 use constamod
-use stdiomod
-use errormod
 
 implicit none
-integer ninit, nfinal, itype, i
+integer itype, i
 real,external :: rgauss
 real delx, dely, delz
 
-do i = ninit, nfinal
+do i = nelenuc+1, nele
   itype = et(i)
   delx = f(i)%x*fact1a(itype)
   dely = f(i)%y*fact1a(itype)
