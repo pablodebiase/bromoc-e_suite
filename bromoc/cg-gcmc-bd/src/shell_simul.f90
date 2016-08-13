@@ -592,6 +592,17 @@ do while (.not. logfinal)
      write(outu,*)
      ! Interaction site coordinates for the native structure
      call native_structure
+     ! Define number of particle types belonging to dna
+     nptnuc=nptyp
+     ! Add Particle
+     if (istrs.gt.0) call addpar(1,1)
+     if (istrs.eq.2) call addpar(2,1)
+     ! Define number of particles belonging to dna
+     nparnuc=npar
+     ! Define number of elements belonging to dna
+     nelenuc=nele
+     ! Define number of elements types belonging to dna
+     netnuc=netyp
      ! bond streching terms
      call bbonds
      ! bond angles terms
@@ -601,21 +612,10 @@ do while (.not. logfinal)
      ! nonbonded terms
      call go_qq
      Qnucl = .true.
-     ! Define number of particle types belonging to dna
-     nptnuc=nptyp
-     ! Add Particle
-     if (istrs.gt.0) call addpar(1,1)
-     if (istrs.eq.2) call addpar(2,1)
-     ! Define number of particles belonging to dna
-     nparnuc=npar
      !call printpdb(outu) ! debug
      write(outu,*) 
      ! assert 
      if (nsites.ne.nele) stop 'nsites is not equal to nele'
-     ! Define number of elements belonging to dna
-     nelenuc=nele
-     ! Define number of elements types belonging to dna
-     netnuc=netyp
      if (allocated(nucnam)) deallocate(nucnam)
   ! **********************************************************************
   elseif (wrd5.eq.'atoms') then
@@ -1553,7 +1553,7 @@ do while (.not. logfinal)
      if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
      if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
   
-!     call energy
+     call energy
      write(outu,'(6x,a,f12.6)') 'Total energy ',ener
      Qmemb = logmemb 
      Qphix = logphix 

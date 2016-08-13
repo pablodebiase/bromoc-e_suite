@@ -60,14 +60,13 @@ real reffdx(nelenuc+1:nele),reffdy(nelenuc+1:nele),reffdz(nelenuc+1:nele),reff(n
 integer ncyz,ncel3,i,j,ix,iy,iz,n1,n2,n3,in3,ifir,itype,jtype
 real aux1dx,aux1dy,aux1dz,gaux1
 real aux2dx,aux2dy,aux2dz,gaux2
-real aux,one,tau,de,dist2,rfdn,rfcf,aux0,aux1,aux2,aux3,srfeij,reffij
+real aux,tau,de,dist2,rfdn,rfcf,aux0,aux1,aux2,aux3,srfeij,reffij
 real prefa1,prefa2
 real xi,yi,zi,ai,bi,ci,fi
 real aisign,bisign,cisign
 
 ncyz=ncly3*nclz3
 ncel3=nclx3*ncyz
-one=1.0
 erfpar=0.0
 srfe=0.0
 reff=0.0
@@ -104,16 +103,16 @@ do i=nelenuc+1,nele
       !     Calculate GB radius from 8 next neighbor grid point values    
       do n1=ix,ix+1
         ai=xi-n1*dcel3
-        aisign=sign(one,ai)
-        ai=one-abs(ai)*idcel3
+        aisign=sign(1.0,ai)
+        ai=1.0-abs(ai)*idcel3
         do n2=iy,iy+1
           bi=yi-n2*dcel3
-          bisign=sign(one,bi)
-          bi=one-abs(bi)*idcel3
+          bisign=sign(1.0,bi)
+          bi=1.0-abs(bi)*idcel3
           do n3=iz,iz+1
             ci=zi-n3*dcel3
-            cisign=sign(one,ci)
-            ci=one-abs(ci)*idcel3
+            cisign=sign(1.0,ci)
+            ci=1.0-abs(ci)*idcel3
             fi=ai*bi*ci
             in3=n1*ncyz+n2*nclz3+n3+1
             gaux1=gsrfen(in3+ifir) 
@@ -128,17 +127,17 @@ do i=nelenuc+1,nele
           
             if (Qforces) then  
     !     Local reaction field parameter derivatives     
-              if ((ai.lt.(one-rsmall)).and.(ai.gt.rsmall)) then
+              if ((ai.lt.(1.0-rsmall)).and.(ai.gt.rsmall)) then
                 aux=aisign*bi*ci
                 aux1dx=aux1dx-aux*prefa1
                 aux2dx=aux2dx-aux*prefa2
               end if
-              if ((bi.lt.(one-rsmall)).and.(bi.gt.rsmall)) then
+              if ((bi.lt.(1.0-rsmall)).and.(bi.gt.rsmall)) then
                 aux=bisign*ai*ci
                 aux1dy=aux1dy-aux*prefa1
                 aux2dy=aux2dy-aux*prefa2
               end if
-              if ((ci.lt.(one-rsmall)).and.(ci.gt.rsmall)) then
+              if ((ci.lt.(1.0-rsmall)).and.(ci.gt.rsmall)) then
                 aux=cisign*ai*bi
                 aux1dz=aux1dz-aux*prefa1
                 aux2dz=aux2dz-aux*prefa2
@@ -226,7 +225,7 @@ end subroutine
 
 
 !==============================================================================
-subroutine rfparionj(xj,yj,zj,j,jtype)
+subroutine rfparionj(parn,energy)
 !==============================================================================
 !
 !     2006
@@ -256,33 +255,30 @@ use listmod
 use grandmod
 use gsbpmod
 implicit none
-
 real srfe(nelenuc+1:nele)
 real reff(nelenuc+1:nele)
-integer ncyz,ncel3,i,j,ix,iy,iz,n1,n2,n3,in3,ifir,itype,jtype
+integer ncyz,ncel3,i,j,ix,iy,iz,n1,n2,n3,in3,ifir,parn,itype,jtype
 real gaux1,gaux2,xj,yj,zj
-real one,tau,dist2,aux1,aux2,reffij
-
-real prefa1,prefa2
+real tau,dist2,aux1,aux2,reffij
+real prefa1,prefa2,energy
 real xi,yi,zi,ai,bi,ci,fi
 real aisign,bisign,cisign
 logical*1 ok
-
 ncyz=ncly3*nclz3
 ncel3=nclx3*ncyz
-one=1.0
-erfpar=0.0
-
+energy=0.0
+j=parl(parn)%sr+1
+xj=r(j)%x
+yj=r(j)%y
+zj=r(j)%z
+jtype=et(j)
 if (etypl(jtype)%chg.eq.0.0) return
-
 !     Main loop by atoms
 if (.not.(xj.le.xbcen3+tranx3.and.xj.ge.xbcen3-tranx3.and. &
           yj.le.ybcen3+trany3.and.yj.ge.ybcen3-trany3.and. &
           zj.le.zbcen3+tranz3.and.zj.ge.zbcen3-tranz3)) return
-
 srfe=0.0
 reff=0.0
-
 do i=nelenuc+1,nele
   itype = et(i)
   if (etypl(itype)%chg.ne.0.0) then
@@ -320,16 +316,16 @@ do i=nelenuc+1,nele
       !     Calculate GB radius from 8 next neighbor grid point values    
       do n1=ix,ix+1
         ai=xi-n1*dcel3
-        aisign=sign(one,ai)
-        ai=one-abs(ai)*idcel3
+        aisign=sign(1.0,ai)
+        ai=1.0-abs(ai)*idcel3
         do n2=iy,iy+1
           bi=yi-n2*dcel3
-          bisign=sign(one,bi)
-          bi=one-abs(bi)*idcel3
+          bisign=sign(1.0,bi)
+          bi=1.0-abs(bi)*idcel3
           do n3=iz,iz+1
             ci=zi-n3*dcel3
-            cisign=sign(one,ci)
-            ci=one-abs(ci)*idcel3
+            cisign=sign(1.0,ci)
+            ci=1.0-abs(ci)*idcel3
             fi=ai*bi*ci
             in3=n1*ncyz+n2*nclz3+n3+1
             gaux1=gsrfen(in3+ifir)
@@ -352,7 +348,7 @@ enddo
 tau = celec*etypl(jtype)%chg
 ! self reaction field energy minus Born energy
 ! reaction field energy 
-erfpar = erfpar + 0.5*tau*etypl(jtype)%chg*srfe(j)**2
+energy = energy+ 0.5*tau*etypl(jtype)%chg*srfe(j)**2
 
 do i=nelenuc+1,nele
   if (i.ne.j) then 
@@ -361,11 +357,10 @@ do i=nelenuc+1,nele
       dist2 = (r(i)%x-xj)**2+(r(i)%y-yj)**2+(r(i)%z-zj)**2
       reffij = reff(j)*reff(i)
       ! reaction field energy 
-      erfpar=erfpar+tau*etypl(itype)%chg*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)
+      energy=energy+tau*etypl(itype)%chg*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)
     endif
   endif
 enddo
-
 end subroutine
   
       

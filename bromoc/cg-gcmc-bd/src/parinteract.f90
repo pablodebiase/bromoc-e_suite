@@ -431,7 +431,11 @@ endif
 
 !reaction field parameter  
 if (Qrfpar) then
-  call par_rfparion(parn, egsbpb)
+  if (parl(parn)%ne.eq.1) then
+    call rfparionj(parn, egsbpb)
+  else
+    call par_rfparion(parn, egsbpb)
+  endif
   energy=energy+egsbpb
 endif ! Qrfpar
 

@@ -48,92 +48,84 @@ esvdw = svdw
 !Main loop by atoms
 
 do i = 1, nele
-  if (i.le.nelenuc .or. i.gt.nelenuc) then
-    ok=r(i)%x.le.xbcen2+tranx2-dcel2.and.r(i)%x.ge.xbcen2-tranx2+dcel2.and. &
-       r(i)%y.le.ybcen2+trany2-dcel2.and.r(i)%y.ge.ybcen2-trany2+dcel2.and. &
-       r(i)%z.le.vzmax              .and.r(i)%z.ge.vzmin
-    if (ok) then
- !     ion cartesian coordinates in the local grid system
-      xi = r(i)%x + tranx2-xbcen2
-      yi = r(i)%y + trany2-ybcen2
-      zi = r(i)%z + tranz2-zbcen2
-!     if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
-      if (Qnmcden) then
-        ifir = (et(i)-1)*ncel3
-      else
-        if (Qsvdw) esvdw = svdw * scal(et(i))
-      endif
-      !initializations forces
-      vdwfx = 0.0
-      vdwfy = 0.0
-      vdwfz = 0.0
-      !integer counter for ion cartesian coordinates
-      ix = nint(xi*idcel2)
-      iy = nint(yi*idcel2)
-      iz = nint(zi*idcel2)
-
-      if(ix.eq.0) ix=1
-      if(iy.eq.0) iy=1
-      if(iz.eq.0) iz=1
-      if(ix.eq.nclx2-1)ix=nclx2-2
-      if(iy.eq.ncly2-1)iy=ncly2-2
-      if(iz.eq.nclz2-1)iz=nclz2-2
-      
-      !Atom charge distribution by 27 adjacent grid points
-    
-      phisum = 0.0
-      do k = ix-1, ix+1
-        ipx = k*ncyz
-        xc = k*dcel2
-        ai = 1.5 -(xi-xc)*idcel2
-        dai = dm3(ai)
-        ai = m3(ai)
-        if (ai.ne.0.0.or.dai.ne.0.0) then
-          do l = iy-1, iy+1
-            ipy= l*nclz2 + ipx
-            yc = l*dcel2
-            bi = 1.5 -(yi-yc)*idcel2
-            dbi = dm3(bi)
-            bi = m3(bi)
-            if (bi.ne.0.0.or.dbi.ne.0.0) then
-              do m = iz-1, iz+1
-                ipz = m + ipy + 1
-                zc = m*dcel2
-                ci = 1.5 -(zi-zc)*idcel2
-                dci = dm3(ci)
-                ci = m3(ci)
-                if (ci.ne.0.0.or.dci.ne.0.0) then
-                  fi = ai*bi*ci
-                  phivi=phiv(ipz+ifir)
-                  phivsv=phivi*esvdw
-                  phisum = phisum + phivi
-                  !Repulsive Forces
-                  if (Qforces) then
-                    prefac = phivsv*idcel2
-                    vdwfx = vdwfx + dai*bi*ci*prefac
-                    vdwfy = vdwfy + ai*dbi*ci*prefac
-                    vdwfz = vdwfz + ai*bi*dci*prefac
-                  endif
-                  !Repulsive Energy 
-                  evdwgd = evdwgd + fi*phivsv
-                endif
-              enddo
+  ok=r(i)%x.le.xbcen2+tranx2-dcel2.and.r(i)%x.ge.xbcen2-tranx2+dcel2.and. &
+     r(i)%y.le.ybcen2+trany2-dcel2.and.r(i)%y.ge.ybcen2-trany2+dcel2.and. &
+     r(i)%z.le.vzmax              .and.r(i)%z.ge.vzmin
+  if (.not.ok) cycle
+! ion cartesian coordinates in the local grid system
+  xi = r(i)%x + tranx2-xbcen2
+  yi = r(i)%y + trany2-ybcen2
+  zi = r(i)%z + tranz2-zbcen2
+! if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
+  if (Qnmcden) then
+    ifir = (et(i)-1)*ncel3
+  else
+    if (Qsvdw) esvdw = svdw * scal(et(i))
+  endif
+  !initializations forces
+  vdwfx = 0.0
+  vdwfy = 0.0
+  vdwfz = 0.0
+  !integer counter for ion cartesian coordinates
+  ix = nint(xi*idcel2)
+  iy = nint(yi*idcel2)
+  iz = nint(zi*idcel2)
+  if(ix.eq.0) ix=1
+  if(iy.eq.0) iy=1
+  if(iz.eq.0) iz=1
+  if(ix.eq.nclx2-1)ix=nclx2-2
+  if(iy.eq.ncly2-1)iy=ncly2-2
+  if(iz.eq.nclz2-1)iz=nclz2-2
+  !Atom charge distribution by 27 adjacent grid points
+  phisum = 0.0
+  do k = ix-1, ix+1
+    ipx = k*ncyz
+    xc = k*dcel2
+    ai = 1.5 -(xi-xc)*idcel2
+    dai = dm3(ai)
+    ai = m3(ai)
+    if (ai.ne.0.0.or.dai.ne.0.0) then
+      do l = iy-1, iy+1
+        ipy= l*nclz2 + ipx
+        yc = l*dcel2
+        bi = 1.5 -(yi-yc)*idcel2
+        dbi = dm3(bi)
+        bi = m3(bi)
+        if (bi.ne.0.0.or.dbi.ne.0.0) then
+          do m = iz-1, iz+1
+            ipz = m + ipy + 1
+            zc = m*dcel2
+            ci = 1.5 -(zi-zc)*idcel2
+            dci = dm3(ci)
+            ci = m3(ci)
+            if (ci.ne.0.0.or.dci.ne.0.0) then
+              fi = ai*bi*ci
+              phivi=phiv(ipz+ifir)
+              phivsv=phivi*esvdw
+              phisum = phisum + phivi
+              !Repulsive Forces
+              if (Qforces) then
+                prefac = phivsv*idcel2
+                vdwfx = vdwfx + dai*bi*ci*prefac
+                vdwfy = vdwfy + ai*dbi*ci*prefac
+                vdwfz = vdwfz + ai*bi*dci*prefac
+              endif
+              !Repulsive Energy 
+              evdwgd = evdwgd + fi*phivsv
             endif
           enddo
         endif
       enddo
-      if (phisum.ge.thold27) then
-        warn(et(i))=warn(et(i))+1
-        if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1spln :: particle inside membrane or protein - ',i,'  '//etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,phisum,thold27
-      endif
-      if (Qforces) then 
-        f(i)%x = f(i)%x + vdwfx
-        f(i)%y = f(i)%y + vdwfy
-        f(i)%z = f(i)%z + vdwfz
-      endif
-    endif            
+    endif
+  enddo
+  if (phisum.ge.thold27) then
+    warn(et(i))=warn(et(i))+1
+    if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1spln :: particle inside membrane or protein - ',i,'  '//etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,phisum,thold27
+  endif
+  if (Qforces) then 
+    f(i)%x = f(i)%x + vdwfx
+    f(i)%y = f(i)%y + vdwfy
+    f(i)%z = f(i)%z + vdwfz
   endif
 enddo
-
-return
-end
+end subroutine

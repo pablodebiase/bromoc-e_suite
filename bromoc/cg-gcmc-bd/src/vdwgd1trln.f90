@@ -48,83 +48,79 @@ esvdw = svdw
 !Main loop by atoms
 
 do i = 1, nele
-  if (i.le.nelenuc .or. i.gt.nelenuc) then
-    ok=r(i)%x.le.xbcen2+tranx2.and.r(i)%x.ge.xbcen2-tranx2.and. &
-       r(i)%y.le.ybcen2+trany2.and.r(i)%y.ge.ybcen2-trany2.and. &
-       r(i)%z.le.vzmax        .and.r(i)%z.ge.vzmin
-    if (ok) then
-      !ion cartesian coordinates in the local grid system                 
-      xi = r(i)%x + tranx2-xbcen2
-      yi = r(i)%y + trany2-ybcen2
-      zi = r(i)%z + tranz2-zbcen2
-!      if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
-      if (Qnmcden) then
-        ifir = (et(i)-1)*ncel3
-      else
-        if (Qsvdw) esvdw = svdw * scal(et(i))
-      endif
-      !initializations forces     
-      vdwfx = 0.0
-      vdwfy = 0.0
-      vdwfz = 0.0
-      !integer counter for ion cartesian coordinates             
-      ix = int(xi*idcel2)
-      iy = int(yi*idcel2)
-      iz = int(zi*idcel2)
-      if (ix.eq.nclx2-1) ix=nclx2-2
-      if (iy.eq.ncly2-1) iy=ncly2-2
-      if (iz.eq.nclz2-1) iz=nclz2-2
+  ok=r(i)%x.le.xbcen2+tranx2.and.r(i)%x.ge.xbcen2-tranx2.and. &
+     r(i)%y.le.ybcen2+trany2.and.r(i)%y.ge.ybcen2-trany2.and. &
+     r(i)%z.le.vzmax        .and.r(i)%z.ge.vzmin
+  if (.not.ok) cycle
+  !ion cartesian coordinates in the local grid system                 
+  xi = r(i)%x + tranx2-xbcen2
+  yi = r(i)%y + trany2-ybcen2
+  zi = r(i)%z + tranz2-zbcen2
+!  if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
+  if (Qnmcden) then
+    ifir = (et(i)-1)*ncel3
+  else
+    if (Qsvdw) esvdw = svdw * scal(et(i))
+  endif
+  !initializations forces     
+  vdwfx = 0.0
+  vdwfy = 0.0
+  vdwfz = 0.0
+  !integer counter for ion cartesian coordinates             
+  ix = int(xi*idcel2)
+  iy = int(yi*idcel2)
+  iz = int(zi*idcel2)
+  if (ix.eq.nclx2-1) ix=nclx2-2
+  if (iy.eq.ncly2-1) iy=ncly2-2
+  if (iz.eq.nclz2-1) iz=nclz2-2
 
-!Atom charge distribution by 8 adjacent grid points
+  !Atom charge distribution by 8 adjacent grid points
 
-      phisum = 0.0
-      do n1 = ix, ix+1
-        ai = xi - n1*dcel2
-        aisign = sign(one,ai)
-        ai = 1.0 - abs(ai)*idcel2
-        do n2 = iy, iy+1
-          bi = yi - n2*dcel2
-          bisign = sign(one,bi)
-          bi =1.0 - abs(bi)*idcel2
-          do n3 = iz, iz+1
-            ci = zi - n3*dcel2
-            cisign = sign(one,ci)
-            ci = 1.0 - abs(ci)*idcel2
-            fi = ai*bi*ci ! fraction of the charge assigned to a
-                          ! grid point
-            in3 = n1*ncyz + n2*nclz2 + n3 + 1
-            phis=phiv(in3+ifir)
-            phisum = phisum + phis
- !Electrostatic forces
-            if (Qforces) then
-              prefac = phis*esvdw*idcel2
-              if ((ai.lt.(1.0-rsmall)).and.(ai.gt.rsmall)) then
-                vdwfx = vdwfx + aisign*bi*ci*prefac
-              endif
-              if ((bi.lt.(1.0-rsmall)).and.(bi.gt.rsmall)) then
-                vdwfy = vdwfy + bisign*ai*ci*prefac
-              endif
-              if ((ci.lt.(1.0-rsmall)).and.(ci.gt.rsmall)) then
-                vdwfz = vdwfz + cisign*ai*bi*prefac
-              endif
-            endif
-! Electrostatic Energy 
-            evdwgd = evdwgd + fi*esvdw*phis
-          enddo ! n3
-        enddo ! n2
-      enddo ! n1
-      if (phisum.ge.thold8) then
-        warn(et(i))=warn(et(i))+1
-        if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1trln :: particle inside membrane or protein - ',i,'  '//etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,phisum,thold8
-      endif
-      if (Qforces) then
-        f(i)%x = f(i)%x + vdwfx
-        f(i)%y = f(i)%y + vdwfy
-        f(i)%z = f(i)%z + vdwfz
-      endif
-    endif  
-  endif   
+  phisum = 0.0
+  do n1 = ix, ix+1
+    ai = xi - n1*dcel2
+    aisign = sign(one,ai)
+    ai = 1.0 - abs(ai)*idcel2
+    do n2 = iy, iy+1
+      bi = yi - n2*dcel2
+      bisign = sign(one,bi)
+      bi =1.0 - abs(bi)*idcel2
+      do n3 = iz, iz+1
+        ci = zi - n3*dcel2
+        cisign = sign(one,ci)
+        ci = 1.0 - abs(ci)*idcel2
+        fi = ai*bi*ci ! fraction of the charge assigned to a
+                      ! grid point
+        in3 = n1*ncyz + n2*nclz2 + n3 + 1
+        phis=phiv(in3+ifir)
+        phisum = phisum + phis
+   !Electrostatic forces
+        if (Qforces) then
+          prefac = phis*esvdw*idcel2
+          if ((ai.lt.(1.0-rsmall)).and.(ai.gt.rsmall)) then
+            vdwfx = vdwfx + aisign*bi*ci*prefac
+          endif
+          if ((bi.lt.(1.0-rsmall)).and.(bi.gt.rsmall)) then
+            vdwfy = vdwfy + bisign*ai*ci*prefac
+          endif
+          if ((ci.lt.(1.0-rsmall)).and.(ci.gt.rsmall)) then
+            vdwfz = vdwfz + cisign*ai*bi*prefac
+          endif
+        endif
+    ! Electrostatic Energy 
+        evdwgd = evdwgd + fi*esvdw*phis
+      enddo ! n3
+    enddo ! n2
+  enddo ! n1
+  if (phisum.ge.thold8) then
+    warn(et(i))=warn(et(i))+1
+    if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1trln :: particle inside membrane or protein - ',i,'  '//etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,phisum,thold8
+  endif
+  if (Qforces) then
+    f(i)%x = f(i)%x + vdwfx
+    f(i)%y = f(i)%y + vdwfy
+    f(i)%z = f(i)%z + vdwfz
+  endif
 enddo
-
 return
 end

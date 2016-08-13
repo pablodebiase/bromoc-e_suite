@@ -120,13 +120,13 @@ OBJECTS = extramod.o apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o
         simul1.o simul.o spline.o staticf1.o switch1.o switch2.o switch3.o\
         vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o\
         polynom.o readpsf.o readcharmm.o exclude.o cmapc.o cmapg.o psf_bend.o psf_bond.o psf_cmap.o\
-        psf_dih.o psf_imp.o test_bond.o cmapspline.o bcucof.o fatnam.o parinteract.o
+        psf_dih.o psf_imp.o test_bond.o cmapspline.o bcucof.o fatnam.o parinteract.o nucenergy.o
 
-OBJECTSMONO = dynamics0.mono.o dynamics1.mono.o dynamics2.mono.o dynamics3.mono.o #energy.mono.o
+OBJECTSMONO = dynamics0.mono.o dynamics1.mono.o dynamics2.mono.o dynamics3.mono.o energy.mono.o
 
-OBJECTSPARA = dynamics0.para.o dynamics1.para.o dynamics2.para.o dynamics3.para.o #energy.para.o
+OBJECTSPARA = dynamics0.para.o dynamics1.para.o dynamics2.para.o dynamics3.para.o energy.mono.o #energy.para.o
 
-FPARAFILES = dynamics0.para.f90 dynamics1.para.f90 dynamics2.para.f90 dynamics3.para.f90 #energy.para.f90
+FPARAFILES = dynamics0.para.f90 dynamics1.para.f90 dynamics2.para.f90 dynamics3.para.f90 energu.mono.f90 #energy.para.f90
 
 # Clean objects
 

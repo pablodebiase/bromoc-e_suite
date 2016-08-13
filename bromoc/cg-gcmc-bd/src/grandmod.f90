@@ -47,7 +47,7 @@ integer igr, nframe
 real    dt,mcmax,bdmax
 real dids(5,datom),fact2a(dtype),fact1a(dtype),fact2pd,beta,diff0,ibeta,diffcutoff
 !real*16 ener,eelec,evdw,ememb,esrpmf,esrpmfmx,eefpot,eefpotmx,econ,erfpar
-real ener,eelec,evdw,ememb,esrpmf,esrpmfmx,eefpot,eefpotmx,econ,erfpar,enonbond
+real ener,eelec,evdw,ememb,esrpmf,esrpmfmx,eefpot,eefpotmx,econ,erfpar,enonbond,eintern
 real    rsphe,rsphe2,lx,ly,lz,lx2p,ly2p,lz2p,lx2m,ly2m,lz2m,cx,cy,cz,iecx,iecy
 real, allocatable :: epp4(:),sgp2(:)
 real, allocatable :: c0(:),c1(:),c2(:),c3(:),c4(:)

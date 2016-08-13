@@ -50,25 +50,27 @@ do i = 1, nelenuc-1
     namesite3 = namsite(i+2)
   endif  
   if (namesite1.eq.'Ab'.or.namesite1.eq.'Tb'.or.namesite1.eq.'Cb'.or.namesite1.eq.'Gb') then
-    nbond = nbond + 1
-    if (nbond.gt.maxbond) call error ('bonds', 'The number of bonds exceeds the maximum value', faterr)
-    typbond(nbond) = 0 ! intranucleotide bond
-    sitebond(nbond,1) = i
-    sitebond(nbond,2) = i + 1
-    bond(etpidx(i,i+1)) = .true.
-    if (namesite2.eq.'S ') then 
-      if (namesite1.eq.'Ab') then ! S-Ab
-        distbond(nbond) = dSAb
-      else if (namesite1.eq.'Tb') then ! S-Tb
-        distbond(nbond) = dSTb
-      else if (namesite1.eq.'Cb') then ! S-Cb
-        distbond(nbond) = dSCb
-      else ! S-Gb      
-        distbond(nbond) = dSGb
+    if (strand1.eq.strand2) then
+      nbond = nbond + 1
+      if (nbond.gt.maxbond) call error ('bonds', 'The number of bonds exceeds the maximum value', faterr)
+      typbond(nbond) = 0 ! intranucleotide bond
+      sitebond(nbond,1) = i
+      sitebond(nbond,2) = i + 1
+      bond(etpidx(i,i+1)) = .true.
+      if (namesite2.eq.'S ') then 
+        if (namesite1.eq.'Ab') then ! S-Ab
+          distbond(nbond) = dSAb
+        else if (namesite1.eq.'Tb') then ! S-Tb
+          distbond(nbond) = dSTb
+        else if (namesite1.eq.'Cb') then ! S-Cb
+          distbond(nbond) = dSCb
+        else ! S-Gb      
+          distbond(nbond) = dSGb
+        endif  
+      else
+        call error ('bonds', 'INCORRECT ORDER FOR SITES', faterr)  
       endif  
-    else
-      call error ('bonds', 'INCORRECT ORDER FOR SITES', faterr)  
-    endif  
+    endif
   else if (namesite1.eq.'S ') then
     if (strand1.eq.strand2) then   
       nbond = nbond + 1
