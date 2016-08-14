@@ -114,8 +114,7 @@ if (Qenergy) then
   call energy
   if (Qpar.and.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i10,6f17.4)') 0,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+evdwmx+esrpmfmx+eefpot+ &
-     eefpotmx,ebond+eang+edihe,egsbpa,egsbpb,evdwgd   
+    write(outu,'(5x,i10,6f17.4)') 0,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+eefpot+ebond+eang+edihe,egsbpa,egsbpb,evdwgd   
     if (Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -143,7 +142,7 @@ if (Qenergy) then
     endif         
   else if (Qpar.and..not.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded------------PHIsf------------PHIrf-----------PHIvdW' 
-    write(outu,'(5x,i10,5f17.4)') 0,ener,eelec+evdw+esrpmf+eefpot, egsbpa,egsbpb,evdwgd 
+    write(outu,'(5x,i10,5f17.4)') 0,ener,eelec+evdw+esrpmf+eefpot,egsbpa,egsbpb,evdwgd 
     write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'
     if (ngcmc.gt.0) then
       ncount = 0
@@ -608,8 +607,7 @@ do icycle = 1, ncycle
     if (ncycle*nbd.eq.0) call energy
     if (Qpar .and. Qnucl) then
       write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded---------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-      write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+evdwmx+esrpmfmx+eefpot+ &
-           eefpotmx,ebond+eang+edihe,egsbpa,egsbpb,evdwgd
+      write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eefpot+ebond+eang+edihe,egsbpa,egsbpb,evdwgd
       if(Qcontrans.and.Qcontprint) then
         write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
         do ii=1,ctn
@@ -668,8 +666,7 @@ call energy
 if (nprint.eq.0) then
   if (Qpar .and. Qnucl) then
     write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+evdwmx+esrpmfmx+eefpot+eefpotmx &
-    ,ebond+eang+edihe,egsbpa,egsbpb,evdwgd
+    write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eefpot,ebond+eang+edihe,egsbpa,egsbpb,evdwgd
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn

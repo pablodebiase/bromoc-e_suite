@@ -145,7 +145,7 @@ doions       = .false.
 dodna        = .false.
 iseed        = 3141593
 ntype        = 0
-netnuc         = 0
+netnuc       = 0
 nbuffer      = 0
 nsites       = 0
 istrs        = 0
@@ -181,10 +181,10 @@ call deltypall()
 call delparall()
 
 ! allocate space for lists
-call resizeetypl(4000)  ! Resize Element-Type Vectors
-call resizeptypl(1000) ! Resize Particle-Type Vectors
-call resizeparl(10000) ! Resize Particle Lists
-call resizecvec(20000) ! Resize Element Lists
+call resizeetypl(dtype)  ! Resize Element-Type Vectors
+call resizeptypl(dtype) ! Resize Particle-Type Vectors
+call resizeparl(datom) ! Resize Particle Lists
+call resizecvec(datom) ! Resize Element Lists
 
 call header(outu)
 start = timer()
@@ -268,7 +268,7 @@ do while (.not. logfinal)
      allocate (nucnam(inuc*2))
      ! allocate variables
      if (Qnucl) then
-       deallocate (strand,typenuc,stfx,stfree,namnucl,namsite,xnat,ynat,znat,rnat,phinat)
+       deallocate (strand,typenuc,namnucl,namsite,xnat,ynat,znat,rnat,phinat)
        deallocate (sitebond,siteangle,sitedihe,distbond,valangle,valdihe,bond,angle,typbond)
        deallocate (valdihe,bond,angle,typbond,sitestack,sitebp,siteex,siteqq,siteslv)
        deallocate (sgstack,sgbp,sgex,sitenam)
@@ -278,13 +278,12 @@ do while (.not. logfinal)
      maxang  = 2*maxsite-2
      maxdihe = 2*maxsite-3
      maxpar  = maxsite*(maxsite-1)/2
-     allocate (strand(maxsite),typenuc(maxsite),stfx(maxsite),stfree(maxsite),namnucl(maxsite),namsite(maxsite))
+     allocate (strand(maxsite),typenuc(maxsite),namnucl(maxsite),namsite(maxsite))
      allocate (xnat(maxsite),ynat(maxsite),znat(maxsite),rnat(maxsite),phinat(maxsite))
      allocate (sitebond(maxbond,2),siteangle(maxang,3),sitedihe(maxdihe,4),distbond(maxbond),valangle(maxang))
      allocate (valdihe(maxdihe),bond(maxpar),angle(maxpar),typbond(maxbond))
      allocate (sitestack(maxpar,2),sitebp(maxpar,2),siteex(maxpar,2),siteqq(maxpar,2),siteslv(maxpar,2))
      allocate (sgstack(maxpar),sgbp(maxpar),sgex(maxpar),sitenam(inuc))
-     stfree     = .true.
      ! charge nucleotides [default=-1]  
      call gtdpar(com,'charge',cgnuc,-1.0)
      ! diffusion constant for nucleotides [default=0.1]
@@ -763,31 +762,6 @@ do while (.not. logfinal)
         write(outu,'(6x,2i4,x,a,x,3(3x,f10.5))') i,sn(i),namsite(sn(i)),af(1:3,i)
       enddo
     endif           
-  ! **********************************************************************
-  elseif (wrd5.eq.'fixsi') then
-  !       ----------------
-    if (.not. Qnucl) call error ('shell_simul', 'FIXSITE order is defined before NUCLEOTIDE order', faterr)
-    ! number of DNA fixed sites [integer, default=0]
-    call gtipar(com,'nstfx',nstfx,0) 
-    if (nstfx.gt.nelenuc .or. nstfx.lt.0) call error ('shell_simul', 'Incorrect number of DNA fixed sites', faterr)
-    Qstfx = nstfx.gt.0
-    if (Qstfx) then
-      if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of data in FIXSITE order', faterr)
-      do j = 1, nstfx
-        if (.not.setint(isite,com)) call error ('shell_simul', 'premature end of data in FIXSITE order', faterr)
-        if (isite.gt.nelenuc .or. isite.le.0) call error ('shell_simul', 'Incorrect DNA fixed site',faterr)
-        stfx(j) = isite
-        stfree(isite) = .false.
-      enddo
-    endif 
-    if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of data in FIXSITE order', faterr)
-    if (.not.setword(word,com)) call error ('shell_simul', 'premature end of data in FIXSITE order', faterr)
-    if (lcase(word).ne.'end') call error ('shell_simul', 'END keyword is not included in FIXSITE order', faterr)
-    if (Qstfx) then
-      write(outu,*)
-      write(outu,'(6x,a,i3,a)') 'There are ',nstfx,' DNA fixed sites:'
-      write(outu,*) '     ',(stfx(j),'(',namsite(stfx(j)),')  ',j=1,nstfx)
-    endif
   ! **********************************************************************
   elseif (wrd5.eq.'notra') then
   !        ---------------

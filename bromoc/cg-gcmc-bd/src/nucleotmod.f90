@@ -47,8 +47,6 @@
 !                          trajectories have to be written in a outputfile
 ! Qfmemb                -> Logical variable which indicates if traslocation duration 
 !                          for cylindrical pores has to be calculated
-! Qstfx                 -> Logical variable which indicates if DNA fixed sites are 
-!                          turned on
 ! eps(P,S,Ab,Tb,Cb,Gb)  -> Lennard-Jones parameter for interaction between ions 
 !                          and sites (combination rules)
 ! sg(P,S,Ab,Tb,Cb,Gb)   -> Lennard-Jones parameter for interaction between ions
@@ -60,7 +58,6 @@
 ! epsolv                -> Energy scale for solvnet-induced contribution
 ! maxsite               -> Maximum number of interaction sites
 ! maxpar                -> Maximum number of interaction pairs
-! nstfx                 -> Number of DNA fixed sites
 ! strand(maxsite)       -> This integer vector indicates the strand for the 
 !                          interaction site
 ! typenuc(maxsite)       -> This integer vector indicates the nucleotide type 
@@ -69,8 +66,6 @@
 !                          (A,T,C,G) 
 ! namsite(maxsite)      -> This character vector stores the name interaction 
 !                          sites P=Phosphate, S=Sugar, (Ab,Tb,Cb,Gb)=Bases
-! stfx(maxsite)         -> This integer vector stores DNA fixed sites
-! stfree(maxsite)       -> This logical*1 vector indicates if an site is not fixed
 ! (x,y,z,r,phi)nat(maxsite) -> Interaction site coordinates for the native 
 !                              structure
 ! Qtras                 -> Logical variable which indicates if there is a traslation of DNA 
@@ -85,9 +80,8 @@
 
 module nucleotmod
 implicit none
-integer     istrs, inuc, maxsite, nstfx,extraP,nelenuc1st
-integer,allocatable     ::  strand(:), typenuc(:), stfx(:)
-logical*1,allocatable   ::  stfree(:)
+integer     istrs, inuc, maxsite, extraP,nelenuc1st
+integer,allocatable     ::  strand(:), typenuc(:)
 character*1,allocatable :: namnucl(:)
 character*2,allocatable :: namsite(:)
 real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
@@ -100,7 +94,7 @@ real,allocatable :: kx(:),ky(:),kz(:),contrx(:),contry(:),contrz(:)
 integer     ctn
 integer,allocatable ::  csn(:)
 logical*1   Qcontrans,Qcontprint,Qunsplit
-logical*1   Qnucl, Qatexp, Qassign, Qpar, Qsystem, Qbuf, Qtraj, Qtrajcont, Qdie, Qsolv, Qfmemb, Qstfx
+logical*1   Qnucl, Qatexp, Qassign, Qpar, Qsystem, Qbuf, Qtraj, Qtrajcont, Qdie, Qsolv, Qfmemb
 logical*1   Qtras, Qrot, Qnotrans, Qnotrx, Qnotry, Qnotrz, Qdnafree, Qinvstr, QfirstP
 real cylall(6,3),din,ain
 

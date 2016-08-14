@@ -807,6 +807,14 @@ r1%y=r1%y-r2%y
 r1%z=r1%z-r2%z
 end subroutine
 
+! Square distance between two vectors in car type
+function dist2car(r1,r2)
+implicit none
+real dist2car
+type(car) :: r1,r2
+dist2car=(r1%x-r2%x)**2+(r1%y-r2%y)**2+(r1%z-r2%z)**2
+end function
+
 ! Dot Product of Cartesian Types
 function dotcar(r1,r2)
 implicit none

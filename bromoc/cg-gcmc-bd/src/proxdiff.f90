@@ -15,35 +15,29 @@
 !
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-subroutine dynamics0()
+subroutine proxdiff(i,j,is,dist)
 use grandmod
 use listmod
-use constamod
-
-implicit none
-integer itype, i
-real,external :: rgauss
-real delx, dely, delz
-real zold
-
-!$omp parallel private(i,itype,zold,delx,dely,delz)
-!$omp do
-do i = nelenuc+1, nele
-  itype = et(i)
-  delx = f(i)%x*fact1a(itype)
-  dely = f(i)%y*fact1a(itype)
-  delz = f(i)%z*fact1a(itype)
-  if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
-  if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
-  if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-  r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
-  r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
-  r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
-  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
-enddo
-!$omp end do
-!$omp end parallel
-return
+use efpmod
+integer i,j,is
+real dist,didstmp
+if (j.gt.nelenuc) return
+if (dist.gt.0.0) then
+  if (j.eq.1) then
+    dids(1,i)=dist-efp(is)%xl
+    dids(2,i)=dist
+    dids(3,i)=r(i)%x-r(j)%x
+    dids(4,i)=r(i)%y-r(j)%y
+    dids(5,i)=r(i)%z-r(j)%z
+  else
+    didstmp=dist-efp(is)%xl
+    if (didstmp.lt.dids(1,i)) then
+      dids(1,i)=didstmp
+      dids(2,i)=dist
+      dids(3,i)=r(i)%x-r(j)%x
+      dids(4,i)=r(i)%y-r(j)%y
+      dids(5,i)=r(i)%z-r(j)%z
+    endif
+  endif
+endif
 end subroutine
-

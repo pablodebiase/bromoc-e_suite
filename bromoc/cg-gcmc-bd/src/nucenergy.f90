@@ -15,7 +15,7 @@
 !
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-subroutine nucenergy(parn, energy)
+subroutine nucenergy(energy)
 use apfmod
 use grandmod
 use constamod
@@ -24,23 +24,18 @@ use extramod
 use listmod
 use efpmod
 implicit none
-integer i, j, itype, jtype, is, parn
-real dist, dist2, dist6, idist, idist2, idistkd
-real de, dc
-real  esrpmf0,esrpmf1,esrpmf2,esrpmf3
-real  cofo
+integer i, j 
+real dist, dist2, idist, idist2, idistkd
+real de
 real energy
 integer isite1, isite2, isite3, isite4
-real  dd,vard,eefp,fdf,fdv,vard2
+real  dd,vard,vard2
 real  ang, ang0, varang, cte1
-real  dihe, dihe0, vardihe,didstmp
+real  dihe, dihe0, vardihe
 real  epsln,sgex2,f1(3),f2(3),f3(3),f4(3),v1(3),v2(3),v3(3),m1,m2,m3,modval
-real  dist12,n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
-logical*1 ok,ok2
+real  n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
 ! Initializations
-energy     = 0.0
-eefpotmx = 0.0
-esrpmfmx = 0.0
+energy   = 0.0
 ebond    = 0.0
 eang     = 0.0
 edihe    = 0.0
@@ -49,8 +44,6 @@ ebp      = 0.0
 eex      = 0.0
 eqq      = 0.0
 esolv    = 0.0
-eqqmx    = 0.0
-evdwmx   = 0.0
 econ     = 0.0
 
 ! interaction between interaction sites (nucleotides)         
@@ -71,20 +64,15 @@ do i = 1, nbond
   vard = dist - dd
   vard2 = vard**2 
   ebond = ebond + epsnuc*vard2*(1.0+100.0*vard2)
-  ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-  if (ok) then
+  if (Qforces) then
     de = epsnuc*vard*(2.0+400.0*vard2)/dist
     f1=de*v1
-    if (stfree(isite1)) then   
-      f(isite1)%x = f(isite1)%x + f1(1)
-      f(isite1)%y = f(isite1)%y + f1(2)
-      f(isite1)%z = f(isite1)%z + f1(3)
-    endif
-    if (stfree(isite2)) then
-      f(isite2)%x = f(isite2)%x - f1(1)
-      f(isite2)%y = f(isite2)%y - f1(2)
-      f(isite2)%z = f(isite2)%z - f1(3)
-    endif 
+    f(isite1)%x = f(isite1)%x + f1(1)
+    f(isite1)%y = f(isite1)%y + f1(2)
+    f(isite1)%z = f(isite1)%z + f1(3)
+    f(isite2)%x = f(isite2)%x - f1(1)
+    f(isite2)%y = f(isite2)%y - f1(2)
+    f(isite2)%z = f(isite2)%z - f1(3)
   endif
 enddo       
 !  The bending energy is calculated 
@@ -108,26 +96,19 @@ do i = 1, nangle
   ang = acos(m3*modval)
   varang = ang - ang0
   eang = eang + 700.0*epsnuc*varang**2
-  ok = Qforces .and. stfree(isite1).or.stfree(isite2).or.stfree(isite3)
-  if (ok) then
+  if (Qforces) then
     de = 1400.0*epsnuc*varang*modval/sin(ang)
     f1=de*v1
     f2=de*v2
-    if (stfree(isite1)) then
-      f(isite1)%x = f(isite1)%x + f2(1)
-      f(isite1)%y = f(isite1)%y + f2(2)
-      f(isite1)%z = f(isite1)%z + f2(3)
-    endif
-    if (stfree(isite2)) then
-      f(isite2)%x = f(isite2)%x - (f1(1)+f2(1))
-      f(isite2)%y = f(isite2)%y - (f1(2)+f2(2))
-      f(isite2)%z = f(isite2)%z - (f1(3)+f2(3))
-    endif
-    if (stfree(isite3)) then
-      f(isite3)%x = f(isite3)%x + f1(1)
-      f(isite3)%y = f(isite3)%y + f1(2)
-      f(isite3)%z = f(isite3)%z + f1(3)
-    endif
+    f(isite1)%x = f(isite1)%x + f2(1)
+    f(isite1)%y = f(isite1)%y + f2(2)
+    f(isite1)%z = f(isite1)%z + f2(3)
+    f(isite2)%x = f(isite2)%x - (f1(1)+f2(1))
+    f(isite2)%y = f(isite2)%y - (f1(2)+f2(2))
+    f(isite2)%z = f(isite2)%z - (f1(3)+f2(3))
+    f(isite3)%x = f(isite3)%x + f1(1)
+    f(isite3)%y = f(isite3)%y + f1(2)
+    f(isite3)%z = f(isite3)%z + f1(3)
   endif
 enddo  
  ! The torsional energy is calculated 
@@ -156,8 +137,7 @@ do i = 1, ndihe
   dihe = atan2(v2v*av,bv)
   vardihe = dihe - dihe0
   edihe = edihe + 28.0*epsnuc*(1.0-cos(vardihe))
-  ok = Qforces .and. stfree(isite1).or.stfree(isite2).or.stfree(isite3).or.stfree(isite4)
-  if (ok) then
+  if (Qforces) then
     n1v=dot_product(n1,n1)
     n2v=dot_product(n2,n2)
     v12=dot_product(v1,v2)
@@ -170,26 +150,18 @@ do i = 1, ndihe
     v23=v23*iv22
     f2=-f1+v12*f1-v23*f4
     f3=-f4-v12*f1+v23*f4
-    if (stfree(isite1)) then
-      f(isite1)%x=f(isite1)%x + f1(1)
-      f(isite1)%y=f(isite1)%y + f1(2)
-      f(isite1)%z=f(isite1)%z + f1(3)
-    endif
-    if (stfree(isite2)) then
-      f(isite2)%x = f(isite2)%x + f2(1)
-      f(isite2)%y = f(isite2)%y + f2(2)
-      f(isite2)%z = f(isite2)%z + f2(3)
-    endif
-    if (stfree(isite3)) then
-      f(isite3)%x = f(isite3)%x + f3(1)
-      f(isite3)%y = f(isite3)%y + f3(2)
-      f(isite3)%z = f(isite3)%z + f3(3)
-    endif
-    if (stfree(isite4)) then
-      f(isite4)%x = f(isite4)%x + f4(1) 
-      f(isite4)%y = f(isite4)%y + f4(2)
-      f(isite4)%z = f(isite4)%z + f4(3)
-    endif
+    f(isite1)%x=f(isite1)%x + f1(1)
+    f(isite1)%y=f(isite1)%y + f1(2)
+    f(isite1)%z=f(isite1)%z + f1(3)
+    f(isite2)%x = f(isite2)%x + f2(1)
+    f(isite2)%y = f(isite2)%y + f2(2)
+    f(isite2)%z = f(isite2)%z + f2(3)
+    f(isite3)%x = f(isite3)%x + f3(1)
+    f(isite3)%y = f(isite3)%y + f3(2)
+    f(isite3)%z = f(isite3)%z + f3(3)
+    f(isite4)%x = f(isite4)%x + f4(1) 
+    f(isite4)%y = f(isite4)%y + f4(2)
+    f(isite4)%z = f(isite4)%z + f4(3)
   endif
 enddo
 
@@ -206,20 +178,15 @@ do i = 1, nstack
   idist2=1.0/dist2
   cte1 = (sgstack(i)**2*idist2)**3   
   estack = estack + 4.0*epsnuc*cte1*(cte1-1.0)
-  ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-  if (ok) then
+  if (Qforces) then
     de = 24.0*epsnuc*cte1*(2.0*cte1-1.0)*idist2
     f1=de*v1 
-    if (stfree(isite1)) then
-      f(isite1)%x = f(isite1)%x - f1(1)  
-      f(isite1)%y = f(isite1)%y - f1(2)
-      f(isite1)%z = f(isite1)%z - f1(3)
-    endif                            
-    if (stfree(isite2)) then         
-      f(isite2)%x = f(isite2)%x + f1(1)
-      f(isite2)%y = f(isite2)%y + f1(2)
-      f(isite2)%z = f(isite2)%z + f1(3)
-    endif
+    f(isite1)%x = f(isite1)%x - f1(1)  
+    f(isite1)%y = f(isite1)%y - f1(2)
+    f(isite1)%z = f(isite1)%z - f1(3)
+    f(isite2)%x = f(isite2)%x + f1(1)
+    f(isite2)%y = f(isite2)%y + f1(2)
+    f(isite2)%z = f(isite2)%z + f1(3)
   endif  
 enddo  
 ! Hydrogen bonding
@@ -238,20 +205,15 @@ do i = 1, nbp
   idist2=1.0/dist2
   cte1 = sgbp(i)*sgbp(i)*idist2
   ebp = ebp + epsln*cte1**5*(20.0*cte1-24.0) 
-  ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-  if (ok) then
+  if (Qforces) then
     de = 240.0*epsln*cte1**5*(cte1-1.0)*idist2
     f1=de*v1 
-    if (stfree(isite1)) then
-      f(isite1)%x = f(isite1)%x - f1(1)
-      f(isite1)%y = f(isite1)%y - f1(2)
-      f(isite1)%z = f(isite1)%z - f1(3)
-    endif                            
-    if (stfree(isite2)) then         
-      f(isite2)%x = f(isite2)%x + f1(1)
-      f(isite2)%y = f(isite2)%y + f1(2)
-      f(isite2)%z = f(isite2)%z + f1(3)   
-    endif
+    f(isite1)%x = f(isite1)%x - f1(1)
+    f(isite1)%y = f(isite1)%y - f1(2)
+    f(isite1)%z = f(isite1)%z - f1(3)
+    f(isite2)%x = f(isite2)%x + f1(1)
+    f(isite2)%y = f(isite2)%y + f1(2)
+    f(isite2)%z = f(isite2)%z + f1(3)   
   endif                
 enddo
 ! Excluded volume
@@ -267,20 +229,15 @@ do i = 1, nex
   if (dist2.lt.sgex2) then
     cte1 = (sgex2*idist2)**3      
     eex = eex + 4.0*epsnuc*cte1*(cte1-1.0) + epsnuc
-    ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-    if (ok) then           
+    if (Qforces) then           
       de = 24.0*epsnuc*cte1*(2.0*cte1-1.0)*idist2
       f1=de*v1 
-      if (stfree(isite1)) then
-        f(isite1)%x = f(isite1)%x - f1(1)
-        f(isite1)%y = f(isite1)%y - f1(2)
-        f(isite1)%z = f(isite1)%z - f1(3)
-      endif                            
-      if (stfree(isite2)) then         
-        f(isite2)%x = f(isite2)%x + f1(1)
-        f(isite2)%y = f(isite2)%y + f1(2)
-        f(isite2)%z = f(isite2)%z + f1(3)
-      endif
+      f(isite1)%x = f(isite1)%x - f1(1)
+      f(isite1)%y = f(isite1)%y - f1(2)
+      f(isite1)%z = f(isite1)%z - f1(3)
+      f(isite2)%x = f(isite2)%x + f1(1)
+      f(isite2)%y = f(isite2)%y + f1(2)
+      f(isite2)%z = f(isite2)%z + f1(3)
     endif
   endif
 enddo 
@@ -299,37 +256,27 @@ do i = 1, nqq
   if (Qdeby) then
     idistkd=exp(-dist*ikappa)
     eqq = eqq + fctn*idist*idistkd
-    ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-    if (ok) then
+    if (Qforces) then
       de = fctn*(dist+kappa)*idist**3*ikappa*idistkd
       f1=de*v1
-      if (stfree(isite1)) then
-        f(isite1)%x = f(isite1)%x - f1(1)
-        f(isite1)%y = f(isite1)%y - f1(2)
-        f(isite1)%z = f(isite1)%z - f1(3)
-      endif                            
-      if (stfree(isite2)) then         
-        f(isite2)%x = f(isite2)%x + f1(1)
-        f(isite2)%y = f(isite2)%y + f1(2)
-        f(isite2)%z = f(isite2)%z + f1(3) 
-      endif
+      f(isite1)%x = f(isite1)%x - f1(1)
+      f(isite1)%y = f(isite1)%y - f1(2)
+      f(isite1)%z = f(isite1)%z - f1(3)
+      f(isite2)%x = f(isite2)%x + f1(1)
+      f(isite2)%y = f(isite2)%y + f1(2)
+      f(isite2)%z = f(isite2)%z + f1(3) 
     endif      
   else
     eqq = eqq + fctn*idist
-    ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-    if (ok) then
+    if (Qforces) then
       de = fctn*idist**3
       f1=de*v1
-      if (stfree(isite1)) then
-        f(isite1)%x = f(isite1)%x - f1(1)
-        f(isite1)%y = f(isite1)%y - f1(2)
-        f(isite1)%z = f(isite1)%z - f1(3)
-      endif
-      if (stfree(isite2)) then
-        f(isite2)%x = f(isite2)%x + f1(1)
-        f(isite2)%y = f(isite2)%y + f1(2)
-        f(isite2)%z = f(isite2)%z + f1(3)
-      endif
+      f(isite1)%x = f(isite1)%x - f1(1)
+      f(isite1)%y = f(isite1)%y - f1(2)
+      f(isite1)%z = f(isite1)%z - f1(3)
+      f(isite2)%x = f(isite2)%x + f1(1)
+      f(isite2)%y = f(isite2)%y + f1(2)
+      f(isite2)%z = f(isite2)%z + f1(3)
     endif
   endif
   if (Qdebyhyb) Qdeby=.false.
@@ -345,20 +292,15 @@ if (Qsolv) then
     dist=sqrt(dot_product(v1,v1)) 
     cte1 = exp((13.38-dist)*0.1875)
     esolv = esolv + epsolv*(1.0-cte1)**2 - epsolv
-    ok = Qforces .and. stfree(isite1).or.stfree(isite2)
-    if (ok) then
+    if (Qforces) then
       de = 0.375*epsolv*cte1*(cte1-1.0)/dist
       f1=de*v1
-      if (stfree(isite1)) then
-        f(isite1)%x = f(isite1)%x - f1(1)
-        f(isite1)%y = f(isite1)%y - f1(2)
-        f(isite1)%z = f(isite1)%z - f1(3)
-      endif                            
-      if (stfree(isite2)) then         
-        f(isite2)%x = f(isite2)%x + f1(1)
-        f(isite2)%y = f(isite2)%y + f1(2)
-        f(isite2)%z = f(isite2)%z + f1(3)
-      endif
+      f(isite1)%x = f(isite1)%x - f1(1)
+      f(isite1)%y = f(isite1)%y - f1(2)
+      f(isite1)%z = f(isite1)%z - f1(3)
+      f(isite2)%x = f(isite2)%x + f1(1)
+      f(isite2)%y = f(isite2)%y + f1(2)
+      f(isite2)%z = f(isite2)%z + f1(3)
     endif
   enddo
 endif 
@@ -366,7 +308,7 @@ endif
 if (Qapfor) then
   do i=1,afn
     j=sn(i)
-    if (Qforces.and.stfree(j)) then
+    if (Qforces) then
       f(j)%x=f(j)%x+af(1,i)
       f(j)%y=f(j)%y+af(2,i)
       f(j)%z=f(j)%z+af(3,i)
@@ -435,109 +377,5 @@ if (Qcontrans) then
     endif
   enddo
 endif
-dids(1:5,nelenuc+1:nele)=0.0
-!  nonbonded interactions between interaction sites and ions
-if (Qpar .and. Qnucl .and. Qnonbond) then
-  do j = 1, nelenuc
-    jtype = et(j)
-    do i = nelenuc+1, nele
-      itype = et(i)
-      is=etpidx(itype,jtype)
-! Compute distances dna fragment-ion
-      dist2 = (r(i)%x-r(j)%x)**2 + (r(i)%y-r(j)%y)**2 + (r(i)%z-r(j)%z)**2
-      ok=.false.
-      ok2=Qforces .and.(i.gt.nelenuc.or.stfree(j))
-      if (Qefpot(is)) then
-        if (ok2) then
-          call getyd(is,dist2,eefp,de,dist)
-        else
-          call gety(is,dist2,eefp,dist)
-        endif
-        eefpotmx=eefpotmx+eefp
-        if (Qproxdiff) then
-          if (dist.gt.0.0) then
-            if (j.eq.1) then 
-              dids(1,i)=dist-efp(is)%xl
-              dids(2,i)=dist 
-              dids(3,i)=r(i)%x-r(j)%x
-              dids(4,i)=r(i)%y-r(j)%y
-              dids(5,i)=r(i)%z-r(j)%z
-            else
-              didstmp=dist-efp(is)%xl
-              if (didstmp.lt.dids(1,i)) then
-                dids(1,i)=didstmp
-                dids(2,i)=dist
-                dids(3,i)=r(i)%x-r(j)%x
-                dids(4,i)=r(i)%y-r(j)%y
-                dids(5,i)=r(i)%z-r(j)%z
-              endif
-            endif
-          endif
-        endif
-      else
-        idist2 = 1.0/dist2
-        if (Qchr(is).or.Qsrpmfi(is)) idist = sqrt(idist2)
-! Compute Coulomb contribution
-        if (Qchr(is)) then
-          cofo=fct(is)*idist
-          eqqmx = eqqmx + cofo
-        endif
-! Compute Lennard Jones contribution 
-        if (Qlj(is)) then 
-          dist6 = (sgp2(is)*idist2)**3
-          dist12 = dist6**2
-          evdwmx = evdwmx + epp4(is)*(dist12-dist6)
-        endif
-! Compute Short-Range correction contribution
-        if (Qsrpmfi(is)) then
-          if (dist2.le.rth) then
-            dist=1.0/idist
-            esrpmf1 = exp((c1(is)-dist)*c2(is))
-            esrpmf2 = cos(c3(is)*pi*(c1(is)-dist))
-            esrpmf3 = (c1(is)*idist)**6
-            esrpmf0 = c0(is)*esrpmf1*esrpmf2+c4(is)*esrpmf3
-            if (dist.ge.srpx) then ! smoothly fix discontinuity 
-              fdf=exp(-srpk*(dist-srpx))-srpy
-              fdv=esrpmf0
-              esrpmf0=fdv*fdf
-            endif
-            esrpmfmx = esrpmfmx + esrpmf0
-          endif
-        endif
-      endif
-! Compute forces
-      if (ok2) then    
-        if (.not.Qefpot(is)) then
-          de=0.0
-          if (Qchr(is)) then
-            de = cofo*idist2  ! Coulomb force
-          endif
-          if (Qlj(is)) then
-            de = de+epp4(is)*(2.0*dist12-dist6)*6.0*idist2 ! vdw force
-          endif
-          if (Qsrpmfi(is)) then
-            if (dist2.le.rth) then
-              dc=(-c2(is)*esrpmf2 + c3(is)*pi*sin(c3(is)*pi*(c1(is)-dist)))*c0(is)*esrpmf1-6.0*c4(is)*esrpmf3*idist! forces
-              if (dist.ge.srpx) dc=dc*fdf-fdv*srpk*(fdf+srpy)  ! smoothly fix discontinuity 
-              de = de - dc*idist
-            endif
-          endif
-        endif
-        if (de.ne.0.0) then 
-          if (i.gt.nelenuc) then
-            f(i)%x = f(i)%x + de*(r(i)%x-r(j)%x)
-            f(i)%y = f(i)%y + de*(r(i)%y-r(j)%y)
-            f(i)%z = f(i)%z + de*(r(i)%z-r(j)%z)
-          endif
-          if (stfree(j)) then
-            f(j)%x = f(j)%x - de*(r(i)%x-r(j)%x)
-            f(j)%y = f(j)%y - de*(r(i)%y-r(j)%y)
-            f(j)%z = f(j)%z - de*(r(i)%z-r(j)%z)
-          endif
-        endif
-      endif
-    enddo ! i=nelenuc+1,...,nele 
-  enddo   ! j=1,...,nelenuc
-endif
-energy = energy + esrpmfmx + ebond + eang + edihe + estack + ebp + eex + eqq + esolv + eqqmx + evdwmx + eefpotmx + econ
+energy = ebond + eang + edihe + estack + ebp + eex + eqq + esolv + econ
 end subroutine

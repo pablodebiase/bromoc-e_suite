@@ -77,7 +77,6 @@ TITLE        title
 SYSTEM       define size of box, temperature, dielectric constant, ionic strength, debye huckel, iseed, etc
 NUCLEOTIDES  define DNA
 APFORCE      apply force to DNA sites
-FIXSITE      fix DNA sites
 PARTICLES    define free particles (ions)
 BUFFERS      define GCMC buffers region
 LJSIN        define single particle Lennard Jones parameters
@@ -254,28 +253,6 @@ example:
   10 fx 0.1
   11 fy -0.1
   END
-
-*************************
-*** FIXSITE: Fix site ***
-*************************
-
-   Fixes the position of a group of DNA sites by ignoring the displacements of the selected sites during dynamics.
-
-syntax:
-
-  [FIXSITE] nstfx (integer n)
-  (integer 1) ... (integer n)      
-  END
-
-  nstfx         | 0 | : Number of sites to fix
-  (integer 1)         : First site number to fix
-  (integer n)         : Last (nstfx) site number to fix
-
-example:
-  FIXSITE nstfx 5
-  1 6 8 10 12
-  END
-
 
 *********************
 *** NOTRANSLATION ***

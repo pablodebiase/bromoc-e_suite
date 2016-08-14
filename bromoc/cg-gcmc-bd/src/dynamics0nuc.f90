@@ -28,21 +28,18 @@ real,external :: rgauss
 real delx, dely, delz
 
 do i = 1,nelenuc
-  if (stfree(i)) then
-    itype = et(i)
-    delx = f(i)%x*fact1a(itype)
-    dely = f(i)%y*fact1a(itype)
-    delz = f(i)%z*fact1a(itype)
-    if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
-    if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
-    if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
-    r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
-    r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
-    r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
-    ! Fix Coor
-    if (.not.Qdnafree) call fixcoor(r(i)%x,r(i)%y,r(i)%z)
-  endif 
+  itype = et(i)
+  delx = f(i)%x*fact1a(itype)
+  dely = f(i)%y*fact1a(itype)
+  delz = f(i)%z*fact1a(itype)
+  if (abs(delx).gt.bdmax) delx = sign(bdmax,delx)
+  if (abs(dely).gt.bdmax) dely = sign(bdmax,dely)
+  if (abs(delz).gt.bdmax) delz = sign(bdmax,delz)
+  r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
+  r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
+  r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
+  ! Fix Coor
+  if (.not.Qdnafree) call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
-return
 end subroutine
 

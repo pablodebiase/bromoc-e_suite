@@ -32,7 +32,7 @@ real    temp,kbt,kBTdt,dnatemp,kbtdna
 real*8 runtime
 integer nbuffer
 integer,allocatable :: warn(:)
-integer     ibfftyp(dbuff),nat(dtype),idtype(dtype)
+integer     ibfftyp(dbuff),nat(dtype)
 integer     nremove(dtype),ninsert(dtype),ntotat(dtype)
 real        ampl1(dtype),p1(2,dtype)
 real        ampl2(dtype),p2(2,dtype),rcylinder(dtype),deltaz,ampl3(dtype),p3(dtype)
@@ -46,8 +46,7 @@ integer nprint,nanal,cntpts,svcntfq
 integer igr, nframe
 real    dt,mcmax,bdmax
 real dids(5,datom),fact2a(dtype),fact1a(dtype),fact2pd,beta,diff0,ibeta,diffcutoff
-!real*16 ener,eelec,evdw,ememb,esrpmf,esrpmfmx,eefpot,eefpotmx,econ,erfpar
-real ener,eelec,evdw,ememb,esrpmf,esrpmfmx,eefpot,eefpotmx,econ,erfpar,enonbond,eintern
+real ener,eelec,evdw,ememb,esrpmf,eefpot,econ,erfpar,enonbond,eintern
 real    rsphe,rsphe2,lx,ly,lz,lx2p,ly2p,lz2p,lx2m,ly2m,lz2m,cx,cy,cz,iecx,iecy
 real, allocatable :: epp4(:),sgp2(:)
 real, allocatable :: c0(:),c1(:),c2(:),c3(:),c4(:)
