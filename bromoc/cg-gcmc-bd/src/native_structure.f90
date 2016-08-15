@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine native_structure
+subroutine native_structure(nsites,xnat,ynat,znat,rnat,phinat)
 !This routine obtain the site interaction coordinates in
 !(B,10_1,3.38)-DNA conformation as well as the natural bond
 !lenghts, bond angles and dihedral angles. (xnat,ynat,znat) are
@@ -31,7 +31,7 @@ use errormod
 use listmod
 !Local variables
 implicit none
-integer isite, nuc, i,j,k
+integer isite, nuc, i,j,k,nsites
 integer jbase, jS, jP, jPE, jPF
 real  cte,icte
 real  angAb, angTb, angCb, angGb
@@ -48,6 +48,7 @@ real  phPSAbd, phPSTbd, phPSCbd, phPSGbd, phPSAb2d, phPSTb2d,phPSCb2d, phPSGb2d,
 real  dhAbSPSd, dhTbSPSd, dhCbSPSd, dhGbSPSd, dhSPSAbd,dhSPSTbd, dhSPSCbd, dhSPSGbd, dhSPSPd, dhPSPSd
 real  cylAb(3,2), cylTb(3,2), cylCb(3,2), cylGb(3,2)
 real  cylS(3,2), cylP(3,2)
+real xnat(*),ynat(*),znat(*),rnat(*),phinat(*)
 
 if (istrs.eq.0) return
 
@@ -318,7 +319,7 @@ if (istrs.eq.2) then
   jbase = 0
   jS    = 0
   jP    = 0
-  do isite = nelenuc, nuc+1, -1
+  do isite = nsites, nuc+1, -1
     if (namsite(isite).eq.'Ab') then
       jbase = jbase + 1
       rnat(isite)   = cylAb(1,2)
@@ -362,11 +363,9 @@ endif
 do i = 1, nelenuc1st
    call putcoorinptyp(1,i,xnat(i),ynat(i),znat(i))
 enddo
-call centerptyp(1)
-do i = nelenuc1st+1,nelenuc
+do i = nelenuc1st+1,nsites
    call putcoorinptyp(2,i-nelenuc1st,xnat(i),ynat(i),znat(i))
 enddo
-call centerptyp(2)
 
 !OUTPUT
 phPSAbd = phPSAb*icte
@@ -429,7 +428,7 @@ endif
 write(outu,'(/6x,a)') 'Native structure for B isoform of DNA'
 write(outu,'(/6x,a)') 'STRAND SITE# NUCLEOT SITE CARTESIAN COORDINATES (X,Y,Z)'
 write(outu,'(6x,a)') '------ ----- ------- ---- -----------------------------'
-do i = 1, nelenuc
+do i = 1, nsites
   write(outu,'(6x,i2,5x,i4,2x,a1,5x,a2,3x,f8.3,2x,f8.3,2x,f8.3)') strand(i),i,namnucl(i),namsite(i),xnat(i),ynat(i),znat(i)
 enddo
 return

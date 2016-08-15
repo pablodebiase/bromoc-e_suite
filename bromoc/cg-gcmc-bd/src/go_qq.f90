@@ -47,7 +47,7 @@ do i = 2, nelenuc
 !    constitute a bonb
     if (.not.bond(etpidx(i,j))) then
 !      Native contact's length        
-      dij = sqrt((xnat(j)-xnat(i))**2 + (ynat(j)-ynat(i))**2 + (znat(j)-znat(i))**2)
+      dij = sqrt((r(j)%x-r(i)%x)**2 + (r(j)%y-r(i)%y)**2 + (r(j)%z-r(i)%z)**2)
 !      Interaction between nucleotides that form a native contact in
 !      the target structure
       if (strand(i).eq.strand(j) .and. (dij-9.0).lt.0.0 .and. abs(dij-9.0).ge.tol) then

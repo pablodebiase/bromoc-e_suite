@@ -94,6 +94,7 @@ integer*8 ncycle,nsave,nsfbs
 integer,allocatable :: iunitv(:)
 real cc0,cc1,cc2,cc3,cc4
 real xtras, ytras, ztras, rot(3,3)
+real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 
 !Default parameters and options
 !------------------------------
@@ -590,12 +591,18 @@ do while (.not. logfinal)
      enddo
      write(outu,*)
      ! Interaction site coordinates for the native structure
-     call native_structure
+     call native_structure(nsites,xnat,ynat,znat,rnat,phinat)
      ! Define number of particle types belonging to dna
      nptnuc=nptyp
      ! Add Particle
-     if (istrs.gt.0) call addpar(1,1)
-     if (istrs.eq.2) call addpar(2,1)
+     if (istrs.gt.0) then
+       call addpar(1,1)
+       call centerptyp(1)
+     endif
+     if (istrs.eq.2) then
+       call addpar(2,1)
+       call centerptyp(2)
+     endif
      ! Define number of particles belonging to dna
      nparnuc=npar
      ! Define number of elements belonging to dna
@@ -611,11 +618,12 @@ do while (.not. logfinal)
      ! nonbonded terms
      call go_qq
      Qnucl = .true.
-     !call printpdb(outu) ! debug
      write(outu,*) 
      ! assert 
      if (nsites.ne.nele) stop 'nsites is not equal to nele'
      if (allocated(nucnam)) deallocate(nucnam)
+     deallocate(xnat,ynat,znat,rnat,phinat)
+     !call printpdb(outu) ! debug
   ! **********************************************************************
   elseif (wrd5.eq.'atoms') then
   !       ---------------
@@ -686,6 +694,7 @@ do while (.not. logfinal)
         itype=getptyp(wrd4)
         if (itype.eq.0) then
           call addmonoptyp(wrd4)
+          write(outu,*) 'Particle '//wrd4//' added' 
           itype=nptyp
           ! particle charge [real*8,default=0]
           call gtdpar(com,'charge',etypl(netyp)%chg,0.0)

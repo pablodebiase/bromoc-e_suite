@@ -27,12 +27,13 @@ write (lus,500)
 500  format ( &
  1x,'*************************************************************************************'/ &
  1x,'*******                         BROMOC  -  CG-GCMC-BD                         *******'/ &
- 1x,'*******        Electrodiffusion, Gran Canonical Monte Carlo, Brownian         *******'/ &
- 1x,'*******        Dynamics and Coarse Grain Model DNA Simulation Program         *******'/ &
+ 1x,'*******        Simulation Program for Electrodiffusion, Gran Canonical        *******'/ &
+ 1x,'*******        Monte Carlo, Brownian Dynamics, Coarse Grain Model DNA         *******'/ &
+ 1x,'*******        and CHARMM force field reader for Solute and Solvent           *******'/ &
  1x,'*******        (c) 2010 Sergei Y. Noskov,       University of Calgary         *******'/ &
  1x,'*******        (c) 2010 Carlos J. F. Solano,    University of Calgary         *******'/ &
  1x,'*******        (c) 2011 Pablo M. De Biase,      University of Calgary         *******'/ &
- 1x,'*******                       Version 4.14 (2016/05/27)                       *******'/ &
+ 1x,'*******                       Version 5.00 (2016/08/14)                       *******'/ &
  1x,'*************************************************************************************'/ &
  1x,'*******                                                                       *******'/ & 
  1x,'******* Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)         *******'/ &

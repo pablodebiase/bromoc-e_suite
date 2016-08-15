@@ -84,7 +84,6 @@ integer     istrs, inuc, maxsite, extraP,nelenuc1st
 integer,allocatable     ::  strand(:), typenuc(:)
 character*1,allocatable :: namnucl(:)
 character*2,allocatable :: namsite(:)
-real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 real        cgnuc, diffnuc, epsnuc, epsolv, fctn, scalepairing
 real        notrx,notry,notrz,inelenuc  ! NOTRAN
 integer     setframes
