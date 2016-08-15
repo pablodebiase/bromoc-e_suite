@@ -32,6 +32,7 @@ type(car) :: rr, rs, rm
 
 endok = .true.  
 nremovablepar = float(npar - nparnuc)
+if (nremovablepar.le.0) return
 do while (endok)
   parn = nparnuc + int(nremovablepar*rndm()) + 1 ! [nelenuc+1,nele]
   rm%x = mcmax*(rndm()-0.5)

@@ -1897,7 +1897,6 @@ do while (.not. logfinal)
     write(outu,'(6x,a,f8.3,a)') 'beta  =      ',beta,' [Angs]'
     write(outu,'(6x,a,f8.3,a)') 'diff0 =      ',diff0,' [Angs^2/ps]'
     write(outu,'(6x,a,f8.3,a)') 'diffcutoff = ',diffcutoff,' [Angs]'
-
   elseif (wrd5.eq.'chden') then ! user defined proximity diffusion
   !        -----------------    
     if (.not.Qsystem) call error ('shell_simul', 'CHDEN must be defined after SYSTEM', faterr)
@@ -2310,23 +2309,29 @@ do while (.not. logfinal)
        write(outu,'(6x,a,i3)')'Reading coordinates from unit ',iunit
        read(iunit,'(A6)') wrd6
        if (wrd6.ne.'CRYST1') call error('shell_simul','this file has not BROMOC PDB format',faterr)
-       ilast=0
        if (Qnucl) then
+         ilast=0
          do i = 1, nelenuc
            read(iunit,'(a)') com
-           read(com,'(6x,I5,x,5x,5x,I4,4x,3F8.3)') jtype,itype,rr%x,rr%y,rr%z
+           read(com,'(6x,5x,x,5x,5x,I4,4x,3F8.3)') itype,rr%x,rr%y,rr%z
+           if (itype.ne.ilast) jtype=1
            call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
+           ilast=itype
+           jtype=jtype+1
          enddo
        endif
        if (Qpar) then
+         ilast=0
          read(iunit,'(a)') com
          do while (trim(adjustl(com)).ne.'END')
-           read (com,'(6x,I5,x,A5,5x,I4,4x,3F8.3,F6.2)') jtype,wrd4,itype,rr%x,rr%y,rr%z,ibuf
+           read (com,'(6x,5x,x,A5,5x,I4,4x,3F8.3,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,ibuf
            if (ilast.ne.itype) then
+             jtype=1
              call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuf))
            endif
-           call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
+           call putcoorinpar(npar,jtype,rr%x,rr%y,rr%z)
            ilast=itype
+           jtype=jtype+1
            read(iunit,'(a)') com
          enddo
        endif  

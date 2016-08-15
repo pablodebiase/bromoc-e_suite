@@ -347,7 +347,7 @@ enddo
 
 tau = celec*etypl(jtype)%chg
 ! self reaction field energy minus Born energy
-! reaction field energy 
+! reaction field energy
 energy = energy+ 0.5*tau*etypl(jtype)%chg*srfe(j)**2
 
 do i=nelenuc+1,nele

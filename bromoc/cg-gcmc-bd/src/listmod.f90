@@ -943,7 +943,7 @@ real ibuf
 !write (nunit,'(A6,I5)') 'REMARK',nele
 do i=1,nele
   ibuf=parl(pe(i))%ibuf
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuf,0.0,''
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuf,etypl(et(i))%chg,''
 enddo
 write (nunit,'(A)') 'END'
 end subroutine
