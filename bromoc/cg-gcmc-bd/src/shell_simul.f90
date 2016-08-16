@@ -76,7 +76,7 @@ integer    nsec
 type(car) :: rr
 !for TEST order
 real       maxl,minl,maxlg,minlg
-
+real       dener
 !for MEMBRANE and ION-ION orders
 !for effective dielectric constant for DNA
 real       conc
@@ -95,6 +95,7 @@ integer,allocatable :: iunitv(:)
 real cc0,cc1,cc2,cc3,cc4
 real xtras, ytras, ztras, rot(3,3)
 real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
+integer parn
 
 !Default parameters and options
 !------------------------------
@@ -1488,74 +1489,152 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'energ') then
   !        ---------------
-     if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'ENERGY order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
-     ! default values 
-     ! Qbond = Qnonbond =.true.
-     ! Qmemb = Qphix = Qphiv = Qsrpmf = .false.
-     Qbond  = .not.check(com,'nobond')
-     Qnonbond = .not.check(com,'nononbond')
-     if (check(com,'membrane')) then
-       if (.not.Qmemb) call error ('shell_simul', 'Planar membrane has not be defined before ENERGY order', faterr)
-     else
-       logmemb = Qmemb
-       Qmemb = .false.
-     endif
-     if (check(com,'phix')) then
-       if (.not.Qphix) call error ('shell_simul', 'Static Field has not be defined before ENERGY order', faterr)
-     else
-      logphix = Qphix
-      Qphix = .false.
-     endif
-     if (check(com,'phiv')) then
-       if (.not.Qphiv) call error ('shell_simul', 'Repulsive term has not be defined before ENERGY order', faterr)
-     else
-       logphiv = Qphiv
-       Qphiv = .false.
-     endif
-     if (check(com,'srpmf')) then
-       if (.not.Qsrpmf) call error ('shell_simul', 'Short-range interaction term has not be defined before ENERGY order', faterr)
-     else
-       logsrpmf = Qsrpmf
-       Qsrpmf = .false.
-     endif
-     if (check(com,'rfpar')) then
-       if (.not.Qrfpar) call error ('shell_simul', 'Reaction Field parameter term has not be defined before ENERGY order', faterr)
-     else
-       logrfpar = Qrfpar
-       Qrfpar = .false.
-     endif
-     if (check(com,'all')) then 
-       Qmemb = logmemb
-       Qphix = logphix
-       Qphiv = logphiv
-       Qsrpmf = logsrpmf
-       Qrfpar = logrfpar
-       Qbond = .true.
-       Qnonbond = .true. 
-     endif
+    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'ENERGY order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
+    ! default values 
+    ! Qbond = Qnonbond =.true.
+    ! Qmemb = Qphix = Qphiv = Qsrpmf = .false.
+    Qbond  = .not.check(com,'nobond')
+    Qnonbond = .not.check(com,'nononbond')
+    if (check(com,'membrane')) then
+      if (.not.Qmemb) call error ('shell_simul', 'Planar membrane has not be defined before ENERGY order', faterr)
+    else
+      logmemb = Qmemb
+      Qmemb = .false.
+    endif
+    if (check(com,'phix')) then
+      if (.not.Qphix) call error ('shell_simul', 'Static Field has not be defined before ENERGY order', faterr)
+    else
+     logphix = Qphix
+     Qphix = .false.
+    endif
+    if (check(com,'phiv')) then
+      if (.not.Qphiv) call error ('shell_simul', 'Repulsive term has not be defined before ENERGY order', faterr)
+    else
+      logphiv = Qphiv
+      Qphiv = .false.
+    endif
+    if (check(com,'srpmf')) then
+      if (.not.Qsrpmf) call error ('shell_simul', 'Short-range interaction term has not be defined before ENERGY order', faterr)
+    else
+      logsrpmf = Qsrpmf
+      Qsrpmf = .false.
+    endif
+    if (check(com,'rfpar')) then
+      if (.not.Qrfpar) call error ('shell_simul', 'Reaction Field parameter term has not be defined before ENERGY order', faterr)
+    else
+      logrfpar = Qrfpar
+      Qrfpar = .false.
+    endif
+    if (check(com,'all')) then 
+      Qmemb = logmemb
+      Qphix = logphix
+      Qphiv = logphiv
+      Qsrpmf = logsrpmf
+      Qrfpar = logrfpar
+      Qbond = .true.
+      Qnonbond = .true. 
+    endif
  
-     write(outu,*)
-     write(outu,'(6x,a)') 'ENERGY calculation'
-     write(outu,'(6x,a)') '------------------'
-     if (Qbond)    write(outu,'(6x,a)') 'Bonding Energy Term'
-     if (Qnonbond) write(outu,'(6x,a)') 'Nonbonding Energy Term'
-     if (Qmemb)    write(outu,'(6x,a)') 'Planar membrane Term'
-     if (Qphix)    write(outu,'(6x,a)') 'External Field Energy Term'
-     if (Qphiv)    write(outu,'(6x,a)') 'Repulsive Energy Term'
-     if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
-     if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
+    write(outu,*)
+    write(outu,'(6x,a)') 'ENERGY calculation'
+    write(outu,'(6x,a)') '------------------'
+    if (Qbond)    write(outu,'(6x,a)') 'Bonding Energy Term'
+    if (Qnonbond) write(outu,'(6x,a)') 'Nonbonding Energy Term'
+    if (Qmemb)    write(outu,'(6x,a)') 'Planar membrane Term'
+    if (Qphix)    write(outu,'(6x,a)') 'External Field Energy Term'
+    if (Qphiv)    write(outu,'(6x,a)') 'Repulsive Energy Term'
+    if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
+    if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
   
-     call energy(.true.)
-     write(outu,'(6x,a,f12.6)') 'Total energy (Forces On) ',ener
-     write(outu,'(6x,a,6f12.6)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond',ememb,estaticf,evdwgd,erfpar,eintern,enonbond
-     call energy(.false.)
-     write(outu,'(6x,a,f12.6)') 'Total energy (Forces Off)',ener
-     write(outu,'(6x,a,6f12.6)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond',ememb,estaticf,evdwgd,erfpar,eintern,enonbond
-     Qmemb = logmemb 
-     Qphix = logphix 
-     Qphiv = logphiv 
-     Qsrpmf = logsrpmf 
-     Qrfpar = logrfpar
+    call energy(.true.)
+    write(outu,'(6x,a,f12.6)') 'Total energy (Forces On) ',ener
+    write(outu,'(6x,a,6f12.6)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond',ememb,estaticf,evdwgd,erfpar,eintern,enonbond
+    call energy(.false.)
+    write(outu,'(6x,a,f12.6)') 'Total energy (Forces Off)',ener
+    write(outu,'(6x,a,6f12.6)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond',ememb,estaticf,evdwgd,erfpar,eintern,enonbond
+    Qmemb = logmemb 
+    Qphix = logphix 
+    Qphiv = logphiv 
+    Qsrpmf = logsrpmf 
+    Qrfpar = logrfpar
+  ! **********************************************************************
+  elseif (wrd5.eq.'inter') then 
+  !        ---------------
+    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'INTERACT order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
+    ! atom type [integer,default=1]
+    call gtipar(com,'part',parn,1) 
+    ! default values
+    ! Qnobond = Qnonbond =.true.
+    ! Qmemb = Qphix = Qphiv = Qsrpmf = .false.         
+    Qbond  = .not.check(com,'nobond')
+    Qnonbond = .not.check(com,'nononbond')
+    if (check(com,'membrane')) then
+      if (.not.Qmemb) call error ('shell_simul', 'Planar membrane has not be defined before INTERACT order', faterr)
+    else
+      logmemb = Qmemb
+      Qmemb = .false.
+    endif
+    if (check(com,'phix')) then
+      if (.not.Qphix) call error ('shell_simul', 'Static Field has not be defined before INTERACT order', faterr)
+    else
+     logphix = Qphix
+     Qphix = .false.
+    endif
+    if (check(com,'phiv')) then
+      if (.not.Qphiv) call error ('shell_simul', 'Repulsive term has not be defined before INTERACT order', faterr)
+    else
+      logphiv = Qphiv
+      Qphiv = .false.
+    endif
+    if (check(com,'srpmf')) then
+      if (.not.Qsrpmf) call error ('shell_simul', 'Short-range interaction term has not be defined before INTERACT order', faterr)
+    else
+      logsrpmf = Qsrpmf
+      Qsrpmf = .false.
+    endif
+    if (check(com,'rfpar')) then
+      if (.not.Qrfpar) call error ('shell_simul', 'Reaction Field Parameter term has not be defined before INTERACT order', faterr)
+    else
+      logrfpar = Qrfpar
+      Qrfpar = .false.
+    endif
+    if (check(com,'allener')) then
+      Qmemb = logmemb
+      Qphix = logphix
+      Qphiv = logphiv
+      Qsrpmf = logsrpmf
+      Qrfpar = logrfpar
+      Qbond = .true.
+      Qnonbond = .true.
+    endif
+ 
+    write(outu,*)
+    write(outu,'(6x,a)') 'INTERACT calculation'
+    write(outu,'(6x,a)') '--------------------'         
+    if (Qbond)    write(outu,'(6x,a)') 'Bonding Energy Term' 
+    if (Qnonbond) write(outu,'(6x,a)') 'Nonbonding Energy Term'
+    if (Qmemb)    write(outu,'(6x,a)') 'Planar membrane Term'
+    if (Qphix)    write(outu,'(6x,a)') 'External Field Energy Term'
+    if (Qphiv)    write(outu,'(6x,a)') 'Repulsive Energy Term'
+    if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
+    if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
+  
+    ! Calculate the interaction of particle "parn" with the rest of
+    ! the system
+    if (check(com,'allpart')) then
+      do parn=1,npar
+        call par_interact(parn,dener)
+        write(outu,'(6x,a,f12.6)') 'Interaction of particle ',parn,dener
+      enddo
+    else
+      call par_interact(parn,dener)
+      write(outu,'(6x,a,f12.6)') 'Interaction of particle ',parn,dener
+    endif
+    Qmemb = logmemb 
+    Qphix = logphix 
+    Qphiv = logphiv 
+    Qsrpmf = logsrpmf
+    Qrfpar = logrfpar
   ! **********************************************************************
   elseif (wrd5.eq.'membr') then
   !        ---------------
