@@ -1845,21 +1845,19 @@ do while (.not. logfinal)
     call updateuetl()
     write(outu,'(6x,a)') 'Effective potential was activated for the following pairs:'
     write(*,*) 'Used Element Type-Element Type pairs'
-    do i = 1,netyp
-      do j=i,netyp
-        if(j.gt.netnuc) then
-          is=etpidx(i,j)
-          if (Qefpot(is).and.Qefpotread(is)) then
-            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',nxf(is),'  From-To: ',efp(is)%xl,' - ',sqrt(efp(is)%xu2)
-          elseif (Qefpot(is).and..not.Qefpotread(is)) then
-            Qcol(is) = .true. ! if discretize is active, ignore this keyword for that pair 
-            nnp=int(efp(is)%xl*ires)
-            mnp=int(sqrt(efp(is)%xu2)*ires)
-            call discretize(is,nnp,mnp,nxf(is))
-            write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
-          elseif (etul(i).and.etul(j)) then
-            write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',etypl(i)%nam,etypl(j)%nam,' . Using Coulombic and Lennard Jones and/or SRPMF parameters on the fly'
-          endif
+    do i = netnuc+1,netyp
+      do j=1,i
+        is=etpidx(i,j)
+        if (Qefpot(is).and.Qefpotread(is)) then
+          write(outu,'(6x,a,1x,2a,i5,2(a,f8.3))')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',nxf(is),'  From-To: ',efp(is)%xl,' - ',sqrt(efp(is)%xu2)
+        elseif (Qefpot(is).and..not.Qefpotread(is)) then
+          Qcol(is) = .true. ! if discretize is active, ignore this keyword for that pair 
+          nnp=int(efp(is)%xl*ires)
+          mnp=int(sqrt(efp(is)%xu2)*ires)
+          call discretize(is,nnp,mnp,nxf(is))
+          write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
+        elseif (etul(i).and.etul(j)) then
+          write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',etypl(i)%nam,etypl(j)%nam,' . Using Coulombic and Lennard Jones and/or SRPMF parameters on the fly'
         endif
       enddo
     enddo
