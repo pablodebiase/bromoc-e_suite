@@ -47,12 +47,12 @@ do imove = 1, nmcm
    call par_interact(parn, enew)
    if (enew.le.eold) then
       !accept the move
-      ener = ener + (enew-eold)
+      !ener = ener + (enew-eold)
    else                            
       bltz = exp(-(enew-eold)*ikbt)
       if (rndm().lt.bltz) then
          !accept the move
-         ener = ener + (enew-eold)
+         !ener = ener + (enew-eold)
       else
          ! restore original position
          r(sr+1:sr+ne) = rrori

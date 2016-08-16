@@ -52,11 +52,11 @@ real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol,ibuf
+real resol,ibuff
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
 logical*1 logmemb, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
-logical*1 Qexpl2nd,Qinputpar,Qonlychden
+logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdbe
 real*8 zero
 !for time
 integer*8       start,finish,timer
@@ -1536,7 +1536,7 @@ do while (.not. logfinal)
      if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
      if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
   
-     call energy
+     call energy()
      write(outu,'(6x,a,f12.6)') 'Total energy ',ener
      Qmemb = logmemb 
      Qphix = logphix 
@@ -2032,7 +2032,11 @@ do while (.not. logfinal)
          else
            write(iunit,'(A6,3f9.3,3f7.2)') 'CRYST1',LX,LY,LZ,90.0,90.0,90.0
          endif
-         call printpdb(iunit) 
+         if (check(com,'pdbe')) then ! PDB with Extended Digits
+           call printpdbe(iunit)
+         else
+           call printpdb(iunit)
+         endif
        endif  
      elseif (check(com,'title')) then
        write(outu,'(6x,a)') 'TITLE: '//trim(title)
@@ -2307,13 +2311,19 @@ do while (.not. logfinal)
        if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in COOR order', faterr)
        iunit = unvec(iunit)
        write(outu,'(6x,a,i3)')'Reading coordinates from unit ',iunit
+       Qpdbe=check(com,'pdbe')
+       if (Qpdbe) write(outu,'(6x,a)')'Format PDBE (PDB with extended coordinate digits)'
        read(iunit,'(A6)') wrd6
        if (wrd6.ne.'CRYST1') call error('shell_simul','this file has not BROMOC PDB format',faterr)
        if (Qnucl) then
          ilast=0
          do i = 1, nelenuc
            read(iunit,'(a)') com
-           read(com,'(6x,5x,x,5x,5x,I4,4x,3F8.3)') itype,rr%x,rr%y,rr%z
+           if (Qpdbe) then 
+             read(com,'(6x,5x,x,5x,5x,I4,4x,3F16.8)') itype,rr%x,rr%y,rr%z
+           else
+             read(com,'(6x,5x,x,5x,5x,I4,4x,3F8.3)') itype,rr%x,rr%y,rr%z
+           endif
            if (itype.ne.ilast) jtype=1
            call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
            ilast=itype
@@ -2324,10 +2334,14 @@ do while (.not. logfinal)
          ilast=0
          read(iunit,'(a)') com
          do while (trim(adjustl(com)).ne.'END')
-           read (com,'(6x,5x,x,A5,5x,I4,4x,3F8.3,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,ibuf
+           if (Qpdbe) then
+             read (com,'(6x,5x,x,A5,5x,I4,4x,3F16.8,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,ibuff
+           else
+             read (com,'(6x,5x,x,A5,5x,I4,4x,3F8.3,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,ibuff
+           endif
            if (ilast.ne.itype) then
              jtype=1
-             call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuf))
+             call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuff))
            endif
            call putcoorinpar(npar,jtype,rr%x,rr%y,rr%z)
            ilast=itype
@@ -2503,7 +2517,7 @@ do while (.not. logfinal)
        write(outu,'(6x,a,1x,a,1x,a,1x,a)') 'STRAND','SITE','CARTESIAN COORDINATES (X,Y,Z)'
        write(outu,'(6x,a,1x,a,1x,a,1x,a)') '------','----','-----------------------------'
        do i = 1, nelenuc
-        write(outu,'(6x,i1,1x,a4,3(1x,f15.8))') pe(i), etypl(et(i))%nam, r(i)%x, r(i)%y, r(i)%z
+        write(outu,'(6x,i5,2x,a4,3(1x,f15.8))') pe(i), etypl(et(i))%nam, r(i)%x, r(i)%y, r(i)%z
        enddo
      endif
      if (Qpar) then
@@ -2511,7 +2525,7 @@ do while (.not. logfinal)
        write(outu,'(6x,a,1x,a)') 'ION','CARTESIAN COORDINATES (X,Y,Z)'
        write(outu,'(6x,a,1x,a)') '---','-----------------------------'
        do i = nelenuc+1, nele
-         write(outu,'(6x,i5,1x,i5,3(1x,f15.8),1x,i4)') i,et(i),r(i)%x,r(i)%y,r(i)%z,parl(pe(i))%ibuf
+         write(outu,'(6x,i5,1x,A5,3(1x,f15.8),1x,i4)') i,etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,parl(pe(i))%ibuf
        enddo
      endif
      write(outu,*)

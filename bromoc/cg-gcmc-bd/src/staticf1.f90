@@ -37,7 +37,7 @@ logical*1 ok
 
 one=1.0
 ncyz = ncly1*nclz1
-egsbpa = 0.0
+estaticf = 0.0
 
 !Main loop by atoms
 
@@ -94,7 +94,7 @@ do i = 1, nele
           endif
         endif
   ! Electrostatic Energy 
-         egsbpa = egsbpa + (fi*chi*phix(in3)*celec)
+         estaticf = estaticf + (fi*chi*phix(in3)*celec)
       enddo ! n3
     enddo ! n2
   enddo ! n1

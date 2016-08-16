@@ -411,8 +411,8 @@ subroutine par_interact(parn, energy)
 use listmod
 use grandmod
 use constamod
-use gsbpmod
 use extramod
+use gsbpmod
 implicit none
 integer,intent(in) :: parn
 real,intent(out) :: energy
@@ -420,39 +420,39 @@ integer parm,itype,jtype
 integer nen,srn,nem,srm
 integer i,j,is
 real dist, dist2, dist6, idist, idist2
-real pener
+real pener,emembi,erfpari,estaticfi,evdwgdi,enonbondi
 energy = 0.0
 
 ! Membrane
 if (Qmemb) then 
-  call par_membrane(parn, ememb) 
-  energy=energy+ememb
+  call par_membrane(parn, emembi) 
+  energy=energy+emembi
 endif
 
 !reaction field parameter  
 if (Qrfpar) then
   if (parl(parn)%ne.eq.1) then
-    call rfparionj(parn, egsbpb)
+    call rfparionj(parn, erfpari)
   else
-    call par_rfparion(parn, egsbpb)
+    call par_rfparion(parn, erfpari)
   endif
-  energy=energy+egsbpb
+  energy=energy+erfpari
 endif ! Qrfpar
 
 !static external field contribution
 if (Qphix) then
-  call par_staticf(parn, egsbpa)
-  energy=energy+egsbpa
+  call par_staticf(parn, estaticfi)
+  energy=energy+estaticfi
 endif ! Qphix
 
 !grid-based repulsive potential
 if (Qphiv) then
   if (Qtrln) then
-    call par_vdwgd_trln(parn, evdwgd)
+    call par_vdwgd_trln(parn, evdwgdi)
   else 
-    call par_vdwgd_spln(parn, evdwgd)
+    call par_vdwgd_spln(parn, evdwgdi)
   endif
-  energy=energy+evdwgd
+  energy=energy+evdwgdi
 endif ! Qphiv
 
 ! Ignore all internal energies of every particle
@@ -460,7 +460,7 @@ endif ! Qphiv
 if (Qnonbond) then
   srn = parl(parn)%sr
   nen = parl(parn)%ne
-  enonbond=0.0
+  enonbondi=0.0
   do parm=1,npar
     if (parm.ne.parn) then
       nem = parl(parm)%ne
@@ -473,16 +473,16 @@ if (Qnonbond) then
           dist2 = dotcar(r(i),r(j))
           if (Qefpot(is)) then
             call gety(is,dist2,pener,dist)
-            enonbond=enonbond+pener
+            enonbondi=enonbondi+pener
           else
             idist2 = 1.0/dist2
             if (Qchr(is).or.Qsrpmfi(is)) idist = sqrt(idist2)
            !electrostatic interaction    
-            if (Qchr(is)) enonbond=enonbond+fct(is)*idist
+            if (Qchr(is)) enonbondi=enonbondi+fct(is)*idist
            !Lennard-Jones 6-12 potential 
             if (Qlj(is)) then
               dist6 = (sgp2(is)*idist2)**3
-              enonbond=enonbond+epp4(is)*dist6*(dist6-1.0)
+              enonbondi=enonbondi+epp4(is)*dist6*(dist6-1.0)
             endif
             !water-mediated short-range ion-ion interaction  
             if (Qsrpmfi(is)) then
@@ -491,7 +491,7 @@ if (Qnonbond) then
                 pener = c0(is)*exp((c1(is)-dist)*c2(is))*cos(c3(is)*pi*(c1(is)-dist))+c4(is)*(c1(is)*idist)**6
                 if (dist.ge.srpx) pener=pener*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
                 ! Eq. 9 W. Im,and B. Roux J. Mol. Biol. 322:851-869 (2002)
-                enonbond=enonbond+pener
+                enonbondi=enonbondi+pener
               endif
             endif
           endif
@@ -499,6 +499,6 @@ if (Qnonbond) then
       enddo
     endif
   enddo
-  energy=energy+enonbond
+  energy=energy+enonbondi
 endif !Qnonbond
 end subroutine

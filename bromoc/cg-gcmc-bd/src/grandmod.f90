@@ -17,6 +17,9 @@
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ! Fortran common block for Grand Canonical Monte Carlo
+!     estaticf                                 static field energy
+!     erfpar                                   reaction field energy
+!     evdwgd                                   repulsive energy
 ! Dimension of arrays
 module grandmod
 implicit none
@@ -46,7 +49,8 @@ integer nprint,nanal,cntpts,svcntfq
 integer igr, nframe
 real    dt,mcmax,bdmax
 real dids(5,datom),fact2a(dtype),fact1a(dtype),fact2pd,beta,diff0,ibeta,diffcutoff
-real ener,eelec,evdw,ememb,esrpmf,eefpot,econ,erfpar,enonbond,eintern
+real erfpar,estaticf,evdwgd
+real ener,eelec,evdw,ememb,esrpmf,eefpot,enonbond,eintern
 real    rsphe,rsphe2,lx,ly,lz,lx2p,ly2p,lz2p,lx2m,ly2m,lz2m,cx,cy,cz,iecx,iecy
 real, allocatable :: epp4(:),sgp2(:)
 real, allocatable :: c0(:),c1(:),c2(:),c3(:),c4(:)

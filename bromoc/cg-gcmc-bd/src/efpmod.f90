@@ -25,7 +25,7 @@ end type coef3
 
 type :: efpot
     real                                 :: xl           !! square of x lower limit of the potential after the head (ex dmi)
-    real                                 :: xl2,xu2      !! squere of x upper limit of the potential before the tail(ex dm2)
+    real                                 :: xl2,xu2      !! square of x upper limit of the potential before the tail(ex dm2)
     integer                              :: n            !! number of points for the cf
     type(coef3)                          :: sc           !! Head and Tail Coefficients
     type(coef3),allocatable,dimension(:) :: ep           !! Effective Potential Square Coefficients

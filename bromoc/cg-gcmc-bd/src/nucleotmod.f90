@@ -194,7 +194,7 @@ real,allocatable ::              sgstack(:),sgbp(:),sgex(:)
 ! ionstr   -> Ionic strength [Mol/L]
 
 real ebond, eang, edihe
-real estack, ebp, eex, eqq, esolv
+real estack, ebp, eex, eqq, esolv, econ
 real eqqmx, evdwmx
 logical*1 Qdeby, Qljsin, Qljpar, Qninfo, Qdebyhyb
 real  ionstr

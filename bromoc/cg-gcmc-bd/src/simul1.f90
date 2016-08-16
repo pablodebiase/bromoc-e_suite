@@ -111,10 +111,10 @@ endif
 
 if (Qenergy) then
   write(outu,*)
-  call energy
+  call energy()
   if (Qpar.and.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i10,6f17.4)') 0,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eqqmx+eefpot+ebond+eang+edihe,egsbpa,egsbpb,evdwgd   
+    write(outu,'(5x,i10,6f17.4)') 0,ener,enonbond,eintern,estaticf,erfpar,evdwgd   
     if (Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -142,7 +142,7 @@ if (Qenergy) then
     endif         
   else if (Qpar.and..not.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded------------PHIsf------------PHIrf-----------PHIvdW' 
-    write(outu,'(5x,i10,5f17.4)') 0,ener,eelec+evdw+esrpmf+eefpot,egsbpa,egsbpb,evdwgd 
+    write(outu,'(5x,i10,5f17.4)') 0,ener,enonbond,estaticf,erfpar,evdwgd 
     write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'
     if (ngcmc.gt.0) then
       ncount = 0
@@ -156,7 +156,7 @@ if (Qenergy) then
     endif
   else if (Qnucl.and..not.Qpar) then 
     write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded------------PHIsf------------PHIrf------------PHIvdW' 
-    write(outu,'(5x,i10,6f17.4)') 0,ener,estack+ebp+eex+eqq+esolv,ebond+eang+edihe,egsbpa,egsbpb,evdwgd 
+    write(outu,'(5x,i10,6f17.4)') 0,ener,enonbond,eintern,estaticf,erfpar,evdwgd 
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -358,9 +358,8 @@ do icycle = 1, ncycle
   endif 
 
   if (nbd.gt.0) then
-    Qforces = .true.
     do istep = 1, nbd
-      call energy
+      call energy(.true.)
       if (Qpres) then
         vir=dot_product(f(1:nele)%x,r(1:nele)%x)+dot_product(f(1:nele)%y,r(1:nele)%y)+dot_product(f(1:nele)%z,r(1:nele)%z)
         pres=pres+(nele-vir*i3*ikbt)*itvol*kba3bar*temp
@@ -388,7 +387,6 @@ do icycle = 1, ncycle
         endif
       endif ! Qnucl
     enddo
-    Qforces = .false.
   endif  ! nbd   
 
   ! Calculate charge density
@@ -587,8 +585,8 @@ do icycle = 1, ncycle
               call par_interact(iat,dener)
               etot(itype,iz) = etot(itype,iz) + dener    ! total interaction energy
               eion(itype,iz) = eion(itype,iz) + enonbond ! ion-ion interaction energy
-              esf(itype,iz) = esf(itype,iz) + egsbpa     ! static field energy
-              erf(itype,iz) = erf(itype,iz) + egsbpb     ! reaction field energy
+              esf(itype,iz) = esf(itype,iz) + estaticf     ! static field energy
+              erf(itype,iz) = erf(itype,iz) + erfpar     ! reaction field energy
               egvdw(itype,iz) = egvdw(itype,iz) + evdwgd ! repulsive energy
             endif   
           endif
@@ -604,10 +602,10 @@ do icycle = 1, ncycle
 
   !OUTPUT
   if (nprint.gt.0 .and. mod(icycle,nprint).eq.0) then  
-    if (ncycle*nbd.eq.0) call energy
+    if (ncycle*nbd.eq.0) call energy()
     if (Qpar .and. Qnucl) then
       write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded---------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-      write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eefpot+ebond+eang+edihe,egsbpa,egsbpb,evdwgd
+      write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
       if(Qcontrans.and.Qcontprint) then
         write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
         do ii=1,ctn
@@ -625,10 +623,10 @@ do icycle = 1, ncycle
       write(outu,'(10x,a)') '-------------------------------------------------------------------------------------------------------'
     else if (Qpar.and..not.Qnucl) then        
       write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded-----------PHIsf------------PHIrf----------PHIvdW'
-      write(outu,'(5x,i12,5f17.4)') icycle,ener,eelec+evdw+esrpmf+eefpot,egsbpa,egsbpb,evdwgd
+      write(outu,'(5x,i12,5f17.4)') icycle,ener,enonbond,estaticf,erfpar,evdwgd
       write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'
     else if (Qnucl.and..not.Qpar) then
-      write(outu,'(5x,i12,6f17.4)') icycle,ener,estack+ebp+eex+eqq+esolv,ebond+eang+edihe,egsbpa,egsbpb,evdwgd
+      write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,estaticf,erfpar,evdwgd
       if(Qcontrans.and.Qcontprint) then
         write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
         do ii=1,ctn
@@ -662,11 +660,11 @@ enddo ! icycle
 
 if (Qchdencnt) chden=sng(1.0/float(ncycle))*chden
 
-call energy
+call energy()
 if (nprint.eq.0) then
   if (Qpar .and. Qnucl) then
     write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i12,6f17.4)') icycle,ener,eelec+evdw+esrpmf+estack+ebp+eex+eqq+esolv+eefpot,ebond+eang+edihe,egsbpa,egsbpb,evdwgd
+    write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -684,10 +682,10 @@ if (nprint.eq.0) then
     write(outu,'(10x,a)') '--------------------------------------------------------------------------------------------------------'
   else if (Qpar.and..not.Qnucl) then
     write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i12,5f17.4)') icycle,ener,eelec+evdw+esrpmf+eefpot,egsbpa,egsbpb,evdwgd
+    write(outu,'(5x,i12,5f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
     write(outu,'(10x,a)') '----------------------------------------------------------------------------------------'
   else if (Qnucl.and..not.Qpar) then 
-    write(outu,'(5x,i12,6f17.4)') icycle,ener,estack+ebp+eex+eqq+esolv,ebond+eang+edihe,egsbpa,egsbpb,evdwgd
+    write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn

@@ -62,7 +62,6 @@ do igrand = 1, ngcmc
         ! The creation is accepted if a random number 'random(iseed)'
         ! between 0 and 1 is less than or equal to creation transition
         ! probability                   
-        ener = ener + dener
         nat(ib) = nat(ib) + 1
         ninsert(ib) = ninsert(ib) + 1
       else
@@ -89,7 +88,6 @@ do igrand = 1, ngcmc
       if (rndm().le.rate) then
        ! The destruction is accepted if a random number between 0 and 1 
        ! is less than or equal to destruction transition probability
-        ener = ener - dener
         nremove(ib) = nremove(ib) + 1
         call delpar(iat)
         nat(ib) = nat(ib) - 1

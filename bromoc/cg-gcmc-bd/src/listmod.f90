@@ -938,12 +938,26 @@ subroutine printpdb(nunit)
 implicit none
 integer i
 integer :: nunit
-real ibuf
+real ibuff
 
 !write (nunit,'(A6,I5)') 'REMARK',nele
 do i=1,nele
-  ibuf=parl(pe(i))%ibuf
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuf,etypl(et(i))%chg,''
+  ibuff=parl(pe(i))%ibuf
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuff,etypl(et(i))%chg,''
+enddo
+write (nunit,'(A)') 'END'
+end subroutine
+
+! Extended PDB
+subroutine printpdbe(nunit)
+implicit none
+integer i
+integer :: nunit
+real ibuff
+!write (nunit,'(A6,I5)') 'REMARK',nele
+do i=1,nele
+  ibuff=parl(pe(i))%ibuf
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F16.8,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuff,etypl(et(i))%chg,''
 enddo
 write (nunit,'(A)') 'END'
 end subroutine

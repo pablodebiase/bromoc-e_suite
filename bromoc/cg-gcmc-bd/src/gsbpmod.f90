@@ -25,11 +25,8 @@
 !     lstpl(*)                                 list of l index number in spherical harmonics y_{lm}
 !     lstpm(*)                                 list of m index number in spherical harmonics y_{lm}
 !     phix(*)                                  static field 
-!     egsbpa                                   static field energy
-!     egsbpb                                   reaction field energy
 !     phiv(*)                                  grid-based uniform repulsive potential 
 !                                              (zero inside and one outside protein and membrane)
-!     evdwgd                                   repulsive energy
 !     svdw                                     scaling factor of phiv
 !     nclx, ncly, nclz                         grid parameters
 !     dcel                                     mesh size (grid spacing)
@@ -54,8 +51,7 @@ real*4,allocatable :: chden(:)                                 ! charge density
 logical*1 Qchden,Qchdencnt,Qchdenorm                           ! charge density
 real    sqrfac,reffac                                          ! rfpar
 real*4,allocatable :: gsrfen(:),greff(:)                       ! rfpar
-!real*16 egsbpb,egsbpa,evdwgd
-real egsbpb,egsbpa,evdwgd
+!real*16 erfpar,estaticf,evdwgd
 real    svdw,vzmax,vzmin
 real*4,allocatable ::  phix(:)
 integer*1,allocatable :: phiv(:)

@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine energy
+subroutine energy(forces)
 use grandmod
 use gsbpmod
 use constamod
@@ -33,18 +33,22 @@ real  cofo
 real  eefp,fdf,fdv
 real  pener
 real  dist12
+logical*1 Qforcesbak
+logical,optional,intent(in) :: forces
+Qforcesbak = Qforces
+if (present(forces)) Qforces = forces
 
 ! Initializations
 ener     = 0.0
-eelec    = 0.0
+ememb    = 0.0
+estaticf = 0.0
+evdwgd   = 0.0
+erfpar   = 0.0
+eintern  = 0.0
 eefpot   = 0.0
+eelec    = 0.0
 evdw     = 0.0
 esrpmf   = 0.0
-ememb    = 0.0
-egsbpb   = 0.0
-evdwgd   = 0.0
-econ     = 0.0
-eintern  = 0.0
 
 if (Qenergy) then
   ! Initializations
@@ -58,12 +62,12 @@ if (Qenergy) then
 
   ! membrane contribution
   if (Qmemb) call membrane
-  ener = ememb
+  ! ememb
 
   ! static external field contribution
   if (Qphix) then
      call staticf1
-     ener = ener + egsbpa
+     ! estaticf
   endif
 
   ! grid-based repulsive potential
@@ -73,13 +77,12 @@ if (Qenergy) then
      else
         call vdwgd1spln
      endif
-     ener = ener + evdwgd
+     ! evdwgd
   endif
   
   if (Qrfpar) then
     call rfparion
-    ener = ener + erfpar
-    egsbpb=erfpar
+    ! erfpar
   endif
 
   ! bonded energy
@@ -91,7 +94,6 @@ if (Qenergy) then
       ! call charmmenergy(pener)
       eintern=eintern+pener
     enddo
-    ener = ener + eintern
   endif
 
   ! nonbonded interaction between elements
@@ -174,10 +176,14 @@ if (Qenergy) then
           enddo 
         enddo
       enddo
-    enddo 
+    enddo
+    enonbond = eefpot + eelec + evdw + esrpmf 
+  !  write(*,*) eefpot, eelec, evdw, esrpmf
   endif !Qnonbond
 
-  ener = eelec + evdw + esrpmf + eintern + eefpot + econ
+  ener = ememb + estaticf + evdwgd + erfpar + eintern + enonbond
+!  write(*,*) ener, ememb, estaticf, evdwgd, erfpar, eintern, enonbond
+  Qforces = Qforcesbak
 endif !Qenergy
 
 end subroutine
