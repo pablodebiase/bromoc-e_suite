@@ -86,7 +86,7 @@ if (Qenergy) then
   endif
 
   ! bonded energy
-  if (Qnobond) then
+  if (Qbond) then
     if (nparnuc .gt. 0) call nucenergy(eintern)
     pener=0.0
     do i=1+nparnuc,npar

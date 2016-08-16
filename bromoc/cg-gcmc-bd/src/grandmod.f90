@@ -58,7 +58,7 @@ real    cdie,rth,srpx,srpk,srpy,tvol
 real    afact,kappa,ikappa
 !integer typat(datom) 
 logical*1 Qsphere, Qecyl, Qbox
-logical*1 Qenergy, Qforces, Qnobond, Qnonbond, Qmemb, Qgr, Qrho, Qrdna, Qprob, Qdiffuse, Qsrpmf, Qionpair, Qenerprofile, Qprofile, Qsec, Qpres, Qpore, Qwarn, Qcountion, Qproxdiff 
+logical*1 Qenergy, Qforces, Qbond, Qnonbond, Qmemb, Qgr, Qrho, Qrdna, Qprob, Qdiffuse, Qsrpmf, Qionpair, Qenerprofile, Qprofile, Qsec, Qpres, Qpore, Qwarn, Qcountion, Qproxdiff 
 logical*1,allocatable :: Qlj(:),Qsrpmfi(:),Qefpot(:)
 
 ! membrane parameters
