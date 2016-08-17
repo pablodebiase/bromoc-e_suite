@@ -339,6 +339,7 @@ endif
 do icycle = 1, ncycle
 
   if (ngcmc.gt.0) then
+    call count()
     call grand(ngcmc,prob,icycle)
     ! count ions and accumulate for average
     if (Qpar) then
@@ -460,8 +461,6 @@ do icycle = 1, ncycle
       write(iuntfm,'(2x,e17.8,1x,f7.4)') ftime, fmemb 
     endif
   endif
-
-  call count()
 
   !Security outputfile contains coordinates and seed nnumbers
   if (Qsec) then

@@ -358,7 +358,7 @@ do while (.not. logfinal)
      if (istrs.gt.0) then
        j=inuc*3
        if (.not.QfirstP) j=j-1
-       call addptyp(j,'DNA1')
+       call addptyp(j,'DNA')
        if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of date in NUCLEOTIDE order', faterr)
        do j = 1, inuc
          ntype = ntype + 1
@@ -501,7 +501,7 @@ do while (.not. logfinal)
      if (istrs.eq.2) then
        j=inuc*3
        if (.not.QfirstP) j=j-1
-       call addptyp(j,'DNA2')
+       call addptyp(j,'DNA')
        ntypold = ntype      
        do j = 0, inuc-1
          ntype = ntype + 1
@@ -2379,7 +2379,7 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'count') then
   !        ---------------
      if (.not.Qbuf) call error ('shell_simul', 'COUNT order is defined before BUFFER order', faterr)
-     call COUNT
+     call count
      write(outu,*)
      write(outu,'(6x,a,i4)') 'Total number of ions ',npar-nparnuc
      do ib = 1, nbuffer
@@ -2440,7 +2440,7 @@ do while (.not. logfinal)
          enddo
        endif  
        write(outu,'(6x,a)') 'coordinates have been read'
-       call COUNT
+       call count
      elseif (check(com,'gener')) then
        dodna=.false.
        doions=.false.
