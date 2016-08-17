@@ -359,7 +359,9 @@ do icycle = 1, ncycle
 
   if (nbd.gt.0) then
     do istep = 1, nbd
-      call energy(.true.)
+      Qforces=.true.
+      call energy()
+      Qforces=.false.
       if (Qpres) then
         vir=dot_product(f(1:nele)%x,r(1:nele)%x)+dot_product(f(1:nele)%y,r(1:nele)%y)+dot_product(f(1:nele)%z,r(1:nele)%z)
         pres=pres+(nele-vir*i3*ikbt)*itvol*kba3bar*temp

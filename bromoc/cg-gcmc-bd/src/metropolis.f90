@@ -28,36 +28,36 @@ integer parn, imove, ne, sr, pne
 real bltz,eold, enew
 type(car) :: rr
 type(car),allocatable,dimension(:) :: rrori
-
+if (nparnuc.ge.npar) return
 pne = 0
 do imove = 1, nmcm
-   !pick one atom and new shift to position
-   call move(parn,rr)
-   ! backup previous position
-   ne = parl(parn)%ne
-   sr = parl(parn)%sr
-   if (allocated(rrori).and.ne.ne.pne) deallocate (rrori)
-   if (.not.allocated(rrori)) allocate (rrori(ne))
-   rrori = r(sr+1:sr+ne)
-   !calculate old energy
-   call par_interact(parn, eold)
-   !attempt move and rotate
-   call movepar(parn,rr,center=.true.)
-   !calculate new energy
-   call par_interact(parn, enew)
-   if (enew.le.eold) then
-      !accept the move
-      !ener = ener + (enew-eold)
-   else                            
-      bltz = exp(-(enew-eold)*ikbt)
-      if (rndm().lt.bltz) then
-         !accept the move
-         !ener = ener + (enew-eold)
-      else
-         ! restore original position
-         r(sr+1:sr+ne) = rrori
-      endif
-   endif 
-   pne = ne
+  !pick one atom and new shift to position
+  call move(parn,rr)
+  ! backup previous position
+  ne = parl(parn)%ne
+  sr = parl(parn)%sr
+  if (allocated(rrori).and.ne.ne.pne) deallocate (rrori)
+  if (.not.allocated(rrori)) allocate (rrori(ne))
+  rrori = r(sr+1:sr+ne)
+  !calculate old energy
+  call par_interact(parn, eold)
+  !attempt move and rotate
+  call movepar(parn,rr,center=.true.)
+  !calculate new energy
+  call par_interact(parn, enew)
+  if (enew.le.eold) then
+     !accept the move
+     !ener = ener + (enew-eold)
+  else                            
+     bltz = exp(-(enew-eold)*ikbt)
+     if (rndm().lt.bltz) then
+        !accept the move
+        !ener = ener + (enew-eold)
+     else
+        ! restore original position
+        r(sr+1:sr+ne) = rrori
+     endif
+  endif 
+  pne = ne
 enddo
 end subroutine

@@ -16,7 +16,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine energy(forces)
+subroutine energy()
 use grandmod
 use gsbpmod
 use constamod
@@ -33,10 +33,6 @@ real  cofo
 real  eefp,fdf,fdv
 real  pener
 real  dist12
-logical*1 Qforcesbak
-logical,optional,intent(in) :: forces
-Qforcesbak = Qforces
-if (present(forces)) Qforces = forces
 
 ! Initializations
 ener     = 0.0
@@ -183,7 +179,6 @@ if (Qenergy) then
 
   ener = ememb + estaticf + evdwgd + erfpar + eintern + enonbond
 !  write(*,*) ener, ememb, estaticf, evdwgd, erfpar, eintern, enonbond
-  Qforces = Qforcesbak
 endif !Qenergy
 
 end subroutine
