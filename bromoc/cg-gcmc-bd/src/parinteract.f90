@@ -201,43 +201,42 @@ sr = parl(parn)%sr
 
 do i=sr+1,sr+ne
   chi = etypl(et(i))%chg
-  ok=chi.eq.0.0
+  if (chi.eq.0.0) cycle
   xj=r(i)%x
   yj=r(i)%y
   zj=r(i)%z
   ok=ok.and.xj.le.xbcen1+tranx1.and.xj.ge.xbcen1-tranx1
   ok=ok.and.yj.le.ybcen1+trany1.and.yj.ge.ybcen1-trany1
   ok=ok.and.zj.le.zbcen1+tranz1.and.zj.ge.zbcen1-tranz1
-  if (ok) then 
-    !  ion cartesian coordinates in the local grid system              
-    xi = xj + tranx1-xbcen1
-    yi = yj + trany1-ybcen1
-    zi = zj + tranz1-zbcen1
-    !  integer*4 counter for ion cartesian coordinates        
-    ix = int(xi*idcel1)
-    iy = int(yi*idcel1)
-    iz = int(zi*idcel1)
-    if (ix.eq.nclx1-1) ix=nclx1-2
-    if (iy.eq.ncly1-1) iy=ncly1-2
-    if (iz.eq.nclz1-1) iz=nclz1-2
-    !Atom charge distribution by 8 adjacent grid points
-    do n1 = ix, ix+1
-      ai = xi - n1*dcel1
-      ai = 1.0 - abs(ai)*idcel1
-      do n2 = iy, iy+1
-        bi = yi - n2*dcel1
-        bi = 1.0 - abs(bi)*idcel1
-        do n3 = iz, iz+1
-          ci = zi - n3*dcel1
-          ci = 1.0 - abs(ci)*idcel1
-          fi = ai*bi*ci
-          in3 = n1*ncyz + n2*nclz1 + n3 + 1
-    !Electrostatic Energy 
-          energy = energy + (fi*chi*phix(in3)*celec)
-        enddo ! n3
-      enddo ! n2
-    enddo ! n1
-  endif
+  if (.not.ok) cycle
+  !  ion cartesian coordinates in the local grid system              
+  xi = xj + tranx1-xbcen1
+  yi = yj + trany1-ybcen1
+  zi = zj + tranz1-zbcen1
+  !  integer*4 counter for ion cartesian coordinates        
+  ix = int(xi*idcel1)
+  iy = int(yi*idcel1)
+  iz = int(zi*idcel1)
+  if (ix.eq.nclx1-1) ix=nclx1-2
+  if (iy.eq.ncly1-1) iy=ncly1-2
+  if (iz.eq.nclz1-1) iz=nclz1-2
+  !Atom charge distribution by 8 adjacent grid points
+  do n1 = ix, ix+1
+    ai = xi - n1*dcel1
+    ai = 1.0 - abs(ai)*idcel1
+    do n2 = iy, iy+1
+      bi = yi - n2*dcel1
+      bi = 1.0 - abs(bi)*idcel1
+      do n3 = iz, iz+1
+        ci = zi - n3*dcel1
+        ci = 1.0 - abs(ci)*idcel1
+        fi = ai*bi*ci
+        in3 = n1*ncyz + n2*nclz1 + n3 + 1
+  !Electrostatic Energy 
+        energy = energy + (fi*chi*phix(in3)*celec)
+      enddo ! n3
+    enddo ! n2
+  enddo ! n1
 enddo
 end subroutine
 
@@ -420,7 +419,8 @@ integer parm,itype,jtype
 integer nen,srn,nem,srm
 integer i,j,is
 real dist, dist2, dist6, idist, idist2
-real pener,emembi,erfpari,estaticfi,evdwgdi,enonbondi
+real pener
+!real emembi,erfpari,estaticfi,evdwgdi,enonbondi
 energy = 0.0
 
 ! Membrane
@@ -470,7 +470,7 @@ if (Qnonbond) then
         do j=srn+1,srn+nen
           jtype=et(j) 
           is=etpidx(itype,jtype)
-          dist2 = dotcar(r(i),r(j))
+          dist2 = dist2car(r(i),r(j))
           if (Qefpot(is)) then
             call gety(is,dist2,pener,dist)
             enonbondi=enonbondi+pener

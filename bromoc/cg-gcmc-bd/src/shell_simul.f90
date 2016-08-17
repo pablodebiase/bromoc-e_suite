@@ -1546,12 +1546,16 @@ do while (.not. logfinal)
     if (Qsrpmf)   write(outu,'(6x,a)') 'Short-range Interaction Term'
     if (Qrfpar)   write(outu,'(6x,a)') 'Reaction Field Parameter Term'
   
-    call energy(.true.)
-    write(outu,'(6x,a,f12.6)') 'Total energy (Forces On) ',ener
-    write(outu,'(6x,a,6f12.6)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond',ememb,estaticf,evdwgd,erfpar,eintern,enonbond
-    call energy(.false.)
-    write(outu,'(6x,a,f12.6)') 'Total energy (Forces Off)',ener
-    write(outu,'(6x,a,6f12.6)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond',ememb,estaticf,evdwgd,erfpar,eintern,enonbond
+    Qforces=.true.
+    call energy()
+    write(outu,'(6x,a,f16.8)') 'Total energy (Forces On) ',ener
+    write(outu,'(6x,a)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond'
+    write(outu,'(6x,6(x,f16.8))') ememb,estaticf,evdwgd,erfpar,eintern,enonbond
+    Qforces=.false.
+    call energy()
+    write(outu,'(6x,a,f16.8)') 'Total energy (Forces Off) ',ener
+    write(outu,'(6x,a)') 'ememb, estaticf, evdwgd, erfpar, eintern, enonbond'
+    write(outu,'(6x,6(x,f16.8))') ememb,estaticf,evdwgd,erfpar,eintern,enonbond
     Qmemb = logmemb 
     Qphix = logphix 
     Qphiv = logphiv 
@@ -1621,14 +1625,15 @@ do while (.not. logfinal)
   
     ! Calculate the interaction of particle "parn" with the rest of
     ! the system
+    write(outu,'(6x,a)') 'Particle Number, Total Energy, emembi, erfpari, estaticfi, evdwgdi, enonbondi'
     if (check(com,'allpart')) then
       do parn=1,npar
         call par_interact(parn,dener)
-        write(outu,'(6x,a,f12.6)') 'Interaction of particle ',parn,dener
+        write(outu,'(6x,i6,6(x,f18.6))') parn,dener,emembi,erfpari,estaticfi,evdwgdi,enonbondi
       enddo
     else
       call par_interact(parn,dener)
-      write(outu,'(6x,a,f12.6)') 'Interaction of particle ',parn,dener
+      write(outu,'(6x,i6,6(x,f18.6))') parn,dener,emembi,erfpari,estaticfi,evdwgdi,enonbondi
     endif
     Qmemb = logmemb 
     Qphix = logphix 
@@ -1893,7 +1898,7 @@ do while (.not. logfinal)
           if (unvec(iunit).eq.-1) call error('shell_simul','unit incorrect in EFPOT order', faterr)
           iunit = unvec(iunit)
           call gtdpar(com,'scal',scaldd,scald)
-          write(outu,*) '     Scaling ',etypl(i)%nam,'-',etypl(j)%nam,' potential by ',scaldd
+          write(outu,*) '     Scaling ',etypl(itype)%nam,'-',etypl(jtype)%nam,' potential by ',scaldd
           cnt=1
           if (cnt.gt.maxd) call error ('shell_simul','Number of data is greater than expected. Increase maxdata.',faterr) ! Check if maxdata is correct
           read(iunit,*,IOSTAT=kode) xy(1,cnt),xy(2,cnt)
@@ -2394,6 +2399,7 @@ do while (.not. logfinal)
   !        ---------------
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'COOR order is defined before PARTICLE and/or NUCLEOTIDE orders', faterr)
      call delparofkind(3)  ! Delete all particles added when ptype were created
+     call delparofkind(4)  ! Delete all particles added when ptype were created
      if (check(com,'read')) then
        call gtipar(com,'unit',iunit,1)
        if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
@@ -2458,6 +2464,8 @@ do while (.not. logfinal)
          enddo
        endif
        if (doions) then
+         call delparofkind(3)
+         call delparofkind(4)
          do ib = 1, nbuffer
            nat(ib) = nint(avnum(ib))
          enddo

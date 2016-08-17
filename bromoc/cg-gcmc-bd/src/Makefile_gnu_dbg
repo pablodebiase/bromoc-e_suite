@@ -13,8 +13,8 @@ FCOMPL = gfortran
 FFLAGC = -fno-align-commons -fdefault-real-8 
 CCOMPL = gcc
 CFLAGC =
-#OPT    = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
-OPT    = -Wall -ffree-line-length-none -fbacktrace -g -fdump-core -fcheck=all
+OPT    = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
+#OPT    = -Wall -ffree-line-length-none -fbacktrace -g -fdump-core -fcheck=all
 
 
 # Implicit rules
