@@ -1114,7 +1114,7 @@ do while (.not. logfinal)
          ! Transmembrane potential for a buffer
          call gtdpar(com,'volt',battery,0.0)
          ! OBTENTION OF THE ELECTROCHEMICAL POTENTIAL  
-         mu(nbuffer) = mu(nbuffer)+etypl(itype)%chg*battery*Coulomb/kcalmol
+         mu(nbuffer) = mu(nbuffer)+ptypl(itype)%chg*battery*Coulomb/kcalmol
        endif
      enddo
      Qbuf = .true.
