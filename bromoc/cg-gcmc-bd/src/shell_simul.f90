@@ -945,8 +945,8 @@ do while (.not. logfinal)
   
     ! define more constants
     kBT      = kboltz*temp/kcalmol
-    ikbt = 1.0/kbt
-    kbtdna = kbt
+    ikbt = 1.0/kBT
+    kbtdna = kBT
     ikbtdna = ikbt
     Qecyl=check(com,'ecyl') 
     Qsphere = check(com,'sphere') ! logical*1 variable
@@ -1336,7 +1336,23 @@ do while (.not. logfinal)
      ! time-step for BD [real*8,default=0.02]
      call gtdpar(com,'dt',dt,0.02)
      if (dt.le.0.0) call error ('shell_simul', 'dt is lower or equal than zero', faterr)
-     
+    
+     ! Set precalculated diffusion coefficient factors
+     kBTdt = dt * ikbt
+     do i=1,netnuc
+       fact1a(i)=etypl(i)%dif*kbtdna*dt
+       fact2a(i)=sqrt(2.0*dt*etypl(i)%dif)
+     enddo
+     do i=1+netnuc,netyp
+       fact1a(i)=etypl(i)%dif*kBTdt
+       fact2a(i)=sqrt(2.0*dt*etypl(i)%dif)
+     enddo
+     write(outu,'(6x,a)') 'Diffusion Factors per Element Type'
+     do i=1,netyp
+       write(outu,'(6x,i4,x,A4,3(x,f16.8))') i, etypl(i)%nam, etypl(i)%dif, fact1a(i), fact2a(i)
+     enddo
+     if (Qproxdiff) fact2pd=sqrt(2.0*dt*diff0)
+ 
      ! print frequency [integer,default=0]
      call gtipar(com,'nprint',nprint,0)
      if (nprint.lt.0) call error ('shell_simul', 'nprint is a negative number',faterr)
@@ -2604,17 +2620,6 @@ do while (.not. logfinal)
        enddo
        write(outu,'(6x,a,3(f12.6,a))')'DNA geometric center is now at  (',xm,',',ym,',',zm,')'
      endif
-     ! Set precalculated diffusion coefficient factors
-     kBTdt = dt * ikbt
-     do i=1,netyp
-       if (i.le.netnuc) then
-         fact1a(i)=etypl(i)%dif*kbtdna*dt
-       else
-         fact1a(i)=etypl(i)%dif*kBTdt
-       endif
-       fact2a(i)=sqrt(2.0*dt*etypl(i)%dif)
-     enddo
-     if (Qproxdiff) fact2pd=sqrt(2.0*dt*diff0)
      ! Print out data
      if (Qnucl) then
        write(outu,'(6x,a)') 'Native structure for B isoform of DNA'
