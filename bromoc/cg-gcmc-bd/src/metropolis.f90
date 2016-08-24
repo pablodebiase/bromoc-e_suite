@@ -28,7 +28,7 @@ integer parn, imove, ne, sr, pne
 real bltz,eold, enew
 type(car) :: rr
 type(car),allocatable,dimension(:) :: rrori
-if (nparnuc.ge.npar) return
+if (npar.le.nparnuc) return
 pne = 0
 do imove = 1, nmcm
   !pick one atom and new shift to position
@@ -45,19 +45,11 @@ do imove = 1, nmcm
   call movepar(parn,rr,center=.true.)
   !calculate new energy
   call par_interact(parn, enew)
-  if (enew.le.eold) then
-     !accept the move
-     !ener = ener + (enew-eold)
-  else                            
-     bltz = exp(-(enew-eold)*ikbt)
-     if (rndm().lt.bltz) then
-        !accept the move
-        !ener = ener + (enew-eold)
-     else
-        ! restore original position
-        r(sr+1:sr+ne) = rrori
-     endif
-  endif 
+  if (enew.gt.eold) then
+    bltz = exp(-(enew-eold)*ikbt)
+    ! restore original position
+    if (rndm().ge.bltz) r(sr+1:sr+ne) = rrori
+  endif
   pne = ne
 enddo
 end subroutine

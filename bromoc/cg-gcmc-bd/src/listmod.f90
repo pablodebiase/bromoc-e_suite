@@ -559,7 +559,11 @@ nocenter = .true.
 if (present(norot)) rotate=.not.norot
 if (present(center)) nocenter=.not.center
 if (parl(parn)%ne .eq. 1) then
-  call setcarmonopar(parn,sumcar(r(parl(parn)%sr+1),rd))
+  if (nocenter) then 
+    call setcarmonopar(parn,rd)
+  else
+    call setcarmonopar(parn,sumcar(r(parl(parn)%sr+1),rd))
+  endif
 else
   ! Randomly rotate particle
   if (rotate) call uranrot(parn,nocenter=nocenter)
