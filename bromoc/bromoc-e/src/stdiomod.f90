@@ -28,6 +28,6 @@ parameter         (stdin=5, stdout=6)
 !*mdc*else
 parameter         (stderr=0)
 !*mdc*endif
-integer           inpu, outu, iuntrj, iunfbs, iuntfm, iuntsc, iuncnt, iunff, iuncon !, iuncorr, xyzunit
+integer           inpu, outu, iuntrj, iunfbs, iuntfm, iuntsc, iuncnt, iunprm, iunpsf !, iuncorr, xyzunit
 character*7       frmt 
 end module

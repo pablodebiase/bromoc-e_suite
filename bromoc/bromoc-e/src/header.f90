@@ -26,17 +26,15 @@ write (lus,500)
 !.....Formats:
 500  format ( &
  1x,'*************************************************************************************'/ &
- 1x,'*******                         BROMOC  -  CG-GCMC-BD                         *******'/ &
+ 1x,'*******                              BROMOC-E                                 *******'/ &
  1x,'*******        Simulation Program for Electrodiffusion, Gran Canonical        *******'/ &
  1x,'*******        Monte Carlo, Brownian Dynamics, Coarse Grain Model DNA         *******'/ &
  1x,'*******        and CHARMM force field reader for Solute and Solvent           *******'/ &
- 1x,'*******        (c) 2010 Sergei Y. Noskov,       University of Calgary         *******'/ &
- 1x,'*******        (c) 2010 Carlos J. F. Solano,    University of Calgary         *******'/ &
- 1x,'*******        (c) 2011 Pablo M. De Biase,      University of Calgary         *******'/ &
- 1x,'*******                       Version 5.00 (2016/08/14)                       *******'/ &
+ 1x,'*******        (c) 2016 Pablo M. De Biase,   Superluminal Technologies Ltd.   *******'/ &
+ 1x,'*******                       Version 5.00 (2016/08/24)                       *******'/ &
  1x,'*************************************************************************************'/ &
  1x,'*******                                                                       *******'/ & 
- 1x,'******* Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)         *******'/ &
+ 1x,'******* Copyright (C) 2016 Pablo M. De Biase (pablodebiase@gmail.com)         *******'/ &
  1x,'*******                                                                       *******'/ &
  1x,'******* This program is free software: you can redistribute it and/or modify  *******'/ &
  1x,'******* it under the terms of the GNU General Public License as published by  *******'/ &

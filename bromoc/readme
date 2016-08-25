@@ -1,4 +1,4 @@
-BROMOC Suite  (2011-2014)
+BROMOC-E Suite  (2011-2014)
 ************
 ---------------------------------------------------------------
 If you use this program please site us:
@@ -40,10 +40,10 @@ $ ./install
 $ ./install intel
 
 
-CG-GCMC-BD
+BROMOC-E
 ==========
 
-$ cd cg-gcmc-bd/src
+$ cd bromoc-e/src
 
 #For GNU Compilers
 $ make clean -f Makefile_gfortran

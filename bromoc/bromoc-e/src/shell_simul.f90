@@ -626,19 +626,19 @@ do while (.not. logfinal)
      deallocate(xnat,ynat,znat,rnat,phinat)
      !call printpdb(outu) ! debug
   ! **********************************************************************
-  elseif (wrd5.eq.'atoms') then
+  elseif (wrd5.eq.'ptype') then
   !       ---------------
-    if (.not.Qsystem) call error ('shell_simul', 'SYSTEM must be defined before ATOMS order', faterr)
+    if (.not.Qsystem) call error ('shell_simul', 'SYSTEM must be defined before PTYPE order', faterr)
     ! unit number for force field [integer,default=0]
-    call gtipar (com,'iunff',iunff,0)
-    if (iunff.le.0 .or. iunff.gt.maxopen) call error ('shell_simul', 'Incorrect unit in ATOMS order', faterr)
-    if (unvec(iunff).eq.-1) call error ('shell_simul', 'Incorrect unit in ATOMS order', faterr)
-    iunff = unvec(iunff)
+    call gtipar (com,'iunprm',iunprm,0)
+    if (iunprm.le.0 .or. iunprm.gt.maxopen) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+    if (unvec(iunprm).eq.-1) call error ('shell_simul', 'Incorrect unit in ATOMS order', faterr)
+    iunprm = unvec(iunprm)
     ! unit number for connectivity [integer,default=0]
-    call gtipar (com,'iuncon',iuncon,0)
-    if (iuncon.le.0 .or. iuncon.gt.maxopen) call error ('shell_simul', 'Incorrect unit in ATOMS order', faterr)
-    if (unvec(iuncon).eq.-1) call error ('shell_simul', 'Incorrect unit in ATOMS order', faterr)
-    iuncon = unvec(iuncon)
+    call gtipar (com,'iunpsf',iunpsf,0)
+    if (iunpsf.le.0 .or. iunpsf.gt.maxopen) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+    if (unvec(iunpsf).eq.-1) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+    iunpsf = unvec(iunpsf)
     if (Qatexp) then
       deallocate (psf_atomtype,psf_atomtype2)
       deallocate (typen,non_of_charge,nonbonded,sdat,qat,non_labels,atom_labels,psf_charge)
@@ -656,15 +656,15 @@ do while (.not. logfinal)
     ok = check(com,'print')
     ! water viscosity (Kcal ps mole^(-1) Angs.^(-1)) [real,default=0.123]
     call gtdpar(com,'viscwat',viscwat,0.1225)
-    if (viscwat.lt.0.0) call error ('shell_simul', 'Wrong value for water viscosity in ATOMS order', faterr)
+    if (viscwat.lt.0.0) call error ('shell_simul', 'Wrong value for water viscosity in PTYPE order', faterr)
     ! scale factor for self-diffusion calculation [real,deafult=1.0]
     call gtdpar(com,'scald',scldiff,1.0)
-    if (scldiff.lt.0.0) call error ('shell_simul', 'Wrong value for scale factor for self-diffusion calculation in ATOMS order', faterr)
+    if (scldiff.lt.0.0) call error ('shell_simul', 'Wrong value for scale factor for self-diffusion calculation in PTYPE order', faterr)
     ! read PRM file
-    write(outu,'(6x,a)') 'EXPLICIT ATOMS: READ PRM FILE'
+    write(outu,'(6x,a)') 'PARTICLE TYPE: READ PRM FILE'
     call readcharmm(ok)
     ! read PSF file
-    write(outu,'(6x,a)') 'EXPLICIT ATOMS: READ PSF FILE'
+    write(outu,'(6x,a)') 'PARTICLE TYPE: READ PSF FILE'
     call readpsf(ok)
     ! deallocate PRM routine variables
     deallocate (charmm_label,charmm_mass)
@@ -695,7 +695,7 @@ do while (.not. logfinal)
         itype=getptyp(wrd4)
         if (itype.eq.0) then
           call addmonoptyp(wrd4)
-          write(outu,*) 'Particle '//wrd4//' added' 
+          write(outu,*) 'Mono-Particle '//wrd4//' added' 
           itype=nptyp
           ! particle charge [real*8,default=0]
           call gtdpar(com,'charge',etypl(netyp)%chg,0.0)
@@ -739,7 +739,32 @@ do while (.not. logfinal)
       write(outu,'(6x,a,2f8.3)') etypl(i)%nam,etypl(i)%chg,etypl(i)%dif
     enddo
     write(outu,*)
-  
+  ! **************************************************************************
+  elseif (wrd5.eq.'sdiff') then
+  !       ---------------
+    endlog = .false.
+    do while (.not.endlog)
+      call getlin(com,inpu,outu) ! new commands line
+      endlog = check(com,'end')
+      if (.not.endlog) then
+        ! Obtention of ion type atnam(itype)
+        call getfirst(com,wrd4)
+        itype=getetyp(wrd4)
+        ! diffusion constant [real,default=previous value]
+        call gtdpar(com,'diffusion',etypl(itype)%dif,0.0)
+        if (etypl(itype)%dif.lt.0.0) call error ('shell_simul', 'Diffusion coefficient is negative in SDIFF order', faterr)
+      endif
+    enddo
+    write(outu,*)
+    write(word,*) 'DIFFUSION -> diffusion constant [Angs.^2/ps]'
+    write(outu,'(6x,a)') trim(adjustl(word))
+    write(word,*) 'NAME---DIFFUSION'
+    write(outu,'(6x,a)') trim(adjustl(word))
+    do i = 1, netyp
+      write(word,*) etypl(i)%nam,etypl(i)%dif
+      write(outu,'(6x,a)') trim(adjustl(word))
+    enddo
+    write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'apfor') then
   !       ----------------

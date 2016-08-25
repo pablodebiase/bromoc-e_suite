@@ -41,30 +41,30 @@ dodih = .false.
 dodef = .false.
 docmap = .false.
 ! *** read header
-read(iuncon,*)
+read(iunpsf,*)
 
 ! *** read title section
-read(iuncon,*)
-read(iuncon,*) dummyi,dummyc
+read(iunpsf,*)
+read(iunpsf,*) dummyi,dummyc
 do i = 1,dummyi
-  read(iuncon,*)
+  read(iunpsf,*)
 enddo
 
 ! *** read atoms section
-read(iuncon,*)
-read(iuncon,*) natt,dummyc
+read(iunpsf,*)
+read(iunpsf,*) natt,dummyc
 if (natt.le.0) call error ('readpsg', 'Wrong psf format', faterr)
 do i = 1,natt
-  read(iuncon,*)
+  read(iunpsf,*)
 enddo
 
 ! *** rest of sections
 ok = .true.
 ok1 = .true.
 do while (ok.and.ok1) 
-  read(iuncon,*,iostat=i)
+  read(iunpsf,*,iostat=i)
   if (i.eq.0) then
-    read(iuncon,*,iostat=i) dummyi,dummyc
+    read(iunpsf,*,iostat=i) dummyi,dummyc
     if (dummyi.lt.0) call error ('readpsf', 'Wrong psf format', faterr)
     ok2 = dummyi.gt.0
   else if (i.gt.0) then
@@ -115,7 +115,7 @@ do while (ok.and.ok1)
     ilines = nbonds/4 
     if (4*ilines.lt.nbonds) ilines = ilines + 1
     do i = 1,ilines
-      read(iuncon,*)
+      read(iunpsf,*)
     enddo
     dobond = .true.
   endif
@@ -124,7 +124,7 @@ do while (ok.and.ok1)
     ilines = nbends/3 
     if (3*ilines.lt.nbends) ilines = ilines + 1
     do i = 1,ilines
-      read(iuncon,*)
+      read(iunpsf,*)
     enddo
     doang = .true.
   endif
@@ -133,7 +133,7 @@ do while (ok.and.ok1)
     ilines = ntorts/2 
     if (2*ilines.lt.ntorts) ilines = ilines + 1
     do i = 1,ilines
-      read(iuncon,*)
+      read(iunpsf,*)
     enddo
     dodih = .true.
   endif
@@ -142,14 +142,14 @@ do while (ok.and.ok1)
     ilines = ndeforms/2 
     if (2*ilines.lt.ndeforms) ilines = ilines + 1
     do i = 1,ilines
-      read(iuncon,*)
+      read(iunpsf,*)
     enddo
     dodef = .true.
   endif
   if (Qlcmap .and. .not.docmap) then
     ncmaps = dummyi
     do i = 1,ncmaps
-      read(iuncon,*)
+      read(iunpsf,*)
     enddo
     docmap = .true.
   endif
@@ -167,28 +167,28 @@ if (Qlcmap .and. .not.Qchmmcmap) call error ('readpsf', 'PSF and CHARMM paramete
 
 
 ! *** OBTENTION OF PARAMETERS
-rewind(unit=iuncon)
+rewind(unit=iunpsf)
 
 ! *** read header
-read(iuncon,*)
+read(iunpsf,*)
 
 ! *** read title section
-read(iuncon,*)
-read(iuncon,*) dummyi,dummyc
+read(iunpsf,*)
+read(iunpsf,*) dummyi,dummyc
 do i = 1,dummyi
-  read(iuncon,*)
+  read(iunpsf,*)
 enddo
 
 ! *** read atoms section
-read(iuncon,*)
-read(iuncon,*) natt,dummyc
+read(iunpsf,*)
+read(iunpsf,*) natt,dummyc
 allocate(psf_nq(natt),psf_qat(natt,natt),psf_mass(natt),val(natt),psf_atomtype(natt),psf_atomtype2(natt),psf_non_labels(natt))
 ! obtention of maxtypes and some arrays for more assignaments
 Qnet = 0.0
 maxtypes = 0
 psf_nq = 0
 do i = 1,natt
-  read(iuncon,*) IDat,dummyc,dummyi,dummyc,dummyc,atname,atomchar,atommass,dummyi
+  read(iunpsf,*) IDat,dummyc,dummyi,dummyc,dummyc,atname,atomchar,atommass,dummyi
   if (IDat.le.0 .or. IDat.gt.natt) call error ('readpsf', 'Wrong atom ID', faterr)
   Qnet = Qnet + atomchar
   j = 0
@@ -282,8 +282,8 @@ deallocate(psf_non_labels,psf_nq,psf_qat)
 
 ! *** read bond section
 if (Qlbond) then
-  read(iuncon,*)
-  read(iuncon,*) nbonds,dummyc
+  read(iunpsf,*)
+  read(iunpsf,*) nbonds,dummyc
   ! allocations
   allocate (bonds(3,nbonds),psf_btype(2,nbonds))
   ! obtention of nbondt, bonds and an array for more assignaments
@@ -291,7 +291,7 @@ if (Qlbond) then
   nbondt = 0
   ibonds = 0
   do i = 1,ilines
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8 
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8 
     ! first bond
     call psf_bond(ibonds,iat1,iat2,val,psf_btype)
     ! second bond
@@ -303,16 +303,16 @@ if (Qlbond) then
   enddo ! next i
   irest = nbonds - ibonds ! rest of bonds to read in the last line
   if (irest.eq.1) then
-    read(iuncon,*) iat1,iat2
+    read(iunpsf,*) iat1,iat2
     call psf_bond(ibonds,iat1,iat2,val,psf_btype)
   else if (irest.eq.2) then
-    read(iuncon,*) iat1,iat2,iat3,iat4
+    read(iunpsf,*) iat1,iat2,iat3,iat4
     ! first bond
     call psf_bond(ibonds,iat1,iat2,val,psf_btype) 
     ! second bond
     call psf_bond(ibonds,iat3,iat4,val,psf_btype)
   else if (irest.eq.3) then
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6
     ! first bond
     call psf_bond(ibonds,iat1,iat2,val,psf_btype)
     ! second bond
@@ -345,8 +345,8 @@ endif ! Qlbond
 
 ! *** read bond angle section
 if (Qlang) then
-  read(iuncon,*)
-  read(iuncon,*) nbends,dummyc
+  read(iunpsf,*)
+  read(iunpsf,*) nbends,dummyc
   ! allocations
   allocate (bends(4,nbends),psf_btype(3,nbends))
   ! obtention of nbendt, bends and an array for more assignaments
@@ -354,7 +354,7 @@ if (Qlang) then
   nbendt = 0
   ibends = 0
   do i = 1,ilines
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8,iat9 
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8,iat9 
     ! first bond angle
     call psf_bend(ibends,iat1,iat2,iat3,val,psf_btype) 
     ! second bond angle
@@ -364,10 +364,10 @@ if (Qlang) then
   enddo ! next i
   irest = nbends - ibends ! rest of bond angles to read in the last line
   if (irest.eq.1) then
-    read(iuncon,*) iat1,iat2,iat3
+    read(iunpsf,*) iat1,iat2,iat3
     call psf_bend(ibends,iat1,iat2,iat3,val,psf_btype)
   else if (irest.eq.2) then
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6
     ! first bond angle
     call psf_bend(ibends,iat1,iat2,iat3,val,psf_btype)
     ! second bond angle 
@@ -457,8 +457,8 @@ endif ! Qlang
 
 ! *** read dihedral angle section
 if (Qldih) then
-  read(iuncon,*)
-  read(iuncon,*) ntorts,dummyc
+  read(iunpsf,*)
+  read(iunpsf,*) ntorts,dummyc
   ! allocations
   allocate (torts(5,ntorts),psf_btype(4,ntorts))
   ! obtention of ntortt, torts and an array for more assignaments
@@ -466,7 +466,7 @@ if (Qldih) then
   ntortt = 0
   itort = 0
   do i = 1,ilines
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8
     ! first dihedral angle
     call psf_dih(itort,iat1,iat2,iat3,iat4,val,psf_btype)
     ! second dihedral angle
@@ -474,7 +474,7 @@ if (Qldih) then
   enddo ! next i
   irest = ntorts - itort ! rest of dihedral angles to read in the last line
   if (irest.eq.1) then
-    read(iuncon,*) iat1,iat2,iat3,iat4
+    read(iunpsf,*) iat1,iat2,iat3,iat4
     call psf_dih(itort,iat1,iat2,iat3,iat4,val,psf_btype)
   endif
   ! allocations
@@ -518,8 +518,8 @@ endif ! Qldih
 
 ! *** read improper angle section
 if (Qldef) then
-  read(iuncon,*)
-  read(iuncon,*) ndeforms,dummyc
+  read(iunpsf,*)
+  read(iunpsf,*) ndeforms,dummyc
   ! allocations
   allocate (deforms(5,ndeforms),psf_btype(4,ndeforms))
   ! obtention of ndeformt, deforms and an array for more assignaments
@@ -527,7 +527,7 @@ if (Qldef) then
   ndeformt = 0
   ideform = 0
   do i = 1,ilines
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8
     ! first improper angle
     call psf_imp(ideform,iat1,iat2,iat3,iat4,val,psf_btype)
     ! second improper angle
@@ -535,7 +535,7 @@ if (Qldef) then
   enddo ! next i
   irest = ndeforms - ideform ! rest of improper angles to read in the last line
   if (irest.eq.1) then
-    read(iuncon,*) iat1,iat2,iat3,iat4
+    read(iunpsf,*) iat1,iat2,iat3,iat4
     call psf_imp(ideform,iat1,iat2,iat3,iat4,val,psf_btype)
   endif
   ! allocations
@@ -580,8 +580,8 @@ endif ! Qldef
 
 ! *** read cross-term section
 if (Qlcmap) then
-  read(iuncon,*)
-  read(iuncon,*) ncmaps,dummyc
+  read(iunpsf,*)
+  read(iunpsf,*) ncmaps,dummyc
   ! allocations
   allocate(cmaps(3,ncmaps),lthetacmap(ntorts),lpsicmap(ntorts),psf_btype(8,ncmaps))
   allocate(thetacmap(ncmaps),psicmap(ncmaps),attcmap(4,ncmaps),atpcmap(4,ncmaps),nablatcmp(3,4,ncmaps),nablapcmp(3,4,ncmaps))
@@ -590,7 +590,7 @@ if (Qlcmap) then
   lpsicmap = 0
   ncmap = 0
   do i = 1,ncmaps
-    read(iuncon,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8
+    read(iunpsf,*) iat1,iat2,iat3,iat4,iat5,iat6,iat7,iat8
     if (iat1.le.0 .or. iat2.le.0 .or. iat3.le.0 .or. iat4.le.0 .or. iat1.gt.natt .or. iat2.gt.natt .or. iat3.gt.natt .or.iat4.gt.natt) & 
       call error ('readpsf', 'Wrong first dihedral angle in cross-term section', faterr)
     if (iat5.le.0 .or. iat6.le.0 .or. iat7.le.0 .or. iat8.le.0 .or. iat5.gt.natt .or. iat6.gt.natt .or. iat7.gt.natt .or.iat8.gt.natt) & 

@@ -16,7 +16,7 @@ if [ "$1" == "intel" ]; then
   if [ ! -d bin ]; then 
     mkdir bin 
   fi
-  cd cg-gcmc-bd
+  cd bromoc-e
   if [ ! -d bin ]; then
     mkdir bin
   fi
@@ -73,7 +73,7 @@ else
   if [ ! -d bin ]; then
     mkdir bin
   fi
-  cd cg-gcmc-bd
+  cd bromoc-e
   if [ ! -d bin ]; then
     mkdir bin
   fi

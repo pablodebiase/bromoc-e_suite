@@ -29,13 +29,13 @@ chmmnonb  = 0 ! Number of nonbonded pair types
 chmmnbfix = 0 ! Number of VDW interactions between specific atom pair types to be modified
 chmmhbond = 0 ! Number of hydrogen bond types
 ! SECTION B: ATOMS
-call getlin(com,iunff,outu)
+call getlin(com,iunprm,outu)
 call getfirst(com,word)
 word = lcase(word)
 if (word(1:4).ne.'atom') call error ('readcharmm', 'ATOMS section is not found', faterr)
 ok = .true.
 do while (ok)
-  call getlin(com,iunff,outu)  
+  call getlin(com,iunprm,outu)  
   call getfirst(com,word)
   word = lcase(word)
   endlog  = word(1:3).eq.'end' 
@@ -62,7 +62,7 @@ if (chmmntype.eq.0) call error ('readcharmm', 'Wrong number of atom types', fate
 if (bondlog) then
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)  
+    call getlin(com,iunprm,outu)  
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -83,7 +83,7 @@ Qchmmbond = chmmbond.ne.0
 if (anglog) then
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)  
+    call getlin(com,iunprm,outu)  
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -111,7 +111,7 @@ Qchmmub = chmmub.ne.0
 if (dihlog) then
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -129,7 +129,7 @@ Qchmmdih = chmmdih.ne.0
 if (implog) then
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -147,7 +147,7 @@ if (cmaplog) then
   imax = 0
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -172,7 +172,7 @@ if (cmaplog) then
       chmmcmap = chmmcmap +1
       do j = 1, i
         do l = 1, k
-          call getlin(com,iunff,outu)
+          call getlin(com,iunprm,outu)
         enddo
       enddo  
     endif
@@ -184,7 +184,7 @@ if (nonblog) then
   i = 0
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -206,7 +206,7 @@ endif
 if (nbflog) then
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -221,7 +221,7 @@ Qchmmnbfix = chmmnbfix.ne.0
 if (hbonlog) then
   ok = .true.
   do while (ok)
-    call getlin(com,iunff,outu) 
+    call getlin(com,iunprm,outu) 
     call getfirst(com,word)
     word = lcase(word)
     endlog  = word(1:3).eq.'end' 
@@ -261,11 +261,11 @@ endif
 allocate(charmm_typen(chmmntype,chmmntype),charmm_nonbonded(4,chmmnonb))
 
 ! *** OBTENTION OF PARAMETERS
-rewind(unit=iunff)
+rewind(unit=iunprm)
 ! SECTION B: ATOMS
-call getlin(com,iunff,outu)
+call getlin(com,iunprm,outu)
 do i = 1, chmmntype
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   call getfirst(com,word) 
   call getfirst(com,word)
   call getfirst(com,charmm_label(i)) ! atom type name
@@ -277,9 +277,9 @@ enddo ! next i
 ! Kb: Kcal/mole/A**2
 ! b0 : A
 if (Qchmmbond) then
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   do i = 1, chmmbond    
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     call fatnam(charmm_label,1,chmmntype,word,itype)
     call getfirst(com,word)
@@ -307,10 +307,10 @@ endif ! Qchmmbond
 ! Kub: Kcal/mole/A**2
 ! S0: A
 if (Qchmmang) then
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   j = 0
   do i = 1, chmmang
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     call fatnam(charmm_label,1,chmmntype,word,itype)
     call getfirst(com,word)
@@ -367,13 +367,13 @@ endif ! Qchmmang
 ! n: multiplicity
 ! delta : degrees
 if (Qchmmdih) then
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   allocate(tmp_dtype(4,chmmdih),tmp_dih(2,chmmdih),tmp_ndih(chmmdih),tmp_nterms(chmmdih))
   tmp_nterms = 1
   charmm_nmax = 1
   diht = 0
   do i = 1, chmmdih
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)
     if (lcase(word).ne.'x') then 
       call fatnam(charmm_label,1,chmmntype,word,itype)
@@ -639,11 +639,11 @@ endif ! Qchmmdih
 ! Ordinarily, improper dihedrals are given a multiplicity of 0, which imposes a harmonic restoring potential
 ! instead of a cosine function.  In this case, the central atom must be either the first or the last atom 
 if (Qchmmimp) then
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   allocate(tmp_dtype(4,chmmimp),tmp_dih(2,chmmimp))
   do i = 1, chmmimp
     j = 0
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word)     
     if (lcase(word).ne.'x') then 
       call fatnam(charmm_label,1,chmmntype,word,itype)
@@ -829,9 +829,9 @@ if (Qchmmimp) then
 endif ! Qchmmimp
 ! SECTION G: CMAP
 if (Qchmmcmap) then
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   do i = 1, chmmcmap
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     ! get angles   
     ! first angle: theta angle (C-N-C_alpha-C)
     call getfirst(com,word)
@@ -904,7 +904,7 @@ if (Qchmmcmap) then
       m = charmm_ncmap(i)*(j-1)
       n = 0
       do l = 1, k
-         call getlin(com,iunff,outu)
+         call getlin(com,iunprm,outu)
          if (l.lt.k) then
            do p = 1, 5
              n = n + 1
@@ -935,9 +935,9 @@ do itype = 1, chmmntype
     charmm_typen(jtype,itype) = i
   enddo
 enddo
-call getlin(com,iunff,outu)
+call getlin(com,iunprm,outu)
 do i = 1, chmmntype
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   call getfirst(com,word) 
   call fatnam(charmm_label,1,chmmntype,word,itype) ! atom type
   j = charmm_typen(itype,itype) ! nonbonded pair
@@ -977,9 +977,9 @@ do itype = 1, chmmntype-1
 enddo
 ! SECTION I: NBFIX
 if (Qchmmnbfix) then
-  call getlin(com,iunff,outu)
+  call getlin(com,iunprm,outu)
   do i = 1, chmmnbfix
-    call getlin(com,iunff,outu)
+    call getlin(com,iunprm,outu)
     call getfirst(com,word) 
     call fatnam(charmm_label,1,chmmntype,word,itype) ! first atom type
     call getfirst(com,word) 

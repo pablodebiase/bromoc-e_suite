@@ -1,17 +1,17 @@
                      -----------------------------------------------
-                    |  BROMOC (CG-GCMC-BD) 4.14 Documentation file  |
+                    |  BROMOC-E 5.00 Documentation file            |
                      -----------------------------------------------
 
 
   Coarse Grain, Grand Canonical Monte Carlo and Brownian Dynamics Simulation Program
   -----------------------------------------------------------------------------------
 
-  BROMOC (CG-GCMC-BD: Coarse Grain, Grand Canonical Monte Carlo and Brownian Dynamics) program is designed to simulate a Brownian dynamics trajectory of ions and a Coarse Grained DNA in a channel/membrane system. In particular, the Grand Canonical Monte Carlo method is used to maintain the desired electrochemical conditions in the boundaries (buffer regions) of the simulation system which are in (equilibrium) contact with the bulk. BROMOC can be used to do Brownian dynamics simulations and Monte Carlo moves of ions. BROMOC package include a variety of tools to perform a variety of analysis and set-up parameters for BROMOC runs. BROMOC can be used by setting up an input file with the corresponding keywords and command to do the desired simulation.
+  BROMOC-E (Coarse Grain, Grand Canonical Monte Carlo and Brownian Dynamics) program is an Extended version of BROMOC designed to simulate a Brownian dynamics trajectory of atomistic or coarse grain particles such as mono/poli-atomic ions, prebuilt Coarse Grained DNA, or any other particle from CHARMM Force Field format in a channel/membrane system. In particular, the Grand Canonical Monte Carlo method is used to maintain the desired electrochemical conditions in the boundaries (buffer regions) of the simulation system which are in (equilibrium) contact with the bulk. BROMOC can be used to do Brownian dynamics simulations and Monte Carlo moves of mobile particles (ions or solvent). BROMOC package include a variety of tools to perform a variety of analysis and set-up parameters for BROMOC runs and to compute effective potentials. BROMOC can be used by setting up an input file with the corresponding keywords and command to do the desired simulation.
 
 LAST MODIFICATION
 -----------------
 
-May 27th, 2016
+Aug 24th, 2016
 
 
 REFERENCES
@@ -46,7 +46,7 @@ BUGS
 AUTHORS
 -------
 
-  BROMOC was developed based on GCMC-BD program.
+  BROMOC-E was developed based on GCMC-BD, BROMOC and BROMOCEA programs.
 
    GCMC-BD Authors:
    . Benoit Roux at roux@uchicago.edu, phone 773-834-3557 
@@ -58,6 +58,15 @@ AUTHORS
    . Pablo M. De Biase at pablodebiase@gmail.com
    . Sergei Noskov at snoskov@ucalgary.ca
    . Carlos Solano at cjfqct@gmail.com
+
+   BROMOCEA Authors:
+   . Carlos Solano at cjfqct@gmail.com
+   . Ulrich Kleinekathöfer at u.kleinekathoefer@jacobs-university.de
+   . Sergei Noskov at snoskov@ucalgary.ca
+   . Pablo M. De Biase at pablodebiase@gmail.com
+
+   BROMOC-E Author:
+   . Pablo M. De Biase at pablodebiase@gmail.com
 
 
 INTERPRETATION OF SYMBOLS
@@ -77,8 +86,10 @@ TITLE        title
 SYSTEM       define size of box, temperature, dielectric constant, ionic strength, debye huckel, iseed, etc
 NUCLEOTIDES  define DNA
 APFORCE      apply force to DNA sites
+PTYPE        define particle type from CHARMM Force Field (.PRM) and Connectivity files (.PSF)
 PARTICLES    define free particles (ions)
 BUFFERS      define GCMC buffers region
+SDIFF        define single diffusion constants for each element type defined in PTYPE or PARTICLE
 LJSIN        define single particle Lennard Jones parameters
 LJPAR        define pair of particles Lennard Jones parameters
 MEMBRANE     define membrane
@@ -362,10 +373,50 @@ example3:
  END
 
 
+***************************************
+*** PTYPE: Particle Type definition ***
+***************************************
+   The particle types are defined from CHARMM Force Field read from .prm files and the connectivity is read from .psf files.
+
+syntax:
+
+  [PTYPE] iunprm (integer) iunpsf (integer) {print} [viscwat (real)] [scald (real)]
+
+  iunprm             | 0 | : File unit number for the CHARMM Parameter file (.prm)
+  iunpsf             | 0 | : File unit number for the connectivity file (.psf)
+  {print}                  : Prints information when reading each file
+  viscwat       | 0.1225 | : Water Viscosity
+  scald            | 1.0 | : Sca;e Factor for self-diffusion calculation
+                           
+ 
+*****************************************
+*** SDIFF: Single Diffusion Constants ***
+*****************************************
+   Single diffusion constants or diffusivities are defined or redefined for each element type declared in PTYPE, PARTICLE or NUCLEO.
+
+syntax:
+
+  [SDIFF]
+  <element-type> [diffusion (real)]
+  END
+
+  <element-type>      : element type (should be less than 4 characters)
+  diffusion     |0.0| : diffusion constant [Ang.**2/ps]
+
+example:
+
+  SDIFF
+  POT  diffusion 0.196
+  CLA  diffusion 0.203
+  Ab   diffusion 0.001
+  S    diffusion 0.001
+  P    diffusion 0.001
+  END
+
+
 **************************************
 *** PARTICLES: Particle definition ***
 **************************************
-
 
    The properties of ions are defined for the rest of the simulation such as type, charge and diffusivity. Different ions can be defined in a separate line. If NUCLEOTIDES is not present cannot be omitted.
 
@@ -385,7 +436,6 @@ example:
   POT  charge  1.0  diffusion 0.196
   CLA  charge -1.0  diffusion 0.203
   END
-
 
 
 **********************************
