@@ -1,3 +1,18 @@
+*************************************************************************
+                             BROMOC-E:
+ELECTRODIFFUSION, BROWNIAN DYNAMICS, GRAN CANONICAL MONTE CARLO, 
+COARSE GRAIN MODEL DNA AND EXPLICIT SOLUTE AND SOLVENT SIMULATION PROGRAM
+************************************************************************* 
+(c) 2016 P. M. De Biase,  Superluminal Technologies Ltd.
+-------------------------------------------------------------------------
+
+What's new in version 5.00 (2016.08.24) ?
+-Force Field reader for any kind of solute and solvent
+
+
+
+*********** Forked from:
+
 BROMOC (CG-GCMC-BD): ELECTRODIFFUSION, BROWNIAN DYNAMICS AND COARSE GRAIN MODEL DNA SIMULATION PROGRAM
 (c) 2010 S. Y. Noskov,    University of Calgary
 (c) 2010 C. J. F. Solano, University of Calgary
