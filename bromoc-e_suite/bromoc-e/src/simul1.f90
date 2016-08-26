@@ -771,7 +771,7 @@ if (Qpar) then
       do ii=1,cntpts 
         current = 0.0
         write (outu,'(6x,a,i0,a,f11.4)') 'Counting Zone= ',ii,'  Counting z-pos= ',zcont(ii)
-        do itype = 1, nptnuc+1, nptyp
+        do itype = nptnuc+1, nptyp
           write (outu,'(8x,a,a)') 'Particle type ',ptypl(itype)%nam
           write (outu,'(8x,2(a,i7))') 'forward   ',nforward(itype,ii),'   backward ',nbackward(itype,ii)
           write (outu,'(8x,a,i7)') 'Net Number of particle going forward:',nforward(itype,ii)-nbackward(itype,ii)
