@@ -205,9 +205,11 @@ do i=sr+1,sr+ne
   xj=r(i)%x
   yj=r(i)%y
   zj=r(i)%z
-  ok=ok.and.xj.le.xbcen1+tranx1.and.xj.ge.xbcen1-tranx1
-  ok=ok.and.yj.le.ybcen1+trany1.and.yj.ge.ybcen1-trany1
-  ok=ok.and.zj.le.zbcen1+tranz1.and.zj.ge.zbcen1-tranz1
+  ok=xj.le.xbcen1+tranx1.and.xj.ge.xbcen1-tranx1
+  if (.not.ok) cycle
+  ok=yj.le.ybcen1+trany1.and.yj.ge.ybcen1-trany1
+  if (.not.ok) cycle
+  ok=zj.le.zbcen1+tranz1.and.zj.ge.zbcen1-tranz1
   if (.not.ok) cycle
   !  ion cartesian coordinates in the local grid system              
   xi = xj + tranx1-xbcen1
