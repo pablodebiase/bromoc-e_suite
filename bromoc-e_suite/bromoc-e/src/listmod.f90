@@ -41,10 +41,11 @@ end type parpro
 ! Particle Type
 type :: partype
     integer :: ne                              !! Number of Elements in Particle
-    character*4                      :: nam    !! Particle Name
-    real                             :: chg    !! Particle Total Charge
-    integer,allocatable,dimension(:) :: etyp   !! Particle Element Types Vector :: Size of ne
-    type(car),allocatable,dimension(:) :: r    !! Position Vector of Particle Elements :: Size of ne
+    character*4                        :: nam    !! Particle Name
+    real                               :: chg    !! Particle Total Charge
+    integer,allocatable,dimension(:)   :: etyp   !! Particle Element Types Vector :: Size of ne
+    type(car),allocatable,dimension(:) :: r      !! Position Vector of Particle Elements :: Size of ne
+    real,allocatable,dimension(:)      :: chgi   !! Charge Vector of Particle Elements :: Size of ne
 end type partype
 
 ! Element Type
@@ -76,12 +77,12 @@ type(partype), allocatable, dimension(:) :: ptypl    !! Type of Particle list ::
 
 !! Force and position vectors
 integer nele                                !! Total Number of elements
-type(car), allocatable, dimension(:) :: r  !! Elements Position Vector
-type(car), allocatable, dimension(:) :: f  !! Elements Force Vector
-integer, allocatable, dimension(:)   :: et !! Elements Type List of nele size
-integer, allocatable, dimension(:)   :: pt !! Particle Type List nele size
-integer, allocatable, dimension(:)   :: pe !! Particle List of nele size
-
+type(car), allocatable, dimension(:) :: r   !! Elements Position Vector
+type(car), allocatable, dimension(:) :: f   !! Elements Force Vector
+integer, allocatable, dimension(:)   :: et  !! Elements Type List of nele size
+integer, allocatable, dimension(:)   :: pt  !! Particle Type List nele size
+integer, allocatable, dimension(:)   :: pe  !! Particle List of nele size
+real, allocatable, dimension(:)      :: chq !! Charge List of nele size
 
 !! Used Element Types List
 integer nuet                      !! Total Number of Used Element Types in et
