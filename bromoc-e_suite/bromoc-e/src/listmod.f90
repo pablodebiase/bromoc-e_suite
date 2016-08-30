@@ -40,14 +40,20 @@ end type parpro
 
 ! Particle Type
 type :: partype
-    integer :: ne                              !! Number of Elements in Particle
-    character*4                        :: nam    !! Particle Name
-    real                               :: chg    !! Particle Total Charge
-    integer,allocatable,dimension(:)   :: etyp   !! Particle Element Types Vector :: Size of ne
-    type(car),allocatable,dimension(:) :: r      !! Position Vector of Particle Elements :: Size of ne
-    real,allocatable,dimension(:)      :: chgi   !! Charge Vector of Particle Elements :: Size of ne
+    integer :: ne                                     !! Number of Elements in Particle
+    character*4                             :: nam    !! Particle Name
+    real                                    :: chg    !! Particle Total Charge
+    integer,allocatable,dimension(:)        :: etyp   !! Particle Element Types Vector :: Size of ne
+    type(car),allocatable,dimension(:)      :: r      !! Position Vector of Particle Elements :: Size of ne
+    logical*1                               :: Qpsf   !! whether it is a psf particle
+    type(psftype),allocatable,dimension(:)  :: psf    !! psf properties
 end type partype
 
+type :: psftype
+    real,allocatable,dimension(:)      :: chg   !! Charge Vector of Particle Elements :: Size of ne
+  !! put all psf stuff here
+end type psftype
+    
 ! Element Type
 type :: eletype
     character*4 :: nam    ! Element Name
