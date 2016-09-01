@@ -73,7 +73,7 @@ reff=0.0
 !     Main loop by atoms
 do i=nelenuc+1,nele
   itype = et(i)
-  if (etypl(itype)%chg.ne.0.0) then
+  if (q(i).ne.0.0) then
     if (r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
         r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
         r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3) then
@@ -143,7 +143,6 @@ do i=nelenuc+1,nele
                 aux2dz=aux2dz-aux*prefa2
               end if 
             end if   
-         
           enddo
         enddo
       enddo
@@ -157,10 +156,10 @@ do i=nelenuc+1,nele
         reffdy(i)=aux2dy
         reffdz(i)=aux2dz            
       endif
-      tau = celec*etypl(itype)%chg
+      tau = celec*q(i)
 
     ! self reaction field energy minus Born energy
-      aux = tau*etypl(itype)%chg*srfe(i)
+      aux = tau*q(i)*srfe(i)
       ! reaction field energy 
       erfpar = erfpar + 0.5*aux*srfe(i)
 
@@ -174,13 +173,13 @@ do i=nelenuc+1,nele
       endif
       do j=1+nelenuc,i-1
         jtype = et(j)
-        if (etypl(jtype)%chg.ne.0.0.and.srfe(j).ne.0.0) then
+        if (q(j).ne.0.0.and.srfe(j).ne.0.0) then
           dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
           srfeij = srfe(j)*srfe(i)
           reffij = reff(j)*reff(i)
           rfdn = 1.0/sqrt(reffij*reffij+dist2)
           rfcf = reffij*rfdn
-          aux0 = tau*etypl(jtype)%chg
+          aux0 = tau*q(j)
           aux1 = aux0*rfcf
           ! reaction field energy 
           erfpar = erfpar + aux1*srfeij
@@ -272,7 +271,7 @@ xj=r(j)%x
 yj=r(j)%y
 zj=r(j)%z
 jtype=et(j)
-if (etypl(jtype)%chg.eq.0.0) return
+if (q(j).eq.0.0) return
 !     Main loop by atoms
 if (.not.(xj.le.xbcen3+tranx3.and.xj.ge.xbcen3-tranx3.and. &
           yj.le.ybcen3+trany3.and.yj.ge.ybcen3-trany3.and. &
@@ -281,7 +280,7 @@ srfe=0.0
 reff=0.0
 do i=nelenuc+1,nele
   itype = et(i)
-  if (etypl(itype)%chg.ne.0.0) then
+  if (q(i).ne.0.0) then
     aux1=0.0
     aux2=0.0
     ok=.false.
@@ -345,19 +344,19 @@ do i=nelenuc+1,nele
   endif
 enddo
 
-tau = celec*etypl(jtype)%chg
+tau = celec*q(j)
 ! self reaction field energy minus Born energy
 ! reaction field energy
-energy = energy+ 0.5*tau*etypl(jtype)%chg*srfe(j)**2
+energy = energy+ 0.5*tau*q(j)*srfe(j)**2
 
 do i=nelenuc+1,nele
   if (i.ne.j) then 
     itype = et(i)
-    if (etypl(itype)%chg.ne.0.0.and.srfe(i).ne.0.0) then
+    if (q(i).ne.0.0.and.srfe(i).ne.0.0) then
       dist2 = (r(i)%x-xj)**2+(r(i)%y-yj)**2+(r(i)%z-zj)**2
       reffij = reff(j)*reff(i)
       ! reaction field energy 
-      energy=energy+tau*etypl(itype)%chg*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)
+      energy=energy+tau*q(i)*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)
     endif
   endif
 enddo

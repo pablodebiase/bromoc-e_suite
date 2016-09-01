@@ -20,7 +20,6 @@ use apfmod
 use grandmod
 use constamod
 use nucleotmod
-use extramod
 use listmod
 use efpmod
 implicit none

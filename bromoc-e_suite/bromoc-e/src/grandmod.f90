@@ -66,6 +66,7 @@ logical*1,allocatable :: Qlj(:),Qsrpmfi(:),Qefpot(:)
 real    voltage, thick2, zmemb, plength2, pcenter
 real    czmax, czmin
 real  tmemb, epsm, zmemb1,zmemb2, ceps
+real cecd
 
 contains
 

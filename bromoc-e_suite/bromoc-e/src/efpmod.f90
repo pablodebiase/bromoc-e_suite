@@ -33,5 +33,7 @@ end type efpot
 
 type(efpot),allocatable,dimension(:)     :: efp          !! effective potentials
 real                                     :: res,ires     !! Resolution and inverse resolution
+real,allocatable,dimension(:)            :: fct          !! Coulombic Factor
+logical*1,allocatable :: Qcol(:)
 end module
 

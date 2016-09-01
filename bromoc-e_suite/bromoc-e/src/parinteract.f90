@@ -32,7 +32,7 @@ ne = parl(parn)%ne
 sr = parl(parn)%sr
 do iat = 1+sr, ne+sr
   itype=et(iat)
-  charge=etypl(itype)%chg
+  charge=q(iat)
   ! Nernst transmembrane potential
   if (voltage.ne.0.0.and.charge.ne.0.0) then
     if (r(iat)%z.lt.zmemb1) then ! REGION 1: z=z(iat)-zmemb1 < 0, lim{z->-inf} pot(1) = 0
@@ -100,7 +100,7 @@ sr = parl(parn)%sr
 !     Main loop by atoms
 do i=nelenuc+1,nele
   itype = et(i)
-  if (etypl(itype)%chg.ne.0.0) then
+  if (q(i).ne.0.0) then
     if (r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
         r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
         r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3) then
@@ -149,20 +149,20 @@ do i=nelenuc+1,nele
       enddo
       srfe(i)=aux1
       reff(i)=aux2
-      tau = celec*etypl(itype)%chg
+      tau = celec*q(i)
     ! self reaction field energy minus Born energy
-      aux = tau*etypl(itype)%chg*srfe(i)
+      aux = tau*q(i)*srfe(i)
       ! reaction field energy 
       do j=1+nelenuc,i-1
         if ((i.gt.sr.and.i.le.ne+sr).or.(j.gt.sr.and.j.le.ne+sr)) then
           jtype = et(j)
-          if (etypl(jtype)%chg.ne.0.0.and.srfe(j).ne.0.0) then
+          if (q(j).ne.0.0.and.srfe(j).ne.0.0) then
             dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
             srfeij = srfe(j)*srfe(i)
             reffij = reff(j)*reff(i)
             rfdn = 1.0/sqrt(reffij*reffij+dist2)
             rfcf = reffij*rfdn
-            aux0 = tau*etypl(jtype)%chg
+            aux0 = tau*q(j)
             aux1 = aux0*rfcf
             ! reaction field energy 
             energy = energy + aux1*srfeij
@@ -200,7 +200,7 @@ ne = parl(parn)%ne
 sr = parl(parn)%sr
 
 do i=sr+1,sr+ne
-  chi = etypl(et(i))%chg
+  chi = q(i)
   if (chi.eq.0.0) cycle
   xj=r(i)%x
   yj=r(i)%y
@@ -412,7 +412,6 @@ subroutine par_interact(parn, energy)
 use listmod
 use grandmod
 use constamod
-use extramod
 use gsbpmod
 implicit none
 integer,intent(in) :: parn
@@ -421,7 +420,8 @@ integer parm,itype,jtype
 integer nen,srn,nem,srm
 integer i,j,is
 real dist, dist2, dist6, idist, idist2
-real pener
+real pener,qiqj
+logical*1 Qchr
 !real emembi,erfpari,estaticfi,evdwgdi,enonbondi
 energy = 0.0
 
@@ -478,10 +478,12 @@ if (Qnonbond) then
             enonbondi=enonbondi+pener
           else
             idist2 = 1.0/dist2
-            if (Qchr(is).or.Qsrpmfi(is)) idist = sqrt(idist2)
-           !electrostatic interaction    
-            if (Qchr(is)) enonbondi=enonbondi+fct(is)*idist
-           !Lennard-Jones 6-12 potential 
+            qiqj=q(i)*q(j)
+            Qchr=qiqj.ne.0.0
+            if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
+            !electrostatic interaction    
+            if (Qchr) enonbondi=enonbondi+cecd*qiqj*idist
+            !Lennard-Jones 6-12 potential 
             if (Qlj(is)) then
               dist6 = (sgp2(is)*idist2)**3
               enonbondi=enonbondi+epp4(is)*dist6*(dist6-1.0)

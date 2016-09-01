@@ -20,11 +20,10 @@ subroutine energy()
 use grandmod
 use gsbpmod
 use constamod
-use extramod
 use efpmod
 use listmod
 implicit none
-integer i, j, itype, jtype, is, q, p
+integer i, j, itype, jtype, is, qq, pp
 integer neq, srq, nep, srp
 real dist, dist2, dist6, idist, idist2
 real de, dc
@@ -33,6 +32,8 @@ real  cofo
 real  eefp,fdf,fdv
 real  pener
 real  dist12
+real qiqj
+logical*1 Qchr
 
 ! Initializations
 ener     = 0.0
@@ -95,12 +96,12 @@ if (Qenergy) then
   ! nonbonded interaction between elements
   if (Qnonbond) then
     if (Qproxdiff) dids(1:5,nelenuc+1:nele)=0.0
-    do q = nparnuc+1,npar
-      neq=parl(q)%ne
-      srq=parl(q)%sr
-      do p = 1,q-1
-        nep=parl(p)%ne
-        srp=parl(p)%sr
+    do qq = nparnuc+1,npar
+      neq=parl(qq)%ne
+      srq=parl(qq)%sr
+      do pp = 1,qq-1
+        nep=parl(pp)%ne
+        srp=parl(pp)%sr
         do i = srq+1, srq+neq
           itype  = et(i)
           do j = srp+1, srp+nep
@@ -117,9 +118,11 @@ if (Qenergy) then
               if (Qproxdiff) call proxdiff(i,j,is,dist)
             else 
               idist2 = 1.0/dist2
-              if (Qchr(is).or.Qsrpmfi(is)) idist = sqrt(idist2)
-              if (Qchr(is)) then
-                cofo=fct(is)*idist
+              qiqj=q(i)*q(j)
+              Qchr=qiqj.ne.0.0
+              if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
+              if (Qchr) then 
+                cofo=cecd*qiqj*idist
                 eelec = eelec + cofo
               endif
               if (Qlj(is)) then
@@ -146,12 +149,8 @@ if (Qenergy) then
             if (Qforces) then
               if (.not.Qefpot(is)) then
                 de=0.0
-                if (Qchr(is)) then
-                  de=cofo*idist2
-                endif
-                if (Qlj(is)) then
-                  de=de+epp4(is)*(2.0*dist12-dist6)*6.0*idist2 ! van der waals forces
-                endif
+                if (Qchr) de=cofo*idist2
+                if (Qlj(is)) de=de+epp4(is)*(2.0*dist12-dist6)*6.0*idist2 ! van der waals forces
                 if (Qsrpmfi(is)) then 
                   if (dist2.le.rth) then 
                     dc=(-c2(is)*esrpmf2+c3(is)*pi*sin(c3(is)*pi*(c1(is)-dist)))*c0(is)*esrpmf1-6.0*c4(is)*esrpmf3*idist! forces

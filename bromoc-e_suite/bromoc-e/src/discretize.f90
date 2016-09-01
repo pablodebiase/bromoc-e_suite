@@ -16,12 +16,11 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine discretize(is,nnp,mnp,nxf)
+subroutine discretize(is,nnp,mnp,nxf,kf)
 ! output variables: ep, nxi, dmi ,dm2  (all shared)
 use efpmod
 use constamod
 use grandmod
-use extramod
 
 implicit none
 integer k,is,nn,mnp,nnp,nxf,i
@@ -30,11 +29,6 @@ real scal,scald,x1,x2,d1,d2,dd2,y0,kf
 real cc0,cc1,cc2,cc3,cc4,dist12,dist6,fdf,fdv
 real p(3,nxf)
 
-if (Qchr(is)) then
-  kf=fct(is)
-else
-  kf=0.0
-endif
 do k=nnp,mnp
   x1=k*res
   x2=1.0/x1

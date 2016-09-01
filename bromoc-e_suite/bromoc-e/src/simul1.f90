@@ -778,8 +778,8 @@ if (Qpar) then
           write(outu,*) 
           flux = (nforward(itype,ii)-nbackward(itype,ii))/(dt*float(nbd*ncycle))
           write (outu,'(8x,a,e11.4)') 'Flux in [particle/ps]   ',flux
-          write (outu,'(8x,a,e11.4)') 'Current [in pA]         ',ptypl(itype)%chg*flux*coulomb*ipico**2
-          current=current+ptypl(itype)%chg*flux*coulomb*ipico**2
+          write (outu,'(8x,a,e11.4)') 'Current [in pA]         ',ptypl(itype)%tchg*flux*coulomb*ipico**2
+          current=current+ptypl(itype)%tchg*flux*coulomb*ipico**2
           write (outu,*) 
         enddo ! itype
         write (outu,'(8x,a,e11.4)') 'Total Current [in pA]               ',current

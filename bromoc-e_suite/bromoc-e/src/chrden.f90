@@ -46,7 +46,7 @@ if (Qchdenorm) then
   do i=1,nele
     ok = .true.
     itype=et(i)
-    chi=etypl(itype)%chg
+    chi=q(i)
     if (chi.eq.0.0) ok = .false.
     if (ok) ok=r(i)%x.le.xbcen4+tranx4.and.r(i)%x.ge.xbcen4-tranx4.and. &
                r(i)%y.le.ybcen4+trany4.and.r(i)%y.ge.ybcen4-trany4.and. &
@@ -66,7 +66,7 @@ endif
 do i = 1, nele
   ok = .true.
   itype=et(i)
-  chi=etypl(itype)%chg
+  chi=q(i)
   if (chi.eq.0.0) ok = .false.
   if (ok) ok=r(i)%x.le.xbcen4+tranx4.and.r(i)%x.ge.xbcen4-tranx4.and. &
              r(i)%y.le.ybcen4+trany4.and.r(i)%y.ge.ybcen4-trany4.and. &

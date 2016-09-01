@@ -611,8 +611,8 @@ Effective potentials can be built from analytical potentials. So if "build"
 keyword is used, Coulombinc, LJ and SRPMF (if needed) must be defined.
 
 syntax:
-  [EFPOT] [res (integer)] [scal (real)] [maxdata (integer)] [{write} unit (integer)] [maxdist (real)] [mindist (real)]
-  <type> <type> [[scal (real)] {read} unit (integer)] [{build} [maxdist (real)] [mindist (real)]] {ignoreq}
+  [EFPOT] [res (integer)] [scal (real)] [maxdata (integer)] [{write} unit (integer)] [maxdist (real)] [mindist (real)] {ignoreq}
+  <type> <type> [[scal (real)] {read} unit (integer)] [{build} [maxdist (real)] [mindist (real)]] {ignoreq} {useq}
   END
 
   <type>               : ion/dna type
@@ -634,7 +634,9 @@ syntax:
                          If omitted below uses the values chosen in line 0. (Used in build)
   maxdata |maxdist*ntp|: Is the maximum number of total data points that will be stored (includes read and build). ntp is the number of type pairs
   {ignoreq}            : If present, assume that particles has 0 charge when generating head and tail of effective potentials. 
-                         If effective potentials are generated using analytical potential this is ignored.
+                         If this is present in EFPOT line it will use ignoreq for all pairs. If present next it will just use it for that pair
+                         If effective potentials are generated using analytical potential this is ignored for those pairs.
+  {useq}               : Is the opposite of ignoreq. Useful when using ignoreq for all pairs except for some.
 
 example:
 

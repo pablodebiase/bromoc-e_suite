@@ -36,7 +36,7 @@ lgiat = Qforces
 
 do iat = 1, nele
   itype=et(iat)
-  charge=etypl(itype)%chg
+  charge=q(iat)
   ! Nernst transmembrane potential
   if (voltage.ne.0.0.and.charge.ne.0.0) then
     if (r(iat)%z.lt.zmemb1) then ! REGION 1: z=z(iat)-zmemb1 < 0, lim{z->-inf} pot(1) = 0

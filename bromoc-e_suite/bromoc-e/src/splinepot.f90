@@ -16,9 +16,8 @@
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-subroutine splinepot(is,nn,xx,yy)
+subroutine splinepot(is,nn,xx,yy,kf)
 use efpmod
-use extramod
 use grandmod
 implicit none
 integer nn,is,i
@@ -28,13 +27,9 @@ real p(3,nn)
 efp(is)%xl=xx(1)
 efp(is)%xl2=xx(1)**2
 efp(is)%xu2=xx(nn)**2
+if (.not.Qcol(is)) kf=0.0
 ! Shifting potential
 if(xx(nn).eq.0.0.or.xx(1).eq.0.0) stop 'Division by zero'
-if (Qcol(is).and.Qchr(is)) then
-  kf=fct(is)
-else
-  kf=0.0
-endif
 efp(is)%sc%c=(xx(nn)*yy(nn)-kf)*xx(nn)**5
 d2=-kf/xx(nn)**2-6.0*efp(is)%sc%c/xx(nn)**7
 dd2=2.0*kf/xx(nn)**3+42.0*efp(is)%sc%c/xx(nn)**8

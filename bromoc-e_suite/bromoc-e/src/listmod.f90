@@ -29,6 +29,41 @@ type :: car
     real :: z
 end type car
 
+! PSF Type 
+type :: psftype
+    ! Bonds
+    integer                            :: nbonds
+    integer,allocatable,dimension(:,:) :: bonds
+    real,allocatable,dimension(:,:)    :: stretch
+    ! Angles
+    integer                            :: nbends
+    integer,allocatable,dimension(:,:) :: bends
+    real,allocatable,dimension(:,:)    :: bend 
+    ! UB
+    integer                            :: nubs
+    integer,allocatable,dimension(:,:) :: ubs
+    real,allocatable,dimension(:,:)    :: ubt
+    ! Dihedral
+    integer                            :: ntorts
+    integer,allocatable,dimension(:,:) :: torts
+    integer,allocatable,dimension(:,:) :: ndih
+    real,allocatable,dimension(:,:)    :: dih
+    ! Improper
+    integer                            :: ndeforms
+    integer,allocatable,dimension(:,:) :: deforms
+    real,allocatable,dimension(:,:)    :: deform
+    ! CMAPS
+    integer                            :: ncmaps
+    integer,allocatable,dimension(:,:) :: cmaps
+    integer,allocatable,dimension(:,:) :: attcmap
+    real,allocatable,dimension(:,:)    :: gscmap
+    real,allocatable,dimension(:,:)    :: fcmap
+    real,allocatable,dimension(:,:)    :: ftcmap
+    real,allocatable,dimension(:,:)    :: fpcmap
+    real,allocatable,dimension(:,:)    :: ftpcmap
+    real,allocatable,dimension(:,:,:)  :: ccoef
+end type psftype
+
 ! Particle Properties Type
 type :: parpro
     integer :: ptyp                            !! Identifies the Particle Type with an Index number
@@ -42,22 +77,17 @@ end type parpro
 type :: partype
     integer :: ne                                     !! Number of Elements in Particle
     character*4                             :: nam    !! Particle Name
-    real                                    :: chg    !! Particle Total Charge
+    real                                    :: tchg   !! Particle Total Charge
     integer,allocatable,dimension(:)        :: etyp   !! Particle Element Types Vector :: Size of ne
+    real,allocatable,dimension(:)           :: chg    !! Charge Vector of Particle Elements :: Size of ne
     type(car),allocatable,dimension(:)      :: r      !! Position Vector of Particle Elements :: Size of ne
     logical*1                               :: Qpsf   !! whether it is a psf particle
     type(psftype),allocatable,dimension(:)  :: psf    !! psf properties
 end type partype
-
-type :: psftype
-    real,allocatable,dimension(:)      :: chg   !! Charge Vector of Particle Elements :: Size of ne
-  !! put all psf stuff here
-end type psftype
     
 ! Element Type
 type :: eletype
     character*4 :: nam    ! Element Name
-    real        :: chg    ! Element Charge
     real        :: dif    ! Element Diffusivity
     real        :: eps    ! Element Epsilon Lennard Jones
     real        :: sig    ! Element Sigma Lennard Jones
@@ -72,6 +102,7 @@ real, allocatable, dimension(:)         :: parz       !! z coordinate for partic
 !! Element-Type List
 integer                                  :: netyp     !! Number of Element Types
 type(eletype),allocatable,dimension(:)   :: etypl     !! Element Name List
+real,allocatable,dimension(:)            :: etchg
 logical*1,allocatable,dimension(:)       :: etul      !! Element Types Used List
 
 !! Number of Element-Type Pairs
@@ -88,7 +119,7 @@ type(car), allocatable, dimension(:) :: f   !! Elements Force Vector
 integer, allocatable, dimension(:)   :: et  !! Elements Type List of nele size
 integer, allocatable, dimension(:)   :: pt  !! Particle Type List nele size
 integer, allocatable, dimension(:)   :: pe  !! Particle List of nele size
-real, allocatable, dimension(:)      :: chq !! Charge List of nele size
+real, allocatable, dimension(:)      :: q !! Charge List of nele size
 
 !! Used Element Types List
 integer nuet                      !! Total Number of Used Element Types in et
@@ -156,6 +187,22 @@ integer n
 integer, dimension(n) :: a       ! variable type to sort
 integer, dimension ((n+1)/2) :: t
 call MergeSort(a,n,t) ! order from lower to higher
+end subroutine
+
+subroutine getetchg()
+implicit none
+integer i,j
+if (allocated(etchg)) deallocate (etchg)
+allocate (etchg(netyp))
+etchg=0.0
+do i=1,nptyp
+  do j=1,ptypl(i)%ne
+    if (etchg(ptypl(i)%etyp(j)).ne.0) then
+      if (etchg(ptypl(i)%etyp(j)).ne.ptypl(i)%chg(j)) write(*,'(6x,a,a,a,2f5.2)') 'WARNING: Inconsistent charge for type ',etypl(ptypl(i)%etyp(j))%nam,' : ',etchg(ptypl(i)%etyp(j)),ptypl(i)%chg(j)
+    endif
+    etchg(ptypl(i)%etyp(j))=ptypl(i)%chg(j)
+  enddo
+enddo
 end subroutine
 
 subroutine updateuetl()
@@ -329,6 +376,7 @@ implicit none
 integer vdim,newsize
 type(car), allocatable, dimension(:) :: rtmp   !! Elements Position Vector
 type(car), allocatable, dimension(:) :: ftmp   !! Elements Force Vector
+real, allocatable, dimension(:)      :: qtmp   !! Elements Charge Vector
 integer, allocatable, dimension(:)   :: ettmp !! Elements Type List of nele size
 integer, allocatable, dimension(:)   :: pttmp !! Elements Type List of nele size
 integer, allocatable, dimension(:)   :: petmp !! Elements Type List of nele size
@@ -336,6 +384,7 @@ integer, allocatable, dimension(:)   :: petmp !! Elements Type List of nele size
 ! if 0
 if (newsize .lt. 1) then
     if (allocated(r)) deallocate (r)
+    if (allocated(q)) deallocate (q)
     if (allocated(f)) deallocate (f)
     if (allocated(et)) deallocate (et)
     if (allocated(pt)) deallocate (pt)
@@ -349,18 +398,21 @@ allocate (rtmp(newsize),ftmp(newsize),ettmp(newsize),pttmp(newsize),petmp(newsiz
 if (vdim .gt. newsize) vdim = newsize
 if (allocated(r) .and. vdim .gt. 0) rtmp(1:vdim)=r(1:vdim)
 if (allocated(f) .and. vdim .gt. 0) ftmp(1:vdim)=f(1:vdim)
+if (allocated(q) .and. vdim .gt. 0) qtmp(1:vdim)=q(1:vdim)
 if (allocated(et) .and. vdim .gt. 0) ettmp(1:vdim)=et(1:vdim)
 if (allocated(pt) .and. vdim .gt. 0) pttmp(1:vdim)=pt(1:vdim)
 if (allocated(pe) .and. vdim .gt. 0) petmp(1:vdim)=pe(1:vdim)
 ! Deallocate original Vector
 if (allocated(r)) deallocate (r)
 if (allocated(f)) deallocate (f)
+if (allocated(q)) deallocate (q)
 if (allocated(et)) deallocate (et)
 if (allocated(pt)) deallocate (pt)
 if (allocated(pe)) deallocate (pe)
 ! Move allocations
 call move_alloc(rtmp,r)
 call move_alloc(ftmp,f)
+call move_alloc(qtmp,q)
 call move_alloc(ettmp,et)
 call move_alloc(pttmp,pt)
 call move_alloc(petmp,pe)
@@ -384,13 +436,14 @@ if (present(chg)) lchg=chg
 if (present(dif)) ldif=dif
 if (present(eps)) leps=eps
 if (present(sig)) lsig=sig
-call addetyp(ename,lchg,ldif,leps,lsig)
+call addetyp(ename,ldif,leps,lsig)
 if (present(pname)) then
   call addptyp(1,pname)
 else
   call addptyp(1,ename)
 endif
-ptypl(nptyp)%chg=lchg
+ptypl(nptyp)%tchg=lchg
+ptypl(nptyp)%chg(1)=lchg
 ptypl(nptyp)%etyp(1)=netyp
 call setcarzero(ptypl(nptyp)%r(1))
 end subroutine
@@ -424,23 +477,20 @@ write(*,'(a,a,a)') 'Type name ',trim(adjustl(pname)),' not found'
 end function
 
 ! Edit Element Type
-subroutine editetyp(etype,chg,dif,eps,sig)
+subroutine editetyp(etype,dif,eps,sig)
 integer,intent(in)        :: etype  ! Element Type Number
-real,optional,intent(in)  :: chg    ! Element Charge
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
-if (present(chg)) etypl(etype)%chg=chg
 if (present(dif)) etypl(etype)%dif=dif
 if (present(eps)) etypl(etype)%eps=eps
 if (present(sig)) etypl(etype)%sig=sig
 end subroutine
 
 ! Add Element Name to list
-subroutine addetyp(nam,chg,dif,eps,sig)
+subroutine addetyp(nam,dif,eps,sig)
 implicit none
 character*(*)             :: nam
-real,optional,intent(in)  :: chg    ! Element Charge
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
@@ -448,11 +498,9 @@ netyp=netyp+1
 netp=netyp*(netyp+1)/2
 if (netyp .gt. size(etypl)) call resizeetypl(netyp)
 etypl(netyp)%nam=nam
-etypl(netyp)%chg=0.0
 etypl(netyp)%dif=0.0
 etypl(netyp)%eps=0.0
 etypl(netyp)%sig=0.0
-if (present(chg)) etypl(netyp)%chg=chg
 if (present(dif)) etypl(netyp)%dif=dif
 if (present(eps)) etypl(netyp)%eps=eps
 if (present(sig)) etypl(netyp)%sig=sig
@@ -465,6 +513,16 @@ integer ptypn, nen, etyp
 ptypl(ptypn)%etyp(nen)=etyp
 end subroutine
 
+subroutine setetypchginptyp(ptypn,etypn,chg)
+implicit none
+integer ptypn,etypn,i
+real chg
+do i=1,ptypl(ptypn)%ne
+  if (ptypl(ptypn)%etyp(i).eq.etypn) ptypl(ptypn)%chg(i)=chg
+enddo
+call updateptypchg(ptypn)
+end subroutine
+
 subroutine updateptypchg(ptypn)
 implicit none
 integer ptypn,i
@@ -472,9 +530,9 @@ real chg
 if (.not.allocated(ptypl(ptypn)%etyp)) return
 chg=0.0
 do i=1,ptypl(ptypn)%ne
-  chg=chg+etypl(ptypl(ptypn)%etyp(i))%chg
+  chg=chg+ptypl(ptypn)%chg(i)
 enddo
-ptypl(ptypn)%chg=chg
+ptypl(ptypn)%tchg=chg
 end subroutine
 
 ! Add Particle Type
@@ -489,11 +547,12 @@ if (nptyp .gt. size(ptypl)) call resizeptypl(nptyp)
 ptypl(nptyp)%ne = ne
 ptypl(nptyp)%nam = pnam
 if (present(chg)) then
-  ptypl(nptyp)%chg = chg
+  ptypl(nptyp)%tchg = chg
 else
-  ptypl(nptyp)%chg = 0.0
+  ptypl(nptyp)%tchg = 0.0
 endif
-allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne))
+allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne),ptypl(nptyp)%chg(ne))
+ptypl(nptyp)%chg(:)=0.0
 end subroutine
 
 ! Add Particle Type To Particle List
@@ -525,6 +584,7 @@ if (ptype .gt. 0 .and. ptype .le. nptyp) then
   do i=1,parl(npar)%ne
     j=lastnele+i
     r(j)=ptypl(ptype)%r(i)
+    q(j)=ptypl(ptype)%chg(i)
     et(j)=ptypl(ptype)%etyp(i)
     pt(j)=ptype
     pe(j)=npar
@@ -894,6 +954,7 @@ if (n .gt. parn) then
   j  = parl(n)%sr    + 1
   jj = parl(n)%sr    + parl(n)%ne
    r(i:ii)= r(j:jj)
+   q(i:ii)= q(j:jj)
   et(i:ii)=et(j:jj)
   pt(i:ii)=pt(j:jj)
   pe(i:ii)=parn
@@ -903,6 +964,7 @@ sr=parl(n)%sr
 do i=sr+1,nele-ne
     j=i+ne
     r(i)=r(j)
+    q(i)=q(j)
     et(i)=et(j)
     pt(i)=pt(j)
     pe(i)=pe(j)-1
@@ -954,7 +1016,7 @@ real ibuff
 !write (nunit,'(A6,I5)') 'REMARK',nele
 do i=1,nele
   ibuff=parl(pe(i))%ibuf
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuff,etypl(et(i))%chg,''
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuff,q(i),''
 enddo
 write (nunit,'(A)') 'END'
 end subroutine
@@ -968,7 +1030,7 @@ real ibuff
 !write (nunit,'(A6,I5)') 'REMARK',nele
 do i=1,nele
   ibuff=parl(pe(i))%ibuf
-  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F16.8,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuff,etypl(et(i))%chg,''
+  write (nunit,'(A6,I5,x,A5,A5,I4,4x,3F16.8,2F6.2,6x,A4)') 'ATOM  ',i,etypl(et(i))%nam,ptypl(pt(i))%nam,pe(i),r(i)%x,r(i)%y,r(i)%z,ibuff,q(i),''
 enddo
 write (nunit,'(A)') 'END'
 end subroutine

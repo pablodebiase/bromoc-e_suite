@@ -171,7 +171,6 @@ end subroutine
 ! Computes potential
 subroutine gety(is,x2,y,x)
 use efpmod
-use extramod
 implicit none
 integer i,is
 real x,x2,y,ix2
@@ -181,7 +180,7 @@ if (x2.lt.efp(is)%xl2) then
   y=efp(is)%sc%a*ix2**6 + efp(is)%sc%b
 elseif (x2.gt.efp(is)%xu2) then
   ix2=1.0/x2
-  if (Qcol(is).and.Qchr(is)) then ! coulomb term for tail
+  if (Qcol(is)) then ! coulomb term for tail
     y=efp(is)%sc%c*ix2**3+fct(is)*sqrt(ix2) ! coulomb term for tail
   else
     y=efp(is)%sc%c*ix2**3 !+sc(4,is)*ix2**6
@@ -196,7 +195,6 @@ end subroutine
 ! Computes potential and forces/x
 subroutine getyd(is,x2,y,yp,x)
 use efpmod
-use extramod
 implicit none
 integer i,is
 real x2,x,y,yp,ix2,c,f
@@ -210,7 +208,7 @@ if (x2.lt.efp(is)%xl2) then
 elseif (x2.gt.efp(is)%xu2) then
   ix2=1.0/x2
   c=efp(is)%sc%c*ix2**3
-  if (Qcol(is).and.Qchr(is)) then ! coulomb term for tail
+  if (Qcol(is)) then ! coulomb term for tail
     f=fct(is)*sqrt(ix2)
     y=c + f !+ d
 !    yp=(12.0*d + 6.0*c + f)*ix2
@@ -231,7 +229,6 @@ end subroutine
 ! Computes force/x
 subroutine getyp(is,x2,yp)
 use efpmod
-use extramod
 implicit none
 integer i,is
 real x,x2,yp,ix2
@@ -240,7 +237,7 @@ if (x2.lt.efp(is)%xl2) then
   yp=12.0*efp(is)%sc%a/x2**7 
 elseif (x2.gt.efp(is)%xu2) then
   ix2=1.0/x2
-  if (Qcol(is).and.Qchr(is)) then ! coulomb term for tail
+  if (Qcol(is)) then ! coulomb term for tail
     yp=6.0*efp(is)%sc%c*ix2**4+fct(is)*sqrt(ix2)*ix2    ! coulomb term for tail
   else
     yp=6.0*efp(is)%sc%c*ix2**4 !+ 12.0*sc(4,is)*ix2**7

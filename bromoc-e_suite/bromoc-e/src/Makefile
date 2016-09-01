@@ -39,7 +39,7 @@ OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-no
 
 # Object files
 
-OBJECTSMOD = 	extramod.o apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o errormod.o\
+OBJECTSMOD = 	apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o errormod.o\
 		nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o explatmod.o charmmmod.o listmod.o\
 		splinemod.o sevalmod.o
 

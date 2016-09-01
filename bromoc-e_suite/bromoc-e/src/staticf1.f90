@@ -45,7 +45,7 @@ estaticf = 0.0
 do i = 1, nele
   ok = .true.
   itype=et(i)
-  chi=etypl(itype)%chg
+  chi=q(i)
   if (chi.eq.0.0) cycle
   if (.not.(r(i)%x.le.xbcen1+tranx1.and.r(i)%x.ge.xbcen1-tranx1.and. &
             r(i)%y.le.ybcen1+trany1.and.r(i)%y.ge.ybcen1-trany1.and. &

@@ -27,7 +27,6 @@ use constamod
 use errormod
 use nucleotmod
 use charfuncmod   !command parser
-use extramod
 use splinemod
 use explatmod
 use charmmmod
@@ -293,7 +292,7 @@ do while (.not. logfinal)
      if (.not. Qnucl) then
        ! Add Mono-element Particle Types
        call addetyp('S',dif=diffnuc)   ! 1
-       call addetyp('P',chg=cgnuc,dif=diffnuc)   ! 2
+       call addetyp('P',dif=diffnuc)   ! 2
        call addetyp('Ab',dif=diffnuc)  ! 3
        call addetyp('Tb',dif=diffnuc)  ! 4
        call addetyp('Cb',dif=diffnuc)  ! 5
@@ -358,7 +357,7 @@ do while (.not. logfinal)
      if (istrs.gt.0) then
        j=inuc*3
        if (.not.QfirstP) j=j-1
-       call addptyp(j,'DNA')
+       call addptyp(j,'DNA1')
        if (.not.setline(inpu,com)) call error ('shell_simul', 'premature end of date in NUCLEOTIDE order', faterr)
        do j = 1, inuc
          ntype = ntype + 1
@@ -501,7 +500,7 @@ do while (.not. logfinal)
      if (istrs.eq.2) then
        j=inuc*3
        if (.not.QfirstP) j=j-1
-       call addptyp(j,'DNA')
+       call addptyp(j,'DNA2')
        ntypold = ntype      
        do j = 0, inuc-1
          ntype = ntype + 1
@@ -595,6 +594,9 @@ do while (.not. logfinal)
      call native_structure(nsites,xnat,ynat,znat,rnat,phinat)
      ! Define number of particle types belonging to dna
      nptnuc=nptyp
+     ! Set Charges for P
+     if (istrs.ge.1) call setetypchginptyp(1,getetyp('P'),cgnuc)
+     if (istrs.eq.2) call setetypchginptyp(2,getetyp('P'),cgnuc)
      ! Add Particle
      if (istrs.gt.0) then
        call addpar(1,1)
@@ -698,7 +700,7 @@ do while (.not. logfinal)
           write(outu,*) 'Mono-Particle '//wrd4//' added' 
           itype=nptyp
           ! particle charge [real*8,default=0]
-          call gtdpar(com,'charge',etypl(netyp)%chg,0.0)
+          call gtdpar(com,'charge',ptypl(itype)%chg(1),0.0)
           ! diffusion constant [real*8,default=0.1]
           call gtdpar(com,'diffusion',etypl(netyp)%dif,0.1)
           if (etypl(netyp)%dif.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
@@ -710,33 +712,23 @@ do while (.not. logfinal)
       endif
     enddo
     Qpar = .true.
-    allocate (Qcol(netp),Qchr(netp),Qefpot(netp),Qlj(netp),Qsrpmfi(netp))
-    Qchr=.false.
+    !!! Relocate This !! DEVELOP
+    allocate (Qcol(netp),Qefpot(netp),Qlj(netp),Qsrpmfi(netp))
     Qcol=.true.
     Qefpot=.false.
     Qlj=.false.
     Qsrpmfi=.false.
   
     ! ASSIGN CHARGES USING CDIE
-    allocate (fct(netp))
-    fct=0.0
-    do i=1,netyp
-      do j=i,netyp
-        if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
-          is=etpidx(i,j)
-          fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
-          Qchr(is)=.true.
-        endif
-      enddo
-    enddo
+    cecd=celec/cdie
   
     write(outu,*)
     write(outu,'(6x,a,i3,a)') 'There are ',netyp-netnuc,' atom types'
     write(outu,'(6x,a)') 'CHARGE -> ion charge [e]'
     write(outu,'(6x,a)') 'DIFFUSION -> diffusion constant [Ang.**2/ps]'
     write(outu,'(6x,a)') 'NAME---CHARGE---DIFFUSION'
-    do i=netnuc, netyp
-      write(outu,'(6x,a,2f8.3)') etypl(i)%nam,etypl(i)%chg,etypl(i)%dif
+    do i=nptnuc, nptyp
+      write(outu,'(6x,a,2f8.3)') ptypl(i)%nam,ptypl(i)%tchg,etypl(ptypl(i)%etyp(1))%dif
     enddo
     write(outu,*)
   ! **************************************************************************
@@ -1023,23 +1015,9 @@ do while (.not. logfinal)
     lx2m = cx-0.5*lx
     ly2m = cy-0.5*ly
     lz2m = cz-0.5*lz
-    if (Qnucl) fctn=celec*cgnuc**2/cdie
-    if (Qpar) then
-      fct=0.0
-      do i=1,netyp
-        do j=i,netyp
-          if (etypl(i)%chg.ne.0.0.and.etypl(j)%chg.ne.0.0) then
-            is=etpidx(i,j)
-            fct(is)=celec*etypl(i)%chg*etypl(j)%chg/cdie
-            Qchr(is)=.true.
-          endif
-        enddo
-      enddo
-    endif
     maxpart=int(avogadro*1e-27*3.0*tvol)+1  ! no more than 3 Molar of particles in the system volume
     if (maxpart.gt.datom) maxpart=datom 
     Qsystem = .true. 
-    
     if (Qsphere) then
       write(outu,'(6x,a,f12.3)') 'Spherical system, Radius ',Rsphe
     elseif (Qecyl) then
@@ -1139,7 +1117,7 @@ do while (.not. logfinal)
          ! Transmembrane potential for a buffer
          call gtdpar(com,'volt',battery,0.0)
          ! OBTENTION OF THE ELECTROCHEMICAL POTENTIAL  
-         mu(nbuffer) = mu(nbuffer)+ptypl(itype)%chg*battery*Coulomb/kcalmol
+         mu(nbuffer) = mu(nbuffer)+ptypl(itype)%tchg*battery*Coulomb/kcalmol
        endif
      enddo
      Qbuf = .true.
@@ -1860,11 +1838,10 @@ do while (.not. logfinal)
              ! OBTENTION OF LENNARD-JONES 6-12 POTENTIAL
              evdw  = epp4(is)*r6*(r6-1.0)
              ! OBTENTION OF ELECTROSTATIC INTERACTION BETWEEN IONS
-             eelec = fct(is)/r1
              ! OBTENTION OF WATER-MEDIATED SHORT-RANGE ION-ION
              ! INTERACTION  
              esrpmf = cc0*exp((cc1-r1)/cc2)*cos(cc3*pi*(cc1-r1))+cc4*(cc1/r1)**6
-             if (evdw+eelec+esrpmf.le.50.0) write(iunit,'(4f12.5)') r1,evdw+eelec+esrpmf,evdw+eelec,esrpmf
+             if (evdw+esrpmf.le.50.0) write(iunit,'(4f12.5)') r1,evdw+esrpmf,evdw,esrpmf
            enddo
          endif
        endif
@@ -1873,7 +1850,6 @@ do while (.not. logfinal)
   
      write(outu,'(6x,a)')'Short-range ion-ion interactions are turn on' 
      write(outu,'(6x,a,/,6x,a)') 'Coefficients for the short-range ion-ion interactions','NAME----NAME----C0----C1----C2----C3----C4' 
-     call updateuetl()
      do i = 1,netyp
        do j=i,netyp
          is=etpidx(i,j)
@@ -1922,6 +1898,15 @@ do while (.not. logfinal)
     Qefpotread=.false.
     write(outu,'(6x,a)')
     endlog = .false.
+    call getetchg() ! Build Element Types Charge List
+    allocate (fct(netp))
+    fct=0.0
+    do i=1,netyp
+      do j=i,netyp
+        is=etpidx(i,j)
+        fct(is)=celec*etchg(i)*etchg(j)/cdie
+      enddo
+    enddo
     do while (.not. endlog)
       call getlin(com,inpu,outu) ! new commands line
       itype = 0 ! counter of ion types
@@ -1936,6 +1921,14 @@ do while (.not. logfinal)
         jtype=getetyp(wrd4)
         is=etpidx(itype,jtype)
         if (check(com,'read')) then
+          if (check(com,'ignoreq')) then
+            Qcol(is)=.false.
+            write(outu,'(6x,a,i0)') 'EFPOT: Coulombic terms will be assumed 0 in head and tails for this pair'
+          endif
+          if (check(com,'useq')) then 
+            Qcol(is)=.true.
+            write(outu,'(6x,a,i0)') 'EFPOT: Coulombic terms will be used in head and tails for this pair'
+          endif
           Qefpot(is) = .true.
           Qefpotread(is) = .true.
           ! Unit number to read the pair effective potential
@@ -1966,7 +1959,8 @@ do while (.not. logfinal)
           nxf(is)=cnt
           if (allocated(efp(is)%ep)) deallocate (efp(is)%ep)
           allocate (efp(is)%ep(cnt))
-          call splinepot(is,cnt,xy(1,1:cnt),xy(2,1:cnt))
+          write(outu,'(6x,a)')'WARNING: Do not use EF if using CHARMM Force Field/PSF and a same element type has different charges'
+          call splinepot(is,cnt,xy(1,1:cnt),xy(2,1:cnt),fct(is))
         elseif (check(com,'build')) then
           if (Qlj(is)) then 
             Qefpot(is)=.true.
@@ -1999,7 +1993,8 @@ do while (.not. logfinal)
           Qcol(is) = .true. ! if discretize is active, ignore this keyword for that pair 
           nnp=int(efp(is)%xl*ires)
           mnp=int(sqrt(efp(is)%xu2)*ires)
-          call discretize(is,nnp,mnp,nxf(is))
+          write(outu,'(6x,a)')'WARNING: Do not use EF Build if using CHARMM Force Field/PSF and the same element type has different charges'
+          call discretize(is,nnp,mnp,nxf(is),fct(is))
           write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
         elseif (etul(i).and.etul(j)) then
           write(outu,'(6x,a,x,a,x,a,a)')'WARNING: Missing Effective Potential for:',etypl(i)%nam,etypl(j)%nam,' . Using Coulombic and Lennard Jones and/or SRPMF parameters on the fly'

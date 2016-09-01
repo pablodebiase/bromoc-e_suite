@@ -66,10 +66,10 @@ ncross=nforward-nbackward
 currave=float(ncross)*cnst  ! in pico amperes
 curr=float(ncross-pncross)*cnst2 ! in pico amperes
 do j=nptnuc+1,nptyp
-  write(ln,*) ptypl(j)%nam,icyst,float(icyst)*dt,ncount(j),(zcont(i),nforward(j,i),nbackward(j,i),curr(j,i)*ptypl(j)%chg,currave(j,i)*ptypl(j)%chg,i=1,cntpts)
+  write(ln,*) ptypl(j)%nam,icyst,float(icyst)*dt,ncount(j),(zcont(i),nforward(j,i),nbackward(j,i),curr(j,i)*ptypl(j)%tchg,currave(j,i)*ptypl(j)%tchg,i=1,cntpts)
   write(iuncnt,'(a)') trim(ln)
 enddo
-write(ln,*) 'TOT ',icyst,float(icyst)*dt,(zcont(i),sum(curr(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%chg),sum(currave(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%chg),i=1,cntpts)
+write(ln,*) 'TOT ',icyst,float(icyst)*dt,(zcont(i),sum(curr(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%tchg),sum(currave(nptnuc+1:nptyp,i)*ptypl(nptnuc+1:nptyp)%tchg),i=1,cntpts)
 write(iuncnt,'(a)') trim(ln)
 pncross=ncross
 end subroutine
