@@ -384,8 +384,8 @@ integer, allocatable, dimension(:)   :: petmp !! Elements Type List of nele size
 ! if 0
 if (newsize .lt. 1) then
     if (allocated(r)) deallocate (r)
-    if (allocated(q)) deallocate (q)
     if (allocated(f)) deallocate (f)
+    if (allocated(q)) deallocate (q)
     if (allocated(et)) deallocate (et)
     if (allocated(pt)) deallocate (pt)
     if (allocated(pe)) deallocate (pe)
@@ -393,7 +393,7 @@ endif
 ! Measure Vector Size
 vdim=size(r)
 ! Allocate double of original size in temp vectors
-allocate (rtmp(newsize),ftmp(newsize),ettmp(newsize),pttmp(newsize),petmp(newsize))
+allocate (rtmp(newsize),ftmp(newsize),qtmp(newsize),ettmp(newsize),pttmp(newsize),petmp(newsize))
 ! Copy Vectors
 if (vdim .gt. newsize) vdim = newsize
 if (allocated(r) .and. vdim .gt. 0) rtmp(1:vdim)=r(1:vdim)
