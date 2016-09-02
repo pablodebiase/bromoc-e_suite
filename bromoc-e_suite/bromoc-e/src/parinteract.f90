@@ -82,12 +82,11 @@ implicit none
 integer,intent(in) :: parn
 real,intent(out) :: energy
 integer ne,sr
-real srfe(nelenuc+1:nele)
-real reff(nelenuc+1:nele)
-integer ncyz,ncel3,i,j,ix,iy,iz,n1,n2,n3,in3,ifir,itype,jtype
+real srfe(nele)
+real reff(nele)
+integer ncyz,ncel3,i,j,ix,iy,iz,n1,n2,n3,in3,ifir
 real gaux1,gaux2
-real aux,tau,dist2,rfdn,rfcf,aux0,aux1,aux2,srfeij,reffij
-real prefa1,prefa2
+real tau,dist2,rfdn,aux1,aux2,srfeij,reffij
 real xi,yi,zi,ai,bi,ci,fi
 real aisign,bisign,cisign
 ncyz=ncly3*nclz3
@@ -98,79 +97,70 @@ reff=0.0
 ne = parl(parn)%ne
 sr = parl(parn)%sr
 !     Main loop by atoms
-do i=nelenuc+1,nele
-  itype = et(i)
-  if (q(i).ne.0.0) then
-    if (r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
-        r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
-        r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3) then
-      if (Qrfpsin) then
-        ifir=0
-      else
-        ifir=(itype-netnuc-1)*ncel3
-      endif
-      aux1=0.0e0
-      aux2=0.0e0
-      xi=r(i)%x+tranx3-xbcen3
-      yi=r(i)%y+trany3-ybcen3
-      zi=r(i)%z+tranz3-zbcen3
-      ix=int(xi*idcel3)
-      iy=int(yi*idcel3)
-      iz=int(zi*idcel3)
-      if (ix.eq.nclx3-1) ix=nclx3-2
-      if (iy.eq.ncly3-1) iy=ncly3-2
-      if (iz.eq.nclz3-1) iz=nclz3-2
-      !     Calculate GB radius from 8 next neighbor grid point values    
-      do n1=ix,ix+1
-        ai=xi-n1*dcel3
-        aisign=sign(1.0,ai)
-        ai=1.0-abs(ai)*idcel3
-        do n2=iy,iy+1
-          bi=yi-n2*dcel3
-          bisign=sign(1.0,bi)
-          bi=1.0-abs(bi)*idcel3
-          do n3=iz,iz+1
-            ci=zi-n3*dcel3
-            cisign=sign(1.0,ci)
-            ci=1.0-abs(ci)*idcel3
-            fi=ai*bi*ci
-            in3=n1*ncyz+n2*nclz3+n3+1
-            gaux1=gsrfen(in3+ifir)
-            gaux2=sqrfac*greff(in3+ifir)
-            if(gaux1.eq.0.0) exit
-            prefa1=gaux1*idcel3
-            prefa2=gaux2*idcel3
-
-    !     Local reaction field parameters     
-            aux1=aux1+fi*gaux1
-            aux2=aux2+fi*gaux2
-          enddo
-        enddo
-      enddo
-      srfe(i)=aux1
-      reff(i)=aux2
-      tau = celec*q(i)
-    ! self reaction field energy minus Born energy
-      aux = tau*q(i)*srfe(i)
-      ! reaction field energy 
-      do j=1+nelenuc,i-1
-        if ((i.gt.sr.and.i.le.ne+sr).or.(j.gt.sr.and.j.le.ne+sr)) then
-          jtype = et(j)
-          if (q(j).ne.0.0.and.srfe(j).ne.0.0) then
-            dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
-            srfeij = srfe(j)*srfe(i)
-            reffij = reff(j)*reff(i)
-            rfdn = 1.0/sqrt(reffij*reffij+dist2)
-            rfcf = reffij*rfdn
-            aux0 = tau*q(j)
-            aux1 = aux0*rfcf
-            ! reaction field energy 
-            energy = energy + aux1*srfeij
-          endif
-        endif
-      enddo
-    endif
+do i=1,nele
+  if (q(i).eq.0.0) cycle
+  if (.not.(r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
+            r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
+            r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3)) cycle
+  if (Qrfpsin) then
+    ifir=0
+  else
+    ifir=(et(i)-netnuc-1)*ncel3
   endif
+  aux1=0.0
+  aux2=0.0
+  xi=r(i)%x+tranx3-xbcen3
+  yi=r(i)%y+trany3-ybcen3
+  zi=r(i)%z+tranz3-zbcen3
+  ix=int(xi*idcel3)
+  iy=int(yi*idcel3)
+  iz=int(zi*idcel3)
+  if (ix.eq.nclx3-1) ix=nclx3-2
+  if (iy.eq.ncly3-1) iy=ncly3-2
+  if (iz.eq.nclz3-1) iz=nclz3-2
+  !     Calculate GB radius from 8 next neighbor grid point values    
+  do n1=ix,ix+1
+    ai=xi-n1*dcel3
+    aisign=sign(1.0,ai)
+    ai=1.0-abs(ai)*idcel3
+    do n2=iy,iy+1
+      bi=yi-n2*dcel3
+      bisign=sign(1.0,bi)
+      bi=1.0-abs(bi)*idcel3
+      do n3=iz,iz+1
+        ci=zi-n3*dcel3
+        cisign=sign(1.0,ci)
+        ci=1.0-abs(ci)*idcel3
+        fi=ai*bi*ci
+        in3=n1*ncyz+n2*nclz3+n3+1
+        gaux1=gsrfen(in3+ifir)
+        gaux2=sqrfac*greff(in3+ifir)
+      ! Local reaction field parameters     
+        aux1=aux1+fi*gaux1
+        aux2=aux2+fi*gaux2
+      enddo
+    enddo
+  enddo
+  srfe(i)=aux1
+  reff(i)=aux2
+  ! self reaction field energy minus Born energy
+  if (srfe(i).eq.0.0) cycle
+  tau=celec*q(i)
+  energy=energy+0.5*tau*q(i)*srfe(i)**2
+  if (reff(i).eq.0.0) cycle
+  ! reaction field energy 
+  do j=1,i-1
+    if (q(j).eq.0.0) cycle
+    if (srfe(j).eq.0.0) cycle
+    if (reff(j).eq.0.0) cycle
+    if (.not.((i.gt.sr.and.i.le.ne+sr).or.(j.gt.sr.and.j.le.ne+sr))) cycle
+    dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
+    srfeij = srfe(j)*srfe(i)
+    reffij = reff(j)*reff(i)
+    rfdn = 1.0/sqrt(reffij*reffij+dist2)
+    ! reaction field energy 
+    energy = energy + tau*q(j)*reffij*rfdn*srfeij
+  enddo
 enddo
 end subroutine
 
