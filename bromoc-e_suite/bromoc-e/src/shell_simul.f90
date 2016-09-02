@@ -1907,6 +1907,7 @@ do while (.not. logfinal)
         fct(is)=celec*etchg(i)*etchg(j)/cdie
       enddo
     enddo
+    write(outu,'(6x,a)')'WARNING: Do not use EFPOT with useq or build if are using CHARMM Force Field/PSF and a same element type has different charge'
     do while (.not. endlog)
       call getlin(com,inpu,outu) ! new commands line
       itype = 0 ! counter of ion types
@@ -1959,7 +1960,6 @@ do while (.not. logfinal)
           nxf(is)=cnt
           if (allocated(efp(is)%ep)) deallocate (efp(is)%ep)
           allocate (efp(is)%ep(cnt))
-          write(outu,'(6x,a)')'WARNING: Do not use EF if using CHARMM Force Field/PSF and a same element type has different charges'
           call splinepot(is,cnt,xy(1,1:cnt),xy(2,1:cnt),fct(is))
         elseif (check(com,'build')) then
           if (Qlj(is)) then 
@@ -1993,7 +1993,6 @@ do while (.not. logfinal)
           Qcol(is) = .true. ! if discretize is active, ignore this keyword for that pair 
           nnp=int(efp(is)%xl*ires)
           mnp=int(sqrt(efp(is)%xu2)*ires)
-          write(outu,'(6x,a)')'WARNING: Do not use EF Build if using CHARMM Force Field/PSF and the same element type has different charges'
           call discretize(is,nnp,mnp,nxf(is),fct(is))
           write(outu,'(6x,a,1x,2a,i5,2(a,f8.3),a)')etypl(i)%nam,etypl(j)%nam,'  Number of Points:',1+mnp-nnp,'  From-To: ',efp(is)%xl,' - ',mnp*res,'  (built from current parameters)'
         elseif (etul(i).and.etul(j)) then
