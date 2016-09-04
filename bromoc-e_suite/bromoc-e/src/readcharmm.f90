@@ -14,7 +14,7 @@ real, parameter :: tol=1.0e-2,cte=2**(-1.0/6.0)
 real, allocatable :: tmp_dih(:,:)
 character com*2048,word*1024,wrtline*2048 
 character*7 atnam1,atnam2,atnam3,atnam4
-logical*1 ok,test_bond
+logical*1 ok
 logical*1 endlog,bondlog,anglog,dihlog,implog,cmaplog,nonblog,nbflog,hbonlog
 
 ! *** OBTENTION OF DIMENSIONS

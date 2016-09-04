@@ -56,7 +56,7 @@ type :: psftype
     integer                            :: ncmaps
     integer,allocatable,dimension(:,:) :: cmaps
     integer,allocatable,dimension(:,:) :: attcmap
-    real,allocatable,dimension(:,:)    :: gscmap
+    real,allocatable,dimension(:)      :: gscmap
     real,allocatable,dimension(:,:)    :: fcmap
     real,allocatable,dimension(:,:)    :: ftcmap
     real,allocatable,dimension(:,:)    :: fpcmap
@@ -1007,8 +1007,8 @@ end subroutine
 function getchg(elen)
 implicit none
 real getchg
-integer parn, pp, sr, pt
-getchg=ptyp(parl(pe(elen))%ptyp)%chr(elen-parl(pe(elen))%sr)
+integer elen
+getchg=ptypl(parl(pe(elen))%ptyp)%chg(elen-parl(pe(elen))%sr)
 end function
 
 subroutine delparall()
@@ -1080,11 +1080,13 @@ subroutine loadcoorfromcrdtoptyp(ptypn,iunit)
 implicit none
 integer i,ptypn,iunit,na
 type(car) rr
-character com*256,ext*3
+character com*256,ext*3,onec
 character frmt*64
 read(iunit,'(a)') com
-do while (trim(adjustl(com))(1:1).eq.'*')
+onec=trim(adjustl(com))
+do while (onec.eq.'*')
   read(iunit,'(a)') com
+  onec=trim(adjustl(com))
 enddo
 read(com,*) na,ext
 if (ext.eq.'EXT') then

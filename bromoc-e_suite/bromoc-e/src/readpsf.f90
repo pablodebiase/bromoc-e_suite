@@ -28,7 +28,7 @@ implicit none
 ! sdat                  -> Self-diffusion constants for nonbonded types
 ! qat                   -> Atom type charges
 
-integer     maxtypes, maxcharges, maxnnb
+integer     maxtypes, maxcharges!, maxnnb
 integer,allocatable :: typen(:,:), non_of_charge(:)
 real,allocatable :: nonbonded(:,:), sdat(:), qat(:)
 character*7,allocatable :: non_labels(:) 
@@ -108,7 +108,7 @@ data wt /1,0,-3,2,4*0,-3,0,9,-6,2,0,-6,4,8*0,3,0,-9,6,-2,0,6,-4, &
 ! ghost                 -> Logical variable which indicates if an atom is a ghost atom
 
 integer nch, natt, nbonds, nbends, nubs, ntorts, ndeforms, ncmaps 
-integer natfx, nghosts
+!integer natfx, nghosts
 integer,allocatable :: chain(:), nbondsch(:), bonds(:,:), bends(:,:)
 integer, allocatable :: ubs(:,:), torts(:,:), deforms(:,:), cmaps(:,:)
 integer, allocatable :: lthetacmap(:), lpsicmap(:), attcmap(:,:), atpcmap(:,:)
@@ -122,8 +122,7 @@ logical*1 :: Qlbond, Qlang, Qlubs, Qldih, Qldef, Qlcmap
 ! eub                   -> Urey-Bradley energy
 ! eopbs                 -> improper energy
 ! ecmap                 -> CMAP energy
-
-real eub, eopbs, ecmap
+!real eub, eopbs, ecmap
 
 ! ex explatmod
 
@@ -350,7 +349,7 @@ do i = 1,natt
   call addetyp(atname(1:4))
   etypn=getetyp(atname(1:4))
   call seteleinptyp(nptyp,i,etypn)
-  ptypl(ptypn)%chg(i)=atomchar
+  ptypl(nptyp)%chg(i)=atomchar
   ! } ListMod 
 enddo ! next i
 ! ListMod {
@@ -1665,6 +1664,72 @@ contains
     deallocate (csstmp1,csstmp2)
   end do ! next icmap
   
+  return
+  end subroutine
+
+  subroutine cmapspline(x,y,n,y2)
+  implicit none
+  ! INPUT:
+  ! x(1)<x(2)<...<x(n) -> grid points
+  ! y(1:n)             -> tabulated function
+  ! OUPUT:
+  ! y2(1:n)            -> second derivative of the interpolating function at the grid points
+  integer n
+  real x(n),y(n),y2(n)
+  ! local variables
+  integer i
+  real p,sig,u(n-1)
+  
+  ! The lower boundary condition is set to be "natural"
+  y2(1) = 0.0
+  u(1) = 0.0
+  ! Descomposition loop of the tridiagonal algortihm. y2 and u are used 
+  ! for temporary storage of the descomposed factors
+  do i = 2,n-1
+    sig = (x(i)-x(i-1))/(x(i+1)-x(i-1))
+    p = sig*y2(i-1) + 2.0
+    y2(i) = (sig-1.0)/p
+    u(i) = (6.0*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1)) &
+         - sig*u(i-1))/p 
+  end do
+  ! The upper boundary condition is set to be "natural
+  y2(n) = 0.0
+  ! Backsubstitution loop of the tridiagonal algorithm
+  do i = n-1,1,-1
+    y2(i) = y2(i)*y2(i+1) + u(i)
+  end do
+  return
+  end subroutine
+
+  subroutine bcucof(y,y1,y2,y12,d,c)
+  implicit none
+  ! INPUT:
+  ! d           -> length of the grid cell 
+  ! y,y1,y2,y12 -> function, gradients, and cross derivatives at the four grid points
+  !                of a rectangular grid cell (numbered counterclockwise from the lower left)
+  ! OUPUT:
+  ! c           -> coefficients for the bicubic interpolation
+  real d,c(16),y(4),y1(4),y2(4),y12(4)
+  ! local variables
+  integer i,j
+  real d2,xx,x(16)
+  
+  d2 = d*d
+  ! Pack a temporary vector x
+  do i = 1,4
+    x(i) = y(i)
+    x(i+4) = y1(i)*d
+    x(i+8) = y2(i)*d
+    x(i+12) = y12(i)*d2
+  end do
+  ! Matrix multiply by the stored table
+  do i = 1,16
+    xx = 0.0
+    do j = 1,16
+      xx = xx + wt(i,j)*x(j)
+    end do
+    c(i) = xx
+  end do
   return
   end subroutine
 end subroutine
