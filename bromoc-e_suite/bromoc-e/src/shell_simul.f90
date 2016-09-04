@@ -45,16 +45,17 @@ integer unvec(maxopen), totnumb, nions, kode, maxpart, ncl3, in1, in2
 character*80 title
 character*4 wrd4
 character*4,allocatable,dimension(:) :: nucnam
-character*6 wrd6
+!character*6 wrd6
 real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol,ibuff
+real resol,pkind
+integer ikind
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
 logical*1 logmemb, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
-logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdbe,Qppdb,Qpxyz,Qppdbe,Qpcrd,Qpcrde
+logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdb,Qxyz,Qpdbe,Qcrd,Qcrde
 real*8 zero
 !for time
 integer*8       start,finish,timer
@@ -65,7 +66,7 @@ integer   values(8)
 integer   is,cnt,mnp,nnp,nn,maxd
 integer   wunit,s1,s2,s3,iseed,wallsi4
 integer*1 walls,dnaparams
-integer nsites
+integer nsites,nelem
 !for trajectory, fraction of denatued bases files and translocation time
 integer    ntras 
 real       vfbs,scald,scaldd
@@ -92,7 +93,7 @@ integer*8 ncycle,nsave,nsfbs
 integer,allocatable :: iunitv(:)
 real cc0,cc1,cc2,cc3,cc4
 real xtras, ytras, ztras, rot(3,3)
-real,allocatable ::   xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
+real,allocatable :: xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 integer parn
 
 !Default parameters and options
@@ -686,15 +687,15 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'addpa') then ! Add Particle
   if (.not.Qsystem) call error('shell_simul','SYSTEM must be defined previously',faterr)
   ! Print pdb
-  Qppdb=check(com,'printpdb')
+  Qpdb=check(com,'printpdb')
   ! Print xyz
-  Qpxyz=check(com,'printxyz')
+  Qxyz=check(com,'printxyz')
   ! Print pdbe
-  Qppdbe=check(com,'printpdbe')
+  Qpdbe=check(com,'printpdbe')
   ! Print crd
-  Qpcrd=check(com,'printcrd')
+  Qcrd=check(com,'printcrd')
   ! Print crdext
-  Qpcrde=check(com,'printcrde')
+  Qcrde=check(com,'printcrde')
   endlog = .false.
   ok=.true.
   do while (.not.endlog)
@@ -731,11 +732,11 @@ do while (.not. logfinal)
   enddo
 
   ! print formats 
-  if (Qpxyz) call printxyz(outu)
-  if (Qppdb) call printpdb(outu)
-  if (Qpcrd) call printcrd(outu)
-  if (Qppdbe) call printpdbe(outu)
-  if (Qpcrde) call printcrde(outu)
+  if (Qxyz) call printxyz(outu)
+  if (Qpdb) call printpdb(outu)
+  if (Qcrd) call printcrd(outu)
+  if (Qpdbe) call printpdbe(outu)
+  if (Qcrde) call printcrde(outu)
   ! **********************************************************************
   elseif (wrd5.eq.'parti') then
   !       ---------------
@@ -1048,13 +1049,13 @@ do while (.not. logfinal)
        iecy=2.0/ly
        maxl=sqrt(max(lx,ly)**2+lz**2)+1.0
     else 
-       ! Orthorombic box size along the X-axis [real*8,default=0]
+       ! Orthorhombic box size along the X-axis [real*8,default=0]
        call gtdpar(com,'lx',lx,lx)
        if (lx.lt.0.0) call error ('shell_simul', 'LX is lower than zero in SYSTEM order', faterr)
-       ! Orthorombic box size along the Y-axis [real*8,default=0]
+       ! Orthorhombic box size along the Y-axis [real*8,default=0]
        call gtdpar(com,'ly',ly,ly)
        if (ly.lt.0.0) call error ('shell_simul', 'LY is lower than zero in SYSTEM order', faterr)
-       ! Orthorombic box size along the Z-axis [real*8,default=0]
+       ! Orthorhombic box size along the Z-axis [real*8,default=0]
        call gtdpar(com,'lz',lz,lz)
        if (lz.lt.0.0) call error ('shell_simul', 'LZ is lower than zero in SYSTEM order', faterr)
        tvol=lx*ly*lz
@@ -2217,17 +2218,42 @@ do while (.not. logfinal)
        write(outu,'(6x,a)') 'Configuration has been written'
        if (check(com,'xyz')) then
          call printxyz(iunit)
-       else 
+       else if (check(com,'pdbe')) then ! PDB with Extended Digits
          if (Qsphere) then
            write(iunit,'(A6)') 'CRYST1'
          else
            write(iunit,'(A6,3f9.3,3f7.2)') 'CRYST1',LX,LY,LZ,90.0,90.0,90.0
          endif
-         if (check(com,'pdbe')) then ! PDB with Extended Digits
-           call printpdbe(iunit)
+         call printpdbe(iunit)
+       else if (check(com,'crd')) then
+         if (Qsphere) then
+           write(iunit,'(6x,a,f12.3)') '* System shape: Spherical, Radius: ',Rsphe
+         elseif (Qecyl) then
+           write(iunit,'(6x,a,2f12.3,a,f12.3)') '* System shape: Elliptical Cylinder, Ellipse diameters x and y:',lx,ly,' Cylinder Length: ',lz
          else
-           call printpdb(iunit)
+           write(iunit,'(6x,3(a,f12.3))') '* System shape: Box, Dimensions ->  LX: ',lx,'  LY: ',ly,'  LZ: ',lz
          endif
+         write(iunit,'(6x,3(a,f12.3))') '* System Center:  X ',cx,'  Y ',cy,'  Z ',cz
+         write(iunit,'(6x,a,f20.3)') '* Total System Volume (Ang**3): ',tvol
+         call printcrd(iunit)
+       else if (check(com,'crde')) then
+         if (Qsphere) then
+           write(iunit,'(6x,a,f12.3)') '* System shape: Spherical, Radius: ',Rsphe
+         elseif (Qecyl) then
+           write(iunit,'(6x,a,2f12.3,a,f12.3)') '* System shape: Elliptical Cylinder, Ellipse diameters x and y:',lx,ly,' Cylinder Length: ',lz
+         else
+           write(iunit,'(6x,3(a,f12.3))') '* System shape: Box, Dimensions ->  LX: ',lx,'  LY: ',ly,'  LZ: ',lz
+         endif
+         write(iunit,'(6x,3(a,f12.3))') '* System Center:  X ',cx,'  Y ',cy,'  Z ',cz
+         write(iunit,'(6x,a,f20.3)') '* Total System Volume (Ang**3): ',tvol
+         call printcrde(iunit)
+       else !if (check(com,'pdb')) then
+         if (Qsphere) then
+           write(iunit,'(A6)') 'CRYST1'
+         else
+           write(iunit,'(A6,3f9.3,3f7.2)') 'CRYST1',LX,LY,LZ,90.0,90.0,90.0
+         endif
+         call printpdb(iunit)
        endif  
      elseif (check(com,'title')) then
        write(outu,'(6x,a)') 'TITLE: '//trim(title)
@@ -2503,44 +2529,87 @@ do while (.not. logfinal)
        if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in COOR order', faterr)
        iunit = unvec(iunit)
        write(outu,'(6x,a,i3)')'Reading coordinates from unit ',iunit
+       Qpdb=check(com,'pdb')
        Qpdbe=check(com,'pdbe')
-       if (Qpdbe) write(outu,'(6x,a)')'Format PDBE (PDB with extended coordinate digits)'
-       read(iunit,'(A6)') wrd6
-       if (wrd6.ne.'CRYST1') call error('shell_simul','this file has not BROMOC PDB format',faterr)
+       Qcrd=check(com,'crd')
+       Qcrde=check(com,'crde')
+       if (Qpdb) then
+         write(outu,'(6x,a)')'Format PDB'
+       else if (Qpdbe) then
+         write(outu,'(6x,a)')'Format PDBE (PDB with extended coordinate digits)'
+       else if (Qcrd) then
+         write(outu,'(6x,a)')'Format CRD (CHARMM xplor format)'
+       else if (Qcrde) then
+         write(outu,'(6x,a)')'Format CRDE (CHARM xplor Extended format)'
+       else
+         call error ('shell_simul', 'File Format not specified in COOR', faterr)
+       endif
+       do
+         read(iunit,'(A)') com
+         if (Qpdbe.or.Qpdb) then
+           if (com(1:4).eq.'ATOM') exit
+         else
+           if (com(1:1).ne.'*') then
+             read(iunit,'(A)') com
+             read(com, *) nelem
+             exit
+           endif
+         endif
+       enddo
        if (Qnucl) then
          ilast=0
+         if (nelem.lt.nelenuc) call error ('shell_simul', 'Less number of elements than expected in COOR', faterr)
          do i = 1, nelenuc
-           read(iunit,'(a)') com
            if (Qpdbe) then 
              read(com,'(6x,5x,x,5x,5x,I4,4x,3F16.8)') itype,rr%x,rr%y,rr%z
-           else
+           elseif (Qpdb) then
              read(com,'(6x,5x,x,5x,5x,I4,4x,3F8.3)') itype,rr%x,rr%y,rr%z
+           elseif (Qcrd) then
+             read(com,'(5x,I5,1x,4x,1x,4x,3F10.5)') itype,rr%x,rr%y,rr%z
+           elseif (Qcrde) then
+             read(com,'(10x,I10,2x,4x,6x,4x,4x,3F20.10)') itype,rr%x,rr%y,rr%z
            endif
            if (itype.ne.ilast) jtype=1
            call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
            ilast=itype
            jtype=jtype+1
+           read(iunit,'(a)') com
          enddo
        endif
-       if (Qpar) then
-         ilast=0
-         read(iunit,'(a)') com
+       ilast=0
+       if (Qpdbe.or.Qpdb) then
          do while (trim(adjustl(com)).ne.'END')
            if (Qpdbe) then
-             read (com,'(6x,5x,x,A5,5x,I4,4x,3F16.8,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,ibuff
+             read (com,'(6x,5x,x,A5,5x,I4,4x,3F16.8,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,pkind
            else
-             read (com,'(6x,5x,x,A5,5x,I4,4x,3F8.3,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,ibuff
+             read (com,'(6x,5x,x,A5,5x,I4,4x,3F8.3,F6.2)') wrd4,itype,rr%x,rr%y,rr%z,pkind
            endif
            if (ilast.ne.itype) then
              jtype=1
-             call addpar(getptyp(wrd4),kind=3,ibuf=int(ibuff))
+             call addpar(getptyp(wrd4),kind=int(pkind))
            endif
            call putcoorinpar(npar,jtype,rr%x,rr%y,rr%z)
            ilast=itype
            jtype=jtype+1
            read(iunit,'(a)') com
          enddo
-       endif  
+       else
+         do i=nelenuc,nelem
+           if (Qcrde) then
+             read (com,'(10x,I10,2x,A4,6x,4x,4x,3F20.10,2X,I4)') itype,wrd4,rr%x,rr%y,rr%z,ikind
+           else
+             read (com,'(5x,I5,1x,A4,1x,4x,3F10.5,1X,I4,1X,I4)') itype,wrd4,rr%x,rr%y,rr%z,ikind
+           endif
+           if (ilast.ne.itype) then
+             jtype=1
+             call addpar(getptyp(wrd4),kind=ikind)
+           endif
+           call putcoorinpar(npar,jtype,rr%x,rr%y,rr%z)
+           ilast=itype
+           jtype=jtype+1
+           read(iunit,'(a)') com
+         enddo
+       endif
        write(outu,'(6x,a)') 'coordinates have been read'
        call count
      elseif (check(com,'gener')) then

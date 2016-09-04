@@ -1225,8 +1225,8 @@ syntax:
   Prints system information:
         [PRINT] {system} 
 
-  Prints coordinates:
-        [PRINT] {coor} unit (integer) [XYZ/PDB] 
+  Prints coordinates in the formats XYZ/PDB/PDBE (Extended PDB)/CRD (Charmm xplor Coordinates)/ CRDE (CRD Extended)
+        [PRINT] {coor} unit (integer) [XYZ/PDB/PDBE/CRD/CRDE] 
 
   Prints title:
         [PRINT] {title} 
