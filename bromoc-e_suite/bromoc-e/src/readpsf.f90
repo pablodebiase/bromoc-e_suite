@@ -1,14 +1,132 @@
 subroutine readpsf(Qprint)
-
 use errormod
 use stdiomod
 use charmmmod
 use grandmod
 use charfuncmod
-use explatmod
 use constamod
+use listmod
 
 implicit none
+
+! ex explatmod
+! New variables related to explicit atoms in GCMC/BD code
+! ======================================================
+!
+
+! Non-bonded terms
+! ----------------
+!
+! maxtypes              -> Number of nonbonded types 
+! maxcharges            -> Number of atom types
+! maxnnb                -> Number of atom type pairs
+! typen                 -> Pointer for non-bonded pairs
+! non_of_charge         -> Pointer for non-bonded type
+! nonbonded             -> LJ parameters
+! non_labels            -> Name for nonbonded types
+! atom_labels           -> Name for atom types
+! sdat                  -> Self-diffusion constants for nonbonded types
+! qat                   -> Atom type charges
+
+integer     maxtypes, maxcharges, maxnnb
+integer,allocatable :: typen(:,:), non_of_charge(:)
+real,allocatable :: nonbonded(:,:), sdat(:), qat(:)
+character*7,allocatable :: non_labels(:) 
+character*9,allocatable :: atom_labels(:)
+
+! Bonded terms
+! ------------
+!
+! nbondt                -> Number of bond types
+! nbendt                -> Number of bond angle types
+! nubt                  -> Number of Urey-Bradley term types
+! ntortt                -> Number of dihedral angle types
+! ndeformt              -> Number of improper angle types
+! ncmap                 -> Number of CMAP terms
+! stretch               -> Bond parameters
+! bend                  -> Bond angle parameters
+! ubt                   -> Urey-Bradley parameters
+! dih, ndih, nprms      -> Dihedral angle parameters
+! deform                -> Improper angle parameters
+! cmap                  -> CMAP grid points
+! gscmap                -> CMAP grid spacing
+! fcmap                 -> CMAP interpolating function
+! ftcmap, fpcmap        -> CMAP gradients with respect to theta and psi angles
+! ftpcmap               -> CMAP cross derivatives
+! ccoef                 -> CMAP coefficient for the bicubic interpolation 
+! wt                    -> Matrix necessary for the CMAP coefficient calculations
+
+integer   nbondt, nbendt, nubt, ntortt, ndeformt, ncmap
+integer,allocatable :: ndih(:,:), nprms(:), cmap(:)
+real,allocatable :: stretch(:,:), bend(:,:), ubt(:,:), dih(:,:), deform(:,:), gscmap(:), fcmap(:,:), ftcmap(:,:), fpcmap(:,:), ftpcmap(:,:), ccoef(:,:,:)
+real wt(16,16)
+data wt /1,0,-3,2,4*0,-3,0,9,-6,2,0,-6,4,8*0,3,0,-9,6,-2,0,6,-4, &
+         10*0,9,-6,2*0,-6,4,2*0,3,-2,6*0,-9,6,2*0,6,-4, &
+         4*0,1,0,-3,2,-2,0,6,-4,1,0,-3,2,8*0,-1,0,3,-2,1,0,-3,2, &
+         10*0,-3,2,2*0,3,-2,6*0,3,-2,2*0,-6,4,2*0,3,-2, & 
+         0,1,-2,1,5*0,-3,6,-3,0,2,-4,2,9*0,3,-6,3,0,-2,4,-2, &
+         10*0,-3,3,2*0,2,-2,2*0,-1,1,6*0,3,-3,2*0,-2,2, &
+         5*0,1,-2,1,0,-2,4,-2,0,1,-2,1,9*0,-1,2,-1,0,1,-2,1, &
+         10*0,1,-1,2*0,-1,1,6*0,-1,1,2*0,2,-2,2*0,-1,1/         
+
+! Connectivity terms
+! ------------------
+!
+! nch                   -> Number of chains
+! natt                  -> Number of explicit atoms
+! Qlbond                -> Logical variable which indicates if CHARMM FF includes bonds
+! nbondsch              -> Number of bonds for each chain 
+! nbonds                -> Number of bonds
+! Qlang                 -> Logical variable which indicates if CHARMM FF includes bond angles
+! nbends                -> Number of bond angles
+! Qlubs                 -> Logical variable which indicates if CHARMM FF includes UB terms
+! nubs                  -> Number of Urey-Bradley terms
+! Qldih                 -> Logical variable which indicates if CHARMM FF includes dihedral angles
+! ntorts                -> Number of dihedral angles
+! Qldef                 -> Logical variable which indicates if CHARMM FF includes improper angles
+! ndeforms              -> Number of improper angles
+! Qlcmap                -> Logical variable which indicates if CHARMM FF includes CMAP terms
+! ncmaps                -> Number of CMAP terms
+! natfx                 -> Number of fixed atoms
+! nghosts               -> Number of ghost atoms
+! chain                 -> Pointer which indicates the chain of each atom
+! bonds                 -> Connectivity bonds indices
+! bends                 -> Connectivity bond angle indices
+! ubs                   -> Connectivity Urey-Bradley indices
+! torts                 -> Connectivity dihedral angle indices
+! deforms               -> Connectivity improper angle indices
+! cmaps                 -> Connectivity CMAP indices
+! lthetacmap            -> Integer variable which indicates if a dihedral angle is the theta angle for CMAP
+! lpsicmap              -> Integer variable which indicates if a dihedral angle is the psi angle for CMAP
+! thetacmap             -> Theta angle for CMAP
+! psicmap               -> Psi angle for CMAP
+! attcmap               -> Atoms which form the theta angle for CMAP
+! atpcmap               -> Atoms which form the psi angle for CMAP
+! nablatcmp             -> Gradient for atoms which form the theta angle for CMAP
+! nablapcmp             -> Gradient for atoms which form the psi angle for CMAP
+! fixed                 -> Logical variable which indicates if an atom is a fixed atom
+! ghost                 -> Logical variable which indicates if an atom is a ghost atom
+
+integer nch, natt, nbonds, nbends, nubs, ntorts, ndeforms, ncmaps 
+integer natfx, nghosts
+integer,allocatable :: chain(:), nbondsch(:), bonds(:,:), bends(:,:)
+integer, allocatable :: ubs(:,:), torts(:,:), deforms(:,:), cmaps(:,:)
+integer, allocatable :: lthetacmap(:), lpsicmap(:), attcmap(:,:), atpcmap(:,:)
+logical,allocatable :: fixed(:), ghost(:)
+real, allocatable ::  thetacmap(:), psicmap(:), nablatcmp(:,:,:), nablapcmp(:,:,:)
+logical*1 :: Qlbond, Qlang, Qlubs, Qldih, Qldef, Qlcmap
+
+! Energy terms
+!------------------
+!
+! eub                   -> Urey-Bradley energy
+! eopbs                 -> improper energy
+! ecmap                 -> CMAP energy
+
+real eub, eopbs, ecmap
+
+! ex explatmod
+
 logical*1 Qprint
 ! local variables
 integer :: dummyi, i, j, k, l, m, IDat, intert, intert2, ncharge, ilines, irest, ibonds, ibends, iubs, itort, itort1, itort2, ideform
@@ -21,8 +139,10 @@ real :: atomchar, atommass, Qnet
 real, allocatable :: psf_qat(:,:), psf_mass(:)
 character*7, allocatable :: psf_non_labels(:)
 character :: dummyc*144, atname*7, intg*2, word*5, wrtline*2048
+character*4 :: ptname
 logical*1 :: dobond, doang, dodih, dodef, docmap
 logical*1 :: ok, ok1, ok2
+integer etypn
 
 ! *** OBTENTION OF DIMENSIONS
 nbonds   = 0
@@ -188,7 +308,8 @@ Qnet = 0.0
 maxtypes = 0
 psf_nq = 0
 do i = 1,natt
-  read(iunpsf,*) IDat,dummyc,dummyi,dummyc,dummyc,atname,atomchar,atommass,dummyi
+  read(iunpsf,*) IDat,ptname,dummyi,dummyc,dummyc,atname,atomchar,atommass,dummyi
+  if (i.eq.1) call addptyp(natt, ptname) !ListMod
   if (IDat.le.0 .or. IDat.gt.natt) call error ('readpsf', 'Wrong atom ID', faterr)
   Qnet = Qnet + atomchar
   j = 0
@@ -225,7 +346,17 @@ do i = 1,natt
     psf_atomtype(i) = j
     psf_atomtype2(i) = k
   endif
+  ! ListMod {
+  call addetyp(atname(1:4))
+  etypn=getetyp(atname(1:4))
+  call seteleinptyp(nptyp,i,etypn)
+  ptypl(ptypn)%chg(i)=atomchar
+  ! } ListMod 
 enddo ! next i
+! ListMod {
+call updateptypchg(nptyp)
+call setpsfinptyp(nptyp)
+! } ListMod 
 ! obtention of maxcharges
 maxcharges = 0
 do itype = 1, maxtypes
@@ -341,6 +472,16 @@ if (Qlbond) then
   enddo
   ! deallocations
   deallocate(psf_btype)
+! ListMod {
+  ! copy nbonds
+  ptypl(nptyp)%psf%nbonds=nbonds
+  ! transfer bonds
+  if (allocated(ptypl(nptyp)%psf(1)%bonds)) deallocate (ptypl(nptyp)%psf(1)%bonds)
+  call move_alloc(bonds,ptypl(nptyp)%psf(1)%bonds)
+  ! transfer stretch
+  if (allocated(ptypl(nptyp)%psf(1)%stretch)) deallocate (ptypl(nptyp)%psf(1)%stretch)
+  call move_alloc(stretch,ptypl(nptyp)%psf(1)%stretch)
+! } ListMod 
 endif ! Qlbond
 
 ! *** read bond angle section
@@ -450,9 +591,29 @@ if (Qlang) then
     enddo
     ! deallocations
     deallocate(psf_ubtp)
+    ! ListMod {
+    ! copy nubs
+    ptypl(nptyp)%psf%nubs=nubs
+    ! transfer ubs
+    if (allocated(ptypl(nptyp)%psf(1)%ubs)) deallocate (ptypl(nptyp)%psf(1)%ubs)
+    call move_alloc(ubs,ptypl(nptyp)%psf(1)%ubs)
+    ! transfer ubt
+    if (allocated(ptypl(nptyp)%psf(1)%ubt)) deallocate (ptypl(nptyp)%psf(1)%ubt)
+    call move_alloc(ubt,ptypl(nptyp)%psf(1)%ubt)
+    ! } ListMod 
   endif ! Qlubs
   ! deallocations
   deallocate(psf_btype,psf_bendtyp)
+  ! ListMod {
+  ! copy nbends
+  ptypl(nptyp)%psf%nbends=nbends
+  ! transfer bends
+  if (allocated(ptypl(nptyp)%psf(1)%bends)) deallocate (ptypl(nptyp)%psf(1)%bends)
+  call move_alloc(bends,ptypl(nptyp)%psf(1)%bends)
+  ! transfer bend
+  if (allocated(ptypl(nptyp)%psf(1)%bend)) deallocate (ptypl(nptyp)%psf(1)%bend)
+  call move_alloc(bend,ptypl(nptyp)%psf(1)%bend)
+  ! } ListMod 
 endif ! Qlang
 
 ! *** read dihedral angle section
@@ -514,6 +675,19 @@ if (Qldih) then
   enddo
   ! deallocations
   deallocate(psf_btype)
+  ! ListMod {
+  ! copy ntorts
+  ptypl(nptyp)%psf%ntorts=ntorts
+  ! transfer torts
+  if (allocated(ptypl(nptyp)%psf(1)%torts)) deallocate (ptypl(nptyp)%psf(1)%torts)
+  call move_alloc(torts,ptypl(nptyp)%psf(1)%torts)
+  ! transfer ndih
+  if (allocated(ptypl(nptyp)%psf(1)%ndih)) deallocate (ptypl(nptyp)%psf(1)%ndih)
+  call move_alloc(ndih,ptypl(nptyp)%psf(1)%ndih)
+  ! transfer dih
+  if (allocated(ptypl(nptyp)%psf(1)%dih)) deallocate (ptypl(nptyp)%psf(1)%dih)
+  call move_alloc(dih,ptypl(nptyp)%psf(1)%dih)
+  ! } ListMod 
 endif ! Qldih
 
 ! *** read improper angle section
@@ -576,6 +750,16 @@ if (Qldef) then
   enddo
   ! deallocations
   deallocate(psf_btype)
+  ! ListMod {
+  ! copy ndeforms
+  ptypl(nptyp)%psf%ndeforms=ndeforms
+  ! transfer deforms
+  if (allocated(ptypl(nptyp)%psf(1)%deforms)) deallocate (ptypl(nptyp)%psf(1)%deforms)
+  call move_alloc(deforms,ptypl(nptyp)%psf(1)%deforms)
+  ! transfer deform 
+  if (allocated(ptypl(nptyp)%psf(1)%deform)) deallocate (ptypl(nptyp)%psf(1)%deform)
+  call move_alloc(deform,ptypl(nptyp)%psf(1)%deform)
+  ! } ListMod 
 endif ! Qldef
 
 ! *** read cross-term section
@@ -736,6 +920,34 @@ if (Qlcmap) then
     endif
   enddo
   deallocate(psf_btype,cmaptype)
+  ! ListMod {
+  ! copy ncmaps
+  ptypl(nptyp)%psf%ncmaps=ncmaps
+  ! transfer cmaps
+  if (allocated(ptypl(nptyp)%psf(1)%cmaps)) deallocate (ptypl(nptyp)%psf(1)%cmaps)
+  call move_alloc(cmaps,ptypl(nptyp)%psf(1)%cmaps)
+  ! transfer attcmap
+  if (allocated(ptypl(nptyp)%psf(1)%attcmap)) deallocate (ptypl(nptyp)%psf(1)%attcmap)
+  call move_alloc(attcmap,ptypl(nptyp)%psf(1)%attcmap)
+  ! transfer gscmap
+  if (allocated(ptypl(nptyp)%psf(1)%gscmap)) deallocate (ptypl(nptyp)%psf(1)%gscmap)
+  call move_alloc(gscmap,ptypl(nptyp)%psf(1)%gscmap)
+  ! transfer fcmap
+  if (allocated(ptypl(nptyp)%psf(1)%fcmap)) deallocate (ptypl(nptyp)%psf(1)%fcmap)
+  call move_alloc(fcmap,ptypl(nptyp)%psf(1)%fcmap)
+  ! transfer ftcmap
+  if (allocated(ptypl(nptyp)%psf(1)%ftcmap)) deallocate (ptypl(nptyp)%psf(1)%ftcmap)
+  call move_alloc(ftcmap,ptypl(nptyp)%psf(1)%ftcmap)
+  ! transfer fpcmap
+  if (allocated(ptypl(nptyp)%psf(1)%fpcmap)) deallocate (ptypl(nptyp)%psf(1)%fpcmap)
+  call move_alloc(fpcmap,ptypl(nptyp)%psf(1)%fpcmap)
+  ! transfer ftpcmap
+  if (allocated(ptypl(nptyp)%psf(1)%ftpcmap)) deallocate (ptypl(nptyp)%psf(1)%ftpcmap)
+  call move_alloc(ftpcmap,ptypl(nptyp)%psf(1)%ftpcmap)
+  ! transfer ccoef
+  if (allocated(ptypl(nptyp)%psf(1)%ccoef)) deallocate (ptypl(nptyp)%psf(1)%ccoef)
+  call move_alloc(ccoef,ptypl(nptyp)%psf(1)%ccoef)
+  ! } ListMod 
 endif ! Qlcmap
 deallocate(psf_mass,val)
 
@@ -869,6 +1081,590 @@ if (Qprint) then
     enddo
   endif
 endif
-
+deallocate (psf_atomtype,psf_atomtype2)
+deallocate (typen,non_of_charge,nonbonded,sdat,qat,non_labels,atom_labels,psf_charge)
+deallocate (bonds,stretch)
+deallocate (bends,bend)
+deallocate (ubs,ubt)
+deallocate (torts,dih,ndih,nprms)
+deallocate (deforms,deform)
+deallocate (cmaps,lthetacmap,lpsicmap,thetacmap,psicmap,attcmap,atpcmap,& 
+            nablatcmp,nablapcmp,cmap,gscmap,fcmap,ftcmap,fpcmap,ftpcmap,ccoef)
+deallocate (chain,nbondsch,fixed,ghost) 
 return
+contains
+ 
+  subroutine psf_bond(ibonds,iat1,iat2,val,psf_btype)
+  implicit none
+  integer ibonds,iat1,iat2
+  integer val(natt),psf_btype(2,nbonds)
+  ! local variables
+  integer itype,jtype,j
+  logical*1 ok
+  
+  if (iat1.le.0 .or. iat2.le.0 .or. iat1.gt.natt .or. iat2.gt.natt .or. iat1.eq.iat2) call error ('psf_bond', 'Wrong bond atoms', faterr)
+  ibonds = ibonds + 1
+  if (iat1.lt.iat2) then
+    bonds(1,ibonds) = iat1
+    bonds(2,ibonds) = iat2
+  else
+    bonds(1,ibonds) = iat2
+    bonds(2,ibonds) = iat1
+  endif
+  iat1 = psf_atomtype(iat1)
+  iat2 = psf_atomtype(iat2)
+  itype = val(iat1)
+  jtype = val(iat2)
+  if (itype.gt.jtype) then
+    j = jtype
+    jtype = itype
+    itype = j
+  endif
+  j = 0
+  ok = .false.
+  do while (j.lt.nbondt .and. .not.ok)
+    j = j + 1
+    ok = itype.eq.psf_btype(1,j) .and. jtype.eq.psf_btype(2,j)
+  enddo
+  if (ok) then
+    bonds(3,ibonds) = j
+  else
+    nbondt = nbondt + 1
+    psf_btype(1,nbondt) = itype
+    psf_btype(2,nbondt) = jtype
+    bonds(3,ibonds) = nbondt
+  endif
+  
+  return
+  end subroutine
+  
+  subroutine psf_bend(ibends,iat1,iat2,iat3,val,psf_btype)
+  implicit none
+  integer ibends,iat1,iat2,iat3
+  integer val(natt),psf_btype(3,nbends)
+  ! local variables
+  integer ib1,ib2,ibonds,itype,jtype,ktype,j
+  logical*1 ok
+  
+  if (iat1.le.0 .or. iat2.le.0 .or. iat3.le.0 .or. iat1.gt.natt .or. iat2.gt.natt .or. iat3.gt.natt .or. & 
+      iat1.eq.iat2 .or. iat1.eq.iat3 .or. iat2.eq.iat3) call error ('psf_bend', 'Wrong bond angle', faterr)
+  ibends = ibends + 1
+  bends(1,ibends) = iat1
+  bends(2,ibends) = iat2 ! central atom
+  bends(3,ibends) = iat3
+  ! determine which bonds make up each bend 
+  ib1 = iat1
+  ib2 = iat2
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok) 
+    ibonds = ibonds + 1
+    ok = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (.not.ok) call error ('psf_bend', 'bend: first bond not found', faterr)
+  ib1 = iat2
+  ib2 = iat3
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok) 
+    ibonds = ibonds + 1
+    ok = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (.not.ok) call error ('psf_bend', 'bend: second bond not found', faterr)
+  iat1 = psf_atomtype(iat1)
+  iat2 = psf_atomtype(iat2)
+  iat3 = psf_atomtype(iat3)
+  itype = val(iat1)
+  jtype = val(iat2)
+  ktype = val(iat3)
+  j = 0
+  ok = .false.
+  do while (j.lt.nbendt .and. .not.ok)
+    j = j + 1
+    ok = (itype.eq.psf_btype(1,j).and.jtype.eq.psf_btype(2,j).and.ktype.eq.psf_btype(3,j)) .or. &
+         (itype.eq.psf_btype(3,j).and.jtype.eq.psf_btype(2,j).and.ktype.eq.psf_btype(1,j))
+  enddo
+  if (ok) then
+    bends(4,ibends) = j
+  else
+    nbendt = nbendt + 1
+    psf_btype(1,nbendt) = itype
+    psf_btype(2,nbendt) = jtype
+    psf_btype(3,nbendt) = ktype
+    bends(4,ibends) = nbendt
+  endif
+  
+  return
+  end subroutine
+  
+  subroutine psf_dih(itort,iat1,iat2,iat3,iat4,val,psf_btype)
+  implicit none
+  integer itort,iat1,iat2,iat3,iat4
+  integer val(natt),psf_btype(4,ntorts)
+  ! local variables
+  integer ib1,ib2,ibonds,itype,jtype,ktype,ltype,j
+  logical*1 ok
+  
+  if (iat1.le.0 .or. iat2.le.0 .or. iat3.le.0 .or. iat4.le.0 .or. iat1.gt.natt .or. iat2.gt.natt .or. iat3.gt.natt .or. iat4.gt.natt &
+      .or. iat1.eq.iat2 .or. iat1.eq.iat3 .or. iat1.eq.iat4 .or. iat2.eq.iat3 .or. iat2.eq.iat4 .or. iat3.eq.iat4) call error ('psf_dih', 'Wrong dihedral angle', faterr)
+  ! check there is not duplicate dihedral angles
+  ok = .false.
+  j = 0
+  do while (j.lt.itort .and. .not.ok)
+    j = j + 1
+    ok = (iat1.eq.torts(1,j).and.iat2.eq.torts(2,j).and.iat3.eq.torts(3,j).and.iat4.eq.torts(4,j)) .or. &
+         (iat1.eq.torts(4,j).and.iat2.eq.torts(3,j).and.iat3.eq.torts(2,j).and.iat4.eq.torts(1,j))
+  enddo
+  if (ok) call error ('psf_dih', 'Dihedral angles are duplicated', faterr)
+  itort = itort + 1
+  torts(1,itort) = iat1 ! terminal atom
+  torts(2,itort) = iat2 
+  torts(3,itort) = iat3
+  torts(4,itort) = iat4 ! terminal atom
+  ! determine which bonds make up each torsion
+  ib1 = torts(1,itort)
+  ib2 = torts(2,itort)
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok)
+    ibonds = ibonds + 1
+    ok = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (.not.ok) call error ('psf_dih', 'torsion: first bond not found', faterr)
+  ib1 = torts(2,itort)
+  ib2 = torts(3,itort)
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok)
+    ibonds = ibonds + 1
+    ok = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (.not.ok) call error ('psf_dih', 'torsion: second bond not found', faterr)
+  ib1 = torts(3,itort)
+  ib2 = torts(4,itort)
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok)
+    ibonds = ibonds + 1
+    ok = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (.not.ok) call error ('psf_dih', 'torsion: third bond not found', faterr)
+  iat1 = psf_atomtype(iat1)
+  iat2 = psf_atomtype(iat2)
+  iat3 = psf_atomtype(iat3)
+  iat4 = psf_atomtype(iat4)
+  itype = val(iat1)
+  jtype = val(iat2)
+  ktype = val(iat3)
+  ltype = val(iat4)
+  j = 0
+  ok = .false.
+  do while (j.lt.ntortt .and. .not.ok)
+    j = j + 1
+    ok = (itype.eq.psf_btype(1,j).and.jtype.eq.psf_btype(2,j).and.ktype.eq.psf_btype(3,j).and.ltype.eq.psf_btype(4,j)) .or. &
+         (itype.eq.psf_btype(4,j).and.jtype.eq.psf_btype(3,j).and.ktype.eq.psf_btype(2,j).and.ltype.eq.psf_btype(1,j))
+  enddo
+  if (ok) then
+    torts(5,itort) = j
+  else
+    ntortt = ntortt + 1
+    psf_btype(1,ntortt) = itype
+    psf_btype(2,ntortt) = jtype
+    psf_btype(3,ntortt) = ktype
+    psf_btype(4,ntortt) = ltype
+    torts(5,itort) = ntortt
+  endif
+  
+  return
+  end subroutine
+  
+  subroutine psf_imp(ideform,iat1,iat2,iat3,iat4,val,psf_btype)
+  implicit none
+  integer ideform,iat1,iat2,iat3,iat4
+  integer val(natt),psf_btype(4,ndeforms)
+  ! local variables
+  integer ib1,ib2,ibonds,itype,jtype,ktype,ltype,j
+  logical*1 ok,ok1,ok2
+  
+  if (iat1.le.0 .or. iat2.le.0 .or. iat3.le.0 .or. iat4.le.0 .or. iat1.gt.natt .or. iat2.gt.natt .or. iat3.gt.natt .or.iat4.gt.natt & 
+      .or. iat1.eq.iat2 .or. iat1.eq.iat3 .or. iat1.eq.iat4 .or. iat2.eq.iat3 .or. iat2.eq.iat4 .or. iat3.eq.iat4) call error ('readpsf', 'Wrong improper angle', faterr)
+  ! check there is not duplicate improper angles
+  ok = .false.
+  j = 0
+  do while (j.lt.ideform .and. .not.ok)
+    j = j + 1
+    ok = (iat1.eq.deforms(1,j).and.iat2.eq.deforms(2,j).and.iat3.eq.deforms(3,j).and.iat4.eq.deforms(4,j)) .or. &
+         (iat1.eq.deforms(4,j).and.iat2.eq.deforms(3,j).and.iat3.eq.deforms(2,j).and.iat4.eq.deforms(1,j))
+  enddo
+  if (ok) call error ('psf_imp', 'Improper angles are duplicated', faterr)
+  ideform = ideform + 1
+  deforms(1,ideform) = iat1   
+  deforms(2,ideform) = iat2 
+  deforms(3,ideform) = iat3
+  deforms(4,ideform) = iat4 
+  ! determine which bonds make up each deformation  
+  ! a) iat1 is the central atom
+  ib1 = deforms(1,ideform)
+  ib2 = deforms(2,ideform)
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok1 = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok1)
+    ibonds = ibonds + 1
+    ok1 = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (ok1) then
+    ib1 = deforms(1,ideform)
+    ib2 = deforms(3,ideform)
+    if (ib2.lt.ib1) then
+      j = ib1
+      ib1 = ib2
+      ib2 = j
+    endif
+    ok1 = .false.
+    ibonds = 0
+    do while (ibonds.lt.nbonds .and. .not.ok1)
+      ibonds = ibonds + 1
+      ok1 = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+    enddo
+  endif
+  if (ok1) then
+    ib1 = deforms(1,ideform)
+    ib2 = deforms(4,ideform)
+    if (ib2.lt.ib1) then
+      j = ib1
+      ib1 = ib2
+      ib2 = j
+    endif
+    ok1 = .false.
+    ibonds = 0
+    do while (ibonds.lt.nbonds .and. .not.ok1)
+      ibonds = ibonds + 1
+      ok1 = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+    enddo
+  endif
+  ! b) iat4 is the central atom
+  ib1 = deforms(4,ideform)
+  ib2 = deforms(2,ideform)
+  if (ib2.lt.ib1) then
+    j = ib1
+    ib1 = ib2
+    ib2 = j
+  endif
+  ok2 = .false.
+  ibonds = 0
+  do while (ibonds.lt.nbonds .and. .not.ok2)
+    ibonds = ibonds + 1
+    ok2 = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+  enddo
+  if (ok2) then
+    ib1 = deforms(4,ideform)
+    ib2 = deforms(3,ideform)
+    if (ib2.lt.ib1) then
+      j = ib1
+      ib1 = ib2
+      ib2 = j
+    endif
+    ok2 = .false.
+    ibonds = 0
+    do while (ibonds.lt.nbonds .and. .not.ok2)
+      ibonds = ibonds + 1
+      ok2 = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+    enddo
+  endif
+  if (ok2) then
+    ib1 = deforms(4,ideform)
+    ib2 = deforms(1,ideform)
+    if (ib2.lt.ib1) then
+      j = ib1
+      ib1 = ib2
+      ib2 = j
+    endif
+    ok2 = .false.
+    ibonds = 0
+    do while (ibonds.lt.nbonds .and. .not.ok2)
+      ibonds = ibonds + 1
+      ok2 = ib1.eq.bonds(1,ibonds) .and. ib2.eq.bonds(2,ibonds)
+    enddo
+  endif
+  ok = ok1 .or. ok2
+  if (.not.ok) call error ('psf_imp', 'Central atom is not found', faterr)
+  iat1 = psf_atomtype(iat1)
+  iat2 = psf_atomtype(iat2)
+  iat3 = psf_atomtype(iat3)
+  iat4 = psf_atomtype(iat4)
+  itype = val(iat1)
+  jtype = val(iat2)
+  ktype = val(iat3)
+  ltype = val(iat4)
+  j = 0
+  ok = .false.
+  do while (j.lt.ndeformt .and. .not.ok)
+    j = j + 1
+    ok = (itype.eq.psf_btype(1,j).and.jtype.eq.psf_btype(2,j).and.ktype.eq.psf_btype(3,j).and.ltype.eq.psf_btype(4,j)) .or. &
+         (itype.eq.psf_btype(4,j).and.jtype.eq.psf_btype(3,j).and.ktype.eq.psf_btype(2,j).and.ltype.eq.psf_btype(1,j))
+  enddo
+  if (ok) then
+    deforms(5,ideform) = j
+  else
+    ndeformt = ndeformt + 1
+    psf_btype(1,ndeformt) = itype 
+    psf_btype(2,ndeformt) = jtype 
+    psf_btype(3,ndeformt) = ktype
+    psf_btype(4,ndeformt) = ltype
+    deforms(5,ideform) = ndeformt
+  endif
+  
+  return
+  end subroutine
+  
+  subroutine psf_cmap(i,j,iat1,iat2,iat3,iat4,psf_mass)
+  implicit none
+  integer i,j,iat1,iat2,iat3,iat4,itype,jtype,ktype,ltype
+  real psf_mass(natt)
+  ! local variables
+  integer itort
+  real, parameter :: tol=1.0e-2
+  logical*1 ok
+  
+  itype = psf_atomtype(iat1)
+  jtype = psf_atomtype(iat2)
+  ktype = psf_atomtype(iat3)
+  ltype = psf_atomtype(iat4)
+  if (abs(psf_mass(itype)-12.011).lt.tol .and. abs(psf_mass(ltype)-12.011).lt.tol) then ! theta angle (C-N-C_alpha-C)
+    if ((abs(psf_mass(jtype)-14.007).lt.tol.and.abs(psf_mass(ktype)-12.011).lt.tol) .or. &
+        (abs(psf_mass(ktype)-12.011).lt.tol.and.abs(psf_mass(jtype)-14.007).lt.tol)) then
+      j = 1
+    else
+      call error ('psf_cmap', 'Wrong atoms in cross-term section', faterr)
+    endif
+  else if (abs(psf_mass(itype)-14.007).lt.tol .and. abs(psf_mass(ltype)-14.007).lt.tol) then ! psi angle (N-C_alpha-C-N)
+    if (abs(psf_mass(jtype)-12.011).lt.tol.and.abs(psf_mass(ktype)-12.011).lt.tol) then
+      j = 2
+    else
+      call error ('psf_cmap', 'Wrong atoms in cross-term section', faterr)
+    endif
+  else
+    call error ('psf_cmap', 'Wrong atoms in cross-term section', faterr)
+  endif
+  ! check dihedral angle
+  itort = 0
+  ok = .false.
+  do while (itort.lt.ntorts .and. .not.ok)
+    itort = itort + 1
+    ok = (iat1.eq.torts(1,itort).and.iat2.eq.torts(2,itort).and.iat3.eq.torts(3,itort).and.iat4.eq.torts(4,itort)) .or. &
+         (iat4.eq.torts(1,itort).and.iat3.eq.torts(2,itort).and.iat2.eq.torts(3,itort).and.iat1.eq.torts(4,itort))
+  enddo
+  if (.not.ok) call error ('psf_cmap', 'CMAP: dihedral angle not found', faterr) 
+  ! assignament
+  cmaps(j,i) = itort
+  if (j.eq.1) then
+    lthetacmap(itort) = i
+  else
+    lpsicmap(itort) = i
+  endif
+  
+  return
+  end subroutine
+
+  subroutine cmapc()
+  implicit none
+  ! local variables
+  integer icmap,n,n2,i,j,j1,j2,j3,j4,k,l,m
+  real y(4),y1(4),y2(4),y12(4),d,c(16)
+  
+  do icmap = 1,ncmap
+    n = cmap(icmap)
+    n2 = n*n
+    j1 = 0
+    do i = 1,n
+      do j = 1,n
+        ! Grid points for a rectangular grid cell (numbered counter clockwise from the lower left)
+        j1 = j1 + 1
+        j2 = j1 + n
+        j3 = j2 + 1
+        j4 = j1 + 1
+        ! Symmetry considerations for grid points
+        if (j.eq.n) then
+          j3 = j3 - n
+          j4 = j4 - n
+        end if
+        if (i.eq.n) then
+          j2 = j2 - n2
+          j3 = j3 - n2
+        end if
+        ! Function at the four grid points
+        y(1) = fcmap(j1,icmap)
+        y(2) = fcmap(j2,icmap)   
+        y(3) = fcmap(j3,icmap)
+        y(4) = fcmap(j4,icmap) 
+        ! Gradients at the four grid points 
+        y1(1) = ftcmap(j1,icmap)
+        y1(2) = ftcmap(j2,icmap)
+        y1(3) = ftcmap(j3,icmap)
+        y1(4) = ftcmap(j4,icmap)
+        y2(1) = fpcmap(j1,icmap)
+        y2(2) = fpcmap(j2,icmap)
+        y2(3) = fpcmap(j3,icmap)
+        y2(4) = fpcmap(j4,icmap)
+        ! Cross derivative at the four grid points
+        y12(1) = ftpcmap(j1,icmap)
+        y12(2) = ftpcmap(j2,icmap)
+        y12(3) = ftpcmap(j3,icmap)
+        y12(4) = ftpcmap(j4,icmap)
+        ! Obtain the CMAP coefficient for the bicubic interpolation
+        d = gscmap(icmap)
+        call bcucof(y,y1,y2,y12,d,c)
+        m = 0
+        do k = 1,4
+          do l = 1,4
+            m = m + 1
+            ccoef(m,j1,icmap) = c(m)
+          end do
+        end do
+      end do ! next j
+    end do ! next i
+  end do ! next icmap
+  
+  return
+  end subroutine
+
+  subroutine cmapg()
+  implicit none
+  ! local variables
+  integer icmap,n,n2,i,i1,j,j1
+  real dang,idang
+  real, parameter :: cte1 = 1.0/3.0, cte2 = 1.0/6.0
+  real, allocatable :: xp(:),yp(:),y2p(:)
+  real, allocatable :: xt(:),yt(:),y2t(:)
+  real, allocatable :: csstmp1(:),csstmp2(:)
+  
+  do icmap = 1,ncmap
+    ! total number of grid points in each direction
+    n = cmap(icmap)
+    n2 = n*n
+    allocate (xp(n+1),yp(n+1),y2p(n+1))
+    allocate (xt(n+1),yt(n+1),y2t(n+1))
+    allocate (csstmp1(n2),csstmp2(n2))
+    ! grid spacing
+    dang = gscmap(icmap)
+    idang = 1.0/dang
+    ! *** Gradient calculation
+    ! Psi angle
+    do i = 1,n
+      i1 = n*(i-1)
+      do j = 1,n
+        j1 = i1 + j
+        ! Grid points
+        xp(j) = -180.0 + (j-1)*dang
+        ! Interpolating function at the grid points 
+        yp(j) = fcmap(j1,icmap)
+      end do
+      xp(n+1) = 180.0
+      yp(n+1) = yp(1)
+      ! Second derivative of the interpolating function at the grid points
+      call cmapspline(xp,yp,n+1,y2p)
+      ! Psi gradient
+      do j = 1,n
+        j1 = i1 + j
+        fpcmap(j1,icmap) = (yp(j+1)-yp(j))*idang - y2p(j)*dang*cte1 - y2p(j+1)*dang*cte2
+      end do
+    end do ! next i
+    ! Theta angle
+    do j = 1,n
+      do i = 1,n
+        i1 = (i-1)*n + j
+        ! Grid points
+        xt(i) = -180.0 + (i-1)*dang
+        ! Interpolating function at the grid points
+        yt(i) = fcmap(i1,icmap)
+      end do
+      xt(n+1) = 180.0
+      yt(n+1) = yt(1)
+      ! Second derivative of the interpolating function at the grid points
+      call cmapspline(xt,yt,n+1,y2t)
+      ! Theta gradient
+      do i = 1,n 
+        i1 = (i-1)*n + j
+        ftcmap(i1,icmap) = (yt(i+1)-yt(i))*idang - y2t(i)*dang*cte1 - y2t(i+1)*dang*cte2
+      end do
+    end do ! next j
+    ! *** Cross derivative calculation
+    ! Cross derivative (theta-psi)
+    do i = 1,n
+      i1 = n*(i-1)
+      do j = 1,n
+        j1 = i1 + j
+        ! Interpolating function at the grid points 
+        yp(j) = ftcmap(j1,icmap) 
+      end do
+      yp(n+1) = yp(1)
+      ! Second derivative of the interpolating function at the grid points
+      call cmapspline(xp,yp,n+1,y2p)
+      ! Cross derivative 
+      do j = 1,n
+        j1 = i1 + j
+        csstmp1(j1) = (yp(j+1)-yp(j))*idang - y2p(j)*dang*cte1 - y2p(j+1)*dang*cte2
+      end do
+    end do ! next i
+    ! Cross derivative (psi-theta)
+    do j = 1,n
+      do i = 1,n
+        i1 = (i-1)*n + j
+        ! Interpolating function at the grid points
+        yt(i) = fpcmap(i1,icmap)
+      end do
+      yt(n+1) = yt(1)
+      ! Second derivative of the interpolating function at the grid points
+      call cmapspline(xt,yt,n+1,y2t)
+      ! Cross derivative
+      do i = 1,n 
+        i1 = (i-1)*n + j
+        csstmp1(i1) = (yt(i+1)-yt(i))*idang - y2t(i)*dang*cte1 - y2t(i+1)*dang*cte2
+      end do
+    end do ! next j
+    ! Cross derivative (average)
+    j1 = 0
+    do i = 1,n
+      do j = 1,n
+        j1 = j1 + 1
+        ftpcmap(j1,icmap) = (csstmp1(j1)+csstmp2(j1))*0.5
+      end do
+    end do   
+    deallocate (xp,yp,y2p)
+    deallocate (xt,yt,y2t)
+    deallocate (csstmp1,csstmp2)
+  end do ! next icmap
+  
+  return
+  end subroutine
 end subroutine

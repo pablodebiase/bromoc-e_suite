@@ -28,7 +28,6 @@ use errormod
 use nucleotmod
 use charfuncmod   !command parser
 use splinemod
-use explatmod
 use charmmmod
 use listmod
 
@@ -634,26 +633,13 @@ do while (.not. logfinal)
     ! unit number for force field [integer,default=0]
     call gtipar (com,'iunprm',iunprm,0)
     if (iunprm.le.0 .or. iunprm.gt.maxopen) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
-    if (unvec(iunprm).eq.-1) call error ('shell_simul', 'Incorrect unit in ATOMS order', faterr)
+    if (unvec(iunprm).eq.-1) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
     iunprm = unvec(iunprm)
     ! unit number for connectivity [integer,default=0]
     call gtipar (com,'iunpsf',iunpsf,0)
     if (iunpsf.le.0 .or. iunpsf.gt.maxopen) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
     if (unvec(iunpsf).eq.-1) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
     iunpsf = unvec(iunpsf)
-    if (Qatexp) then
-      deallocate (psf_atomtype,psf_atomtype2)
-      deallocate (typen,non_of_charge,nonbonded,sdat,qat,non_labels,atom_labels,psf_charge)
-      if (Qlbond) deallocate (bonds,stretch)
-      if (Qlang) deallocate (bends,bend)
-      if (Qlubs) deallocate (ubs,ubt)
-      if (Qldih) deallocate (torts,dih,ndih,nprms)
-      if (Qldef) deallocate (deforms,deform)
-      if (Qlcmap) deallocate (cmaps,lthetacmap,lpsicmap,thetacmap,psicmap,attcmap,atpcmap,nablatcmp,nablapcmp,cmap,gscmap, &
-                              fcmap,ftcmap,fpcmap,ftpcmap,ccoef)
-      deallocate(chain,nbondsch,fixed,ghost)
-      deallocate (listmex,listex,listm14,list14)
-    endif
     ! Print additional information in outputfile
     ok = check(com,'print')
     ! water viscosity (Kcal ps mole^(-1) Angs.^(-1)) [real,default=0.123]
@@ -677,8 +663,23 @@ do while (.not. logfinal)
     if (Qchmmimp) deallocate (charmm_itype,charmm_imp)
     if (Qchmmcmap) deallocate (charmm_icmap,charmm_icmap2,charmm_ncmap,charmm_cmap,charmm_fcmap)
     deallocate (charmm_typen,charmm_nonbonded)
-    ! Obtain 1-2, 1-3 and 1-4 terms lists
-    call exclude
+    ! unit number for coordinate [integer,default=0]
+    call gtipar (com,'iunpdb',iunpdb,0)
+    call gtipar (com,'iuncrd',iuncrd,0)
+    if (iunpdb.le.0.and.iuncrd.le.0) call error ('shell_simul', 'Enter a pdb or crd for coordinates in PTYPE order', faterr)
+    if (iunpdb.gt.maxopen) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+    if (iuncrd.gt.maxopen) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+    if (iunpdb.gt.0) then 
+      if (unvec(iunpdb).eq.-1) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+      iunpdb = unvec(iunpdb)
+      call loadcoorfrompdbtoptyp(nptyp,iunpdb)
+    endif
+    if (iuncrd.gt.0) then 
+      if (unvec(iuncrd).eq.-1) call error ('shell_simul', 'Incorrect unit in PTYPE order', faterr)
+      iuncrd = unvec(iuncrd)
+      call loadcoorfromcrdtoptyp(nptyp,iuncrd)
+    endif
+    call centerptyp(nptyp)
     Qatexp = .true.
     write(outu,*)
   ! **********************************************************************
@@ -697,7 +698,6 @@ do while (.not. logfinal)
         itype=getptyp(wrd4)
         if (itype.eq.0) then
           call addmonoptyp(wrd4)
-          write(outu,*) 'Mono-Particle '//wrd4//' added' 
           itype=nptyp
           ! particle charge [real*8,default=0]
           call gtdpar(com,'charge',ptypl(itype)%chg(1),0.0)

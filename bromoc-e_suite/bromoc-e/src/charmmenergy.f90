@@ -15,23 +15,32 @@
 !
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-subroutine charmmenergy(energy)
-use explatmod
+subroutine charmmenergy(ptypn,energy)
+use listmod
 implicit none
+integer ptypn
 real energy
 energy=0.0
 ! bonded interaction among explicit atoms
-if (Qlbond) call en2cen ! Bond terms
-if (Qlang) call en3cen ! Angle terms
-if (Qlubs) call ubr ! UB terms
-if (Qldih) call en4cen ! Dihedral angle terms
-if (Qldef) call improper ! Improper angle terms
-if (Qlcmap) call cmapr ! CMAP terms
+! Bond terms
+if (ptypl(ptypn)%psf(1)%nbonds.gt.0) call en2cen(ptypn)
+! Angle terms
+if (ptypl(ptypn)%psf(1)%nbends.gt.0) call en3cen(ptypn)
+! UB terms
+if (ptypl(ptypn)%psf(1)%nubs.gt.0) call ubr(ptypn)
+! Dihedral angle terms
+if (ptypl(ptypn)%psf(1)%ntorts.gt.0) call en4cen(ptypn)
+! Improper angle terms
+if (ptypl(ptypn)%psf(1)%ndeforms.gt.0) call improper(ptypn)
+! CMAP terms
+if (ptypl(ptypn)%psf(1)%ncmaps.gt.0) call cmapr(ptypn)
+! include internal non-bonded interactions
+! to do
 end subroutine
 
 subroutine en2cen
 ! Bond terms for explicit atoms
-use explatmod
+use listmod
 use nucleotmod
 use grandmod
 
@@ -90,7 +99,7 @@ end subroutine
 
 subroutine en3cen
 ! Angle terms for explicit atoms
-use explatmod
+use listmod
 use nucleotmod
 use grandmod
 use constamod
@@ -185,10 +194,10 @@ end subroutine
 
 subroutine ubr
 ! UB terms for explicit atoms
-use explatmod
+use listmod
 use nucleotmod
 use grandmod
-use explatmod
+use listmod
 
 implicit none
 ! local variables
@@ -245,7 +254,7 @@ end subroutine
 
 subroutine en4cen
 ! Dihedral angle terms for explicit atoms
-use explatmod
+use listmod
 use nucleotmod
 use grandmod
 use constamod
@@ -387,7 +396,7 @@ end subroutine
 
 subroutine improper
 ! Improper angle terms for explicit atoms
-use explatmod
+use listmod
 use nucleotmod
 use grandmod
 use constamod
@@ -503,7 +512,7 @@ end subroutine
 
 subroutine cmapr
 ! CMAP terms for explicit atoms
-use explatmod
+use listmod
 use errormod
 use nucleotmod
 use grandmod

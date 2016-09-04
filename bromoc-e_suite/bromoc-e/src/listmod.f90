@@ -189,6 +189,19 @@ integer, dimension ((n+1)/2) :: t
 call MergeSort(a,n,t) ! order from lower to higher
 end subroutine
 
+subroutine setpsfinptyp(ptypn)
+implicit none
+integer ptypn
+ptypl(ptypn)%Qpsf=.true.
+if (.not.allocated(ptypl(ptypn)%psf)) allocate (ptypl(ptypn)%psf(1))
+ptypl(ptypn)%psf(1)%nbonds=0
+ptypl(ptypn)%psf(1)%nbends=0
+ptypl(ptypn)%psf(1)%nubs=0
+ptypl(ptypn)%psf(1)%ntorts=0
+ptypl(ptypn)%psf(1)%ndeforms=0
+ptypl(ptypn)%psf(1)%ncmaps=0
+end subroutine
+
 subroutine getetchg()
 implicit none
 integer i,j
@@ -494,6 +507,11 @@ character*(*)             :: nam
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
+if (getetyp(nam).gt.0) then
+  write(*,'(a,a,a)') 'WARNING: Element Type ',nam,' already exists.'
+  return
+endif
+write(*,'(a,a)') 'Adding Element Type ',nam
 netyp=netyp+1
 netp=netyp*(netyp+1)/2
 if (netyp .gt. size(etypl)) call resizeetypl(netyp)
@@ -986,6 +1004,13 @@ enddo
 npar=npar-1
 end subroutine
 
+function getchg(elen)
+implicit none
+real getchg
+integer parn, pp, sr, pt
+getchg=ptyp(parl(pe(elen))%ptyp)%chr(elen-parl(pe(elen))%sr)
+end function
+
 subroutine delparall()
 implicit none
 npar=0
@@ -1006,6 +1031,79 @@ maxi=MAX(itype,jtype)
 mini=MIN(itype,jtype)
 etpidx=maxi*(maxi-1)/2+mini
 end function
+
+subroutine loadcoorfrompdbtoptyp(ptypn,iunit)
+implicit none
+integer i,ptypn,iunit
+type(car) rr
+character com*256,label*6
+if (ptypn.gt.nptyp) stop 'ptypn greater than nptyp'
+read(iunit,'(a)') com
+i=0
+do while (trim(adjustl(com)).ne.'END')
+  read (com,'(A6,5x,x,5x,5x,4x,4x,3F8.3)') label,rr%x,rr%y,rr%z
+  if (trim(adjustl(label)).eq.'ATOM') then
+    i=i+1
+    if (i.le.ptypl(ptypn)%ne) then
+      ptypl(ptypn)%r(i)=rr
+    else
+      stop 'Number of atoms does not match'
+    endif
+  endif
+  read(iunit,'(a)') com
+enddo
+end subroutine
+
+subroutine loadcoorfrompdbetoptyp(ptypn,iunit)
+implicit none
+integer i,ptypn,iunit
+type(car) rr
+character com*256,label*6
+if (ptypn.gt.nptyp) stop 'ptypn greater than nptyp'
+read(iunit,'(a)') com
+i=0
+do while (trim(adjustl(com)).ne.'END')
+  read (com,'(A6,5x,x,5x,5x,4x,4x,3F16.8)') label,rr%x,rr%y,rr%z
+  if (trim(adjustl(label)).eq.'ATOM') then
+    i=i+1
+    if (i.le.ptypl(ptypn)%ne) then
+      ptypl(ptypn)%r(i)=rr
+    else
+      stop 'Number of atoms does not match'
+    endif
+  endif
+  read(iunit,'(a)') com
+enddo
+end subroutine
+
+subroutine loadcoorfromcrdtoptyp(ptypn,iunit)
+implicit none
+integer i,ptypn,iunit,na
+type(car) rr
+character com*256,ext*3
+character frmt*64
+read(iunit,'(a)') com
+do while (trim(adjustl(com))(1:1).eq.'*')
+  read(iunit,'(a)') com
+enddo
+read(com,*) na,ext
+if (ext.eq.'EXT') then
+  !frmt='(I10,I10,2x,A4,6X,A4,4x,3F20.10,2X,A4,6X,A4,4x,F20.10)'
+  frmt='(10x,10x,2x,4x,6x,4x,4x,3F20.10)'
+else
+  !frmt='(I5,I5,1x,A4,1X,A4,3F10.5,1X,A4,1X,A4,F10.5)'
+  frmt='(5x,5x,1x,4x,1x,4x,3F10.5)'
+endif
+do i=1,na
+  read(iunit,'(a)') com
+  read(com,frmt) rr%x,rr%y,rr%z
+  if (i.le.ptypl(ptypn)%ne) then
+    ptypl(ptypn)%r(i)=rr
+  else
+    stop 'Number of atoms does not match'
+  endif
+enddo
+end subroutine
 
 subroutine printpdb(nunit)
 implicit none

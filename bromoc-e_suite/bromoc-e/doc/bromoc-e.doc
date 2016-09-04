@@ -380,10 +380,13 @@ example3:
 
 syntax:
 
-  [PTYPE] iunprm (integer) iunpsf (integer) {print} [viscwat (real)] [scald (real)]
+  [PTYPE] iunprm (integer) iunpsf (integer) {print} [viscwat (real)] [scald (real)] [iunpdb (integer)] [iuncrd (integer)]
 
   iunprm             | 0 | : File unit number for the CHARMM Parameter file (.prm)
   iunpsf             | 0 | : File unit number for the connectivity file (.psf)
+  [iunpdb]           | 0 | : File unit number for the coordinates file (.pdb)
+                             IMPORTANT NOTE: Coordinates from pdb or crd must be present
+  [iuncrd]           | 0 | : File unit number for the coordinates file (.crd)
   {print}                  : Prints information when reading each file
   viscwat       | 0.1225 | : Water Viscosity
   scald            | 1.0 | : Sca;e Factor for self-diffusion calculation

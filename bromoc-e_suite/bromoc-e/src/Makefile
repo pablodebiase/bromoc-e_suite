@@ -40,7 +40,7 @@ OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-no
 # Object files
 
 OBJECTSMOD = 	apfmod.o efpmod.o ioxmod.o constamod.o gsbpmod.o grandmod.o errormod.o\
-		nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o explatmod.o charmmmod.o listmod.o\
+		nucleotmod.o stdiomod.o strtoolsmod.o charfuncmod.o charmmmod.o listmod.o\
 		splinemod.o sevalmod.o
 
 OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmphi2.o getopt.o\
@@ -50,8 +50,7 @@ OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmp
 		move.o native_structure.o rfpar.o feedseed.o random.o chrden.o readphi.o rgauss.o\
 		staefield.o shell_simul.o simul1.o simul.o spline.o staticf1.o switch1.o switch2.o\
 		switch3.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o polynom.o readpsf.o\
-		readcharmm.o exclude.o cmapc.o cmapg.o psf_bend.o psf_bond.o psf_cmap.o psf_dih.o\
-		psf_imp.o test_bond.o cmapspline.o bcucof.o fatnam.o parinteract.o nucenergy.o\
+		readcharmm.o fatnam.o parinteract.o nucenergy.o\
 		dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o dynamics3.o energy.o
 
 # Clean objects
