@@ -54,7 +54,7 @@ real resol,ibuff
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
 logical*1 logmemb, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
-logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdbe
+logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdbe,Qppdb,Qpxyz,Qppdbe,Qpcrd,Qpcrde
 real*8 zero
 !for time
 integer*8       start,finish,timer
@@ -682,6 +682,60 @@ do while (.not. logfinal)
     call centerptyp(nptyp)
     Qatexp = .true.
     write(outu,*)
+  ! **********************************************************************
+  elseif (wrd5.eq.'addpa') then ! Add Particle
+  if (.not.Qsystem) call error('shell_simul','SYSTEM must be defined previously',faterr)
+  ! Print pdb
+  Qppdb=check(com,'printpdb')
+  ! Print xyz
+  Qpxyz=check(com,'printxyz')
+  ! Print pdbe
+  Qppdbe=check(com,'printpdbe')
+  ! Print crd
+  Qpcrd=check(com,'printcrd')
+  ! Print crdext
+  Qpcrde=check(com,'printcrde')
+  endlog = .false.
+  ok=.true.
+  do while (.not.endlog)
+    call getlin(com,inpu,outu) ! new commands line 
+    endlog = check(com,'end')
+    if (.not.endlog) then
+      ! name ion type [character*4]
+      call getfirst(com,wrd4)
+      ! Read Type
+      itype=getptyp(wrd4)
+      if (itype.eq.0) then
+        write(outu,'(6x,a)') 'Particle Type ',wrd4,' not defined yet'
+      else
+        if (check(com,'solute')) then
+          if (.not.ok) call error('shell_simul','ADDPAR: SOLUTE PTYPE cannot be added after SOLVENT PTYPE',faterr)
+          call addpar(itype,2) ! As solute
+        else
+          ok = .false.
+          call addpar(itype,3) ! As solvent
+        endif
+        call gtdpar(com,'x',rr%x,0.0)
+        call gtdpar(com,'y',rr%y,0.0)
+        call gtdpar(com,'z',rr%z,0.0)
+        if (check(com,'randrot')) then ! Random Rotate
+          call movepar(npar,rr,norot=.false.)
+        else
+          call movepar(npar,rr,norot=.true.)
+        endif
+        call addmonoptyp(wrd4)
+      endif
+      ! Add the particle temporarily to the particle list
+      call addpar(itype,3)
+    endif
+  enddo
+
+  ! print formats 
+  if (Qpxyz) call printxyz(outu)
+  if (Qppdb) call printpdb(outu)
+  if (Qpcrd) call printcrd(outu)
+  if (Qppdbe) call printpdbe(outu)
+  if (Qpcrde) call printcrde(outu)
   ! **********************************************************************
   elseif (wrd5.eq.'parti') then
   !       ---------------

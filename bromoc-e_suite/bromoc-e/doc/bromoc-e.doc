@@ -88,6 +88,7 @@ NUCLEOTIDES  define DNA
 APFORCE      apply force to DNA sites
 PTYPE        define particle type from CHARMM Force Field (.PRM) and Connectivity files (.PSF)
 PARTICLES    define free particles (ions)
+ADDPART      add predefined particle types at a given position
 BUFFERS      define GCMC buffers region
 SDIFF        define single diffusion constants for each element type defined in PTYPE or PARTICLE
 LJSIN        define single particle Lennard Jones parameters
@@ -438,6 +439,35 @@ example:
   PARTICLES
   POT  charge  1.0  diffusion 0.196
   CLA  charge -1.0  diffusion 0.203
+  END
+
+***************************************************
+*** ADDPART: Add Particle Type to Particle List ***
+***************************************************
+  Adds a predefined particle type (in PTYPE or PARTICLE) at a given position with optional random rotation. This excludes particle types generated in NUCLEOTIDES. Can optionally print out coordinates of all particles in the formats: xyz, pdb, pdbe, crd (CHARMM coordinates), crde (CHARMM coordinates Extended)
+
+syntax:
+
+  [ADDPAR] {printxyz} {printpdb} {printpdbe} {printcrd} {printcrde}
+  <particle-type> {solute} {randrot} [x (real)] [y (real)] [z (real)]
+  END
+
+  <particle-type>    : particle type name (should be less than 4 characters)
+  {solute}           : if present, particle will be added as a solute. Otherwise, as a solvent.
+  {randrot}          : it will randomly rotate the particle
+  x            |0.0| : new x location of the geometric center of the particle to add
+  y            |0.0| : new y location of the geometric center of the particle to add
+  z            |0.0| : new z location of the geometric center of the particle to add
+ 
+  NOTE: Solute particles must be added before solvent particles
+
+example:
+
+  PARTICLES printcrde
+  GLU  solute randrot x 1.0 y 1.0 z 1.0
+  GLU  randrot x 2.0 y 1.0 z 1.0
+  GLU  x 1.0 y 1.0 z 2.0
+  POT  x 5.0 y 4.0 z 3.0
   END
 
 
