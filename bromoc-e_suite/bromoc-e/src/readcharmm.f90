@@ -15,231 +15,35 @@ real, allocatable :: tmp_dih(:,:)
 character com*2048,word*1024,wrtline*2048 
 character*7 atnam1,atnam2,atnam3,atnam4
 logical*1 ok
-logical*1 endlog,bondlog,anglog,dihlog,implog,cmaplog,nonblog,nbflog,hbonlog
+logical*1 bondlog,anglog,dihlog,implog,cmaplog,nonblog,nbflog,hbonlog,atomlog
 
-! *** OBTENTION OF DIMENSIONS
-chmmntype = 0 ! Number of CHARMM atom types
-chmmbond  = 0 ! Number of CHARMM bond types
-chmmang   = 0 ! Number of CHARMM bond angle types
-chmmub    = 0 ! Number of CHARMM Urey-Bradley types
-chmmdih   = 0 ! Number of CHARMM dihedral angle types
-chmmimp   = 0 ! Number of CHARMM improper angle types
-chmmcmap  = 0 ! Number of Cross-term energy correction map types
-chmmnonb  = 0 ! Number of nonbonded pair types
-chmmnbfix = 0 ! Number of VDW interactions between specific atom pair types to be modified
-chmmhbond = 0 ! Number of hydrogen bond types
-! SECTION B: ATOMS
-call getlin(com,iunprm,outu)
-call getfirst(com,word)
-word = lcase(word)
+call countterms()
 if (word(1:4).ne.'atom') call error ('readcharmm', 'ATOMS section is not found', faterr)
-ok = .true.
-do while (ok)
-  call getlin(com,iunprm,outu)  
-  call getfirst(com,word)
-  word = lcase(word)
-  endlog  = word(1:3).eq.'end' 
-  bondlog = word(1:4).eq.'bond'
-  anglog  = word(1:4).eq.'angl'.or.word(1:4).eq.'thet'
-  dihlog  = word(1:4).eq.'dihe'.or.word(1:3).eq.'phi'
-  implog  = word(1:4).eq.'impr'.or.word(1:4).eq.'imph'
-  cmaplog = word(1:4).eq.'cmap'
-  nonblog = word(1:4).eq.'nonb'.or.word(1:4).eq.'nbon'
-  nbflog  = word(1:4).eq.'nbfi'
-  hbonlog = word(1:4).eq.'hbon'
-  ok = .not.endlog .and. .not.bondlog .and. .not.anglog .and. .not.dihlog .and. .not.implog .and. .not.cmaplog .and. .not.nonblog .and. .not.nbflog .and. &
-       .not.hbonlog
-  if (ok) then
-    if (word(1:4).eq.'mass') then
-      chmmntype = chmmntype + 1
-    else
-      call error ('readcharmm', 'Unknown command', faterr)
-    endif
-  endif
-enddo
-if (chmmntype.eq.0) call error ('readcharmm', 'Wrong number of atom types', faterr)
 ! SECTION C: BONDS
-if (bondlog) then
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)  
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    anglog  = word(1:4).eq.'angl'.or.word(1:4).eq.'thet'
-    dihlog  = word(1:4).eq.'dihe'.or.word(1:3).eq.'phi'
-    implog  = word(1:4).eq.'impr'.or.word(1:4).eq.'imph'
-    cmaplog = word(1:4).eq.'cmap'
-    nonblog = word(1:4).eq.'nonb'.or.word(1:4).eq.'nbon'
-    nbflog  = word(1:4).eq.'nbfi'
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.anglog .and. .not.dihlog .and. .not.implog .and. .not.cmaplog .and. .not.nonblog .and. .not.nbflog .and. &
-         .not.hbonlog
-    if (ok) chmmbond = chmmbond + 1
-  enddo
-endif
 Qchmmbond = chmmbond.ne.0
 ! SECTION D: ANGLES AND UREY-BRADLEY
-if (anglog) then
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)  
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    dihlog  = word(1:4).eq.'dihe'.or.word(1:3).eq.'phi'
-    implog  = word(1:4).eq.'impr'.or.word(1:4).eq.'imph'
-    cmaplog = word(1:4).eq.'cmap'
-    nonblog = word(1:4).eq.'nonb'.or.word(1:4).eq.'nbon'
-    nbflog  = word(1:4).eq.'nbfi'
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.dihlog .and. .not.implog .and. .not.cmaplog .and. .not.nonblog .and. .not.nbflog .and. .not.hbonlog
-    if (ok) then 
-      chmmang = chmmang + 1
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word) 
-      call getfirst(com,word)
-      if (len_trim(word).ne.0) chmmub = chmmub + 1
-    endif
-  enddo
-endif
 Qchmmang = chmmang.ne.0
 Qchmmub = chmmub.ne.0
 ! SECTION E: DIHEDRALS
-if (dihlog) then
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    implog  = word(1:4).eq.'impr'.or.word(1:4).eq.'imph'
-    cmaplog = word(1:4).eq.'cmap'
-    nonblog = word(1:4).eq.'nonb'.or.word(1:4).eq.'nbon'
-    nbflog  = word(1:4).eq.'nbfi'
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.implog .and. .not.cmaplog .and. .not.nonblog .and. .not.nbflog .and. .not.hbonlog
-    if (ok) chmmdih = chmmdih +1
-  enddo
-endif
 Qchmmdih = chmmdih.ne.0
 ! SECTION F: IMPROPER
-if (implog) then
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    cmaplog = word(1:4).eq.'cmap'
-    nonblog = word(1:4).eq.'nonb'.or.word(1:4).eq.'nbon'
-    nbflog  = word(1:4).eq.'nbfi'
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.cmaplog .and. .not.nonblog .and. .not.nbflog .and. .not.hbonlog
-    if (ok) chmmimp = chmmimp +1
-  enddo
-endif
 Qchmmimp = chmmimp.ne.0
 ! SECTION G: CMAP
 if (cmaplog) then
-  imax = 0
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    nonblog = word(1:4).eq.'nonb'.or.word(1:4).eq.'nbon'
-    nbflog  = word(1:4).eq.'nbfi'
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.nonblog .and. .not.nbflog .and. .not.hbonlog    
-    if (ok) then
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      call getfirst(com,word)
-      i = chr2int(word)
-      if (mod(360,i).ne.0) call error ('readcharmm', 'Wrong number of CMAP grid points', faterr)
-      if (i.gt.imax) imax = i
-      k = i/5
-      if (k*5.lt.i) k = k + 1
-      chmmcmap = chmmcmap +1
-      do j = 1, i
-        do l = 1, k
-          call getlin(com,iunprm,outu)
-        enddo
-      enddo  
-    endif
-  enddo
-endif 
 Qchmmcmap = chmmcmap.ne.0   
 ! SECTION H: NONBONDED
-if (nonblog) then
-  i = 0
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    nbflog  = word(1:4).eq.'nbfi'
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.nbflog .and. .not.hbonlog   
-    if (ok) i = i + 1 
-  enddo
-  if (i.ne.chmmntype) call error ('readcharmm', 'Wrong number of atom types in NONBONDED section', faterr)
-  do itype = 1, chmmntype
-    do jtype = itype, chmmntype
-      chmmnonb = chmmnonb + 1
-    enddo
-  enddo
-else
-  call error ('readcharmm', 'NONBONDED section is not found', faterr)
-endif
+if (chmmnonb.eq.0)  call error ('readcharmm', 'NONBONDED items not found', faterr)
+if (chmmnonb.ne.chmmntype) call error ('readcharmm', 'Wrong number of atom types in NONBONDED section', faterr)
+chmmnonb = chmmntype * (chmmntype+1) / 2
 ! SECTION I: NBFIX
-if (nbflog) then
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu)
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    hbonlog = word(1:4).eq.'hbon'
-    ok = .not.endlog .and. .not.hbonlog    
-    if (ok) chmmnbfix = chmmnbfix + 1
-  enddo 
-  if (chmmnbfix.gt.chmmnonb) call error ('readcharmm', 'Wrong number of VDW interactions between specific atom pair types to be modified', faterr)
+if (chmmnbfix.gt.chmmnonb) call error ('readcharmm', 'Wrong number of VDW interactions between specific atom pair types to be modified', faterr)
 endif
 Qchmmnbfix = chmmnbfix.ne.0 
 ! SECTION J: HBONDS
-if (hbonlog) then
-  ok = .true.
-  do while (ok)
-    call getlin(com,iunprm,outu) 
-    call getfirst(com,word)
-    word = lcase(word)
-    endlog  = word(1:3).eq.'end' 
-    ok = .not.endlog     
-    if (ok) chmmhbond = chmmhbond + 1
-  enddo
-endif
 Qchmmhbond = chmmhbond.ne.0
 ! SECTION K: END
-if (.not.endlog) call error ('readcharmm', 'END command not found', faterr)
+
 ! CHECKING THE FILE FORMAT
-if (.not.Qchmmbond .and. bondlog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
-if (.not.Qchmmang .and. anglog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
-if (.not.Qchmmdih .and. dihlog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
-if (.not.Qchmmimp .and. implog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
-if (.not.Qchmmcmap .and. cmaplog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
-if (.not.Qchmmnbfix .and. nbflog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
-! if (.not.Qchmmhbond .and. hbonlog) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
 if (.not.Qchmmbond .and. (Qchmmang.or.Qchmmub.or.Qchmmdih.or.Qchmmimp.or.Qchmmcmap)) &
   call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
 if (.not.Qchmmang .and. (Qchmmdih.or.Qchmmimp.or.Qchmmcmap)) call error ('readcharmm', 'Wrong format for CHARMM forces field parameter file', faterr)
@@ -259,6 +63,8 @@ if (Qchmmcmap) then
   allocate(charmm_icmap(8,chmmcmap),charmm_icmap2(2,chmmcmap),charmm_ncmap(chmmcmap),charmm_cmap(chmmcmap),charmm_fcmap(imax,chmmcmap))
 endif
 allocate(charmm_typen(chmmntype,chmmntype),charmm_nonbonded(4,chmmnonb))
+
+! FIX FROM HERE ON !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! *** OBTENTION OF PARAMETERS
 rewind(unit=iunprm)
@@ -1153,6 +959,117 @@ contains
     k = k + 1
     test_bond = i1.eq.charmm_btype(1,k) .and. i2.eq.charmm_btype(2,k)
   enddo
+  end function
+
+  subroutine countterms()
+  implicit none
+  character wrd4*4
+  rewind(iunprm)
+  chmmntype = 0 ! Number of CHARMM atom types
+  chmmbond  = 0 ! Number of CHARMM bond types
+  chmmang   = 0 ! Number of CHARMM bond angle types
+  chmmub    = 0 ! Number of CHARMM Urey-Bradley types
+  chmmdih   = 0 ! Number of CHARMM dihedral angle types
+  chmmimp   = 0 ! Number of CHARMM improper angle types
+  chmmcmap  = 0 ! Number of Cross-term energy correction map types
+  chmmnonb  = 0 ! Number of nonbonded pair types
+  chmmnbfix = 0 ! Number of VDW interactions between specific atom pair types to be modified
+  chmmhbond = 0 ! Number of hydrogen bond types
+  imax      = 0
+  atomlog   = .false.
+  bondlog   = .false.
+  anglog    = .false.
+  dihlog    = .false.
+  implog    = .false.
+  cmaplog   = .false.
+  nonblog   = .false.
+  nbflog    = .false.
+  hbonlog   = .false.
+  call getlin(com,iunprm,outu)
+  wrd4=lcase(com(1:4))
+  do while (wrd4(1:3).ne.'end')
+    if (checkiflabel(wrd4)) then  
+      atomlog = wrd4.eq.'atom'
+      bondlog = wrd4.eq.'bond'
+      anglog  = wrd4.eq.'angl'.or.wrd4.eq.'thet'
+      dihlog  = wrd4.eq.'dihe'.or.wrd4(1:3).eq.'phi'
+      implog  = wrd4.eq.'impr'.or.wrd4.eq.'imph'
+      nonblog = wrd4.eq.'nonb'.or.wrd4.eq.'nbon'
+      cmaplog = wrd4.eq.'cmap'
+      nbflog  = wrd4.eq.'nbfi'
+      hbonlog = wrd4.eq.'hbon'
+    else
+      if (atomlog) then
+        chmmntype = chmmntype + 1
+      elseif (bondlog) then
+        chmmbond = chmmbond + 1 
+      elseif (anglog) then
+        chmmang = chmmang + 1
+        if (countparm(com).ge.6) chmmub = chmmub + 1
+      elseif (dihlog) then
+        chmmdih = chmmdih + 1 
+      elseif (implog) then
+        chmmimp = chmmimp + 1
+      elseif (nonblog) then
+        chmmnonb = chmmnonb + 1
+      elseif (cmaplog) then
+        i = getiprm(com,9)
+        if (mod(360,i).ne.0) call error ('readcharmm', 'Wrong number of CMAP grid points', faterr)
+        if (i.gt.imax) imax = i
+        k = i/5
+        if (k*5.lt.i) k = k + 1
+        chmmcmap = chmmcmap +1
+        do j = 1, i
+          do l = 1, k
+            call getlin(com,iunprm,outu)
+          enddo
+        enddo
+      elseif (nbflog) then 
+        chmmnbfix = chmmnbfix + 1        
+      elseif (hbonlog) then
+        chmmhbond = chmmhbond + 1
+      endif
+    endif
+    call getlin(com,iunprm,outu)
+    word=lcase(com(1:4))
+  end do
+  return
+  end subroutine
+
+  logical*1 function checkiflabel(word)
+  character word*(*)
+  character wrd*(len_trim(word))
+  checkiflabel = .false.
+  if (len_trim(lcase(word)).lt.3) return
+  wrd=lcase(word)
+  if (wrd.eq.'atom') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'bond') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'angl') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'thet') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'dihe') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'impr') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'imph') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'nonb') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'nbon') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'cmap') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'nbfi') then
+    checkiflabel = .true.
+  elseif (wrd.eq.'hbon') then
+    checkiflabel = .true.
+  elseif (wrd(1:3).eq.'phi') then
+    checkiflabel = .true.
+  endif
+  return
   end function
 
 end subroutine

@@ -288,6 +288,30 @@ i1=index(c1,'#')
 if(i1.ne.0) c1=c1(1:i1-1) !c1(1:length)=c1(1:i1-1)
 i1=index(c1,'*')
 if(i1.ne.0) c1=c1(1:i1-1) !c1(1:length)=c1(1:i1-1)
+call removenonchar(c1)
+return
+end subroutine
+
+subroutine removenonchar(c1)
+implicit none
+character*(*) c1
+integer i,n
+! remove tab
+n=0
+do i=1,len_trim(c1)
+  if (iachar(c1(i:i)).ge.32.and.iachar(c1(i:i)).le.126) then
+    n=n+1
+    if (n.lt.i) c1(n:n)=c1(i:i)
+  else if(iachar(c1(i:i)).eq.9) then
+    n=n+1
+    c1(n:n)=' '
+  endif
+enddo
+if (n.eq.0) then
+  c1=''
+else
+  c1=c1(1:n)
+endif
 return
 end subroutine
 

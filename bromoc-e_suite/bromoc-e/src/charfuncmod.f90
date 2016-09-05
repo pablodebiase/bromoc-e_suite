@@ -292,4 +292,42 @@ contains
   if (setint) intvar=chr2int(word)
   end function
 
+  ! count the number of parameters in line
+  integer function countparm(str)
+  implicit none
+  integer i,length,num
+  character str*(*)
+  logical chng
+  length=len_trim(str)
+  chng=.false.
+  num=0
+  do i=1,length
+    if (iachar(str(i:i)).le.32.or.iachar(str(i:i)).ge.127) then
+      chng=.false.
+    else
+      if (.not.chng) num=num+1
+      chng=.true.
+    endif
+  enddo
+  countparm=num
+  return
+  end function
+
+  ! get parameter pn from line
+  integer function getiprm(str,pn)
+  implicit none
+  integer num,pn,kode
+  character str*(*)
+  character getprm*(len(trim(adjustl(str))))
+  integer llim(len_trim(str)),ulim(len_trim(str))
+  call findparm(str,num,llim,ulim)
+  if (pn.gt.num.or.pn.lt.1.or.num.lt.1) then
+    getiprm=0
+  else
+    read(str(llim(pn):ulim(pn)),*,iostat=kode) getiprm
+    if (kode.ne.0) getiprm=0
+  endif
+  return
+  end function
+
 end module
