@@ -2558,7 +2558,7 @@ do while (.not. logfinal)
        enddo
        if (Qnucl) then
          ilast=0
-         if (nelem.lt.nelenuc) call error ('shell_simul', 'Less number of elements than expected in COOR', faterr)
+         if ((Qcrd.or.Qcrde).and.nelem.lt.nelenuc) call error ('shell_simul', 'Less number of elements than expected in COOR', faterr)
          do i = 1, nelenuc
            if (Qpdbe) then 
              read(com,'(6x,5x,x,5x,5x,I4,4x,3F16.8)') itype,rr%x,rr%y,rr%z
