@@ -318,7 +318,6 @@ contains
   implicit none
   integer num,pn,kode
   character str*(*)
-  character getprm*(len(trim(adjustl(str))))
   integer llim(len_trim(str)),ulim(len_trim(str))
   call findparm(str,num,llim,ulim)
   if (pn.gt.num.or.pn.lt.1.or.num.lt.1) then

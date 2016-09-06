@@ -334,7 +334,6 @@ begin=1
 lenc1=len(c1)
 endlin=0
 done=.false.
-
 1000 read(inpu,'(a)',end=2000) line
 
 call clean(line)
@@ -357,9 +356,9 @@ else
 endif
 
 if(done)then
-return !that was the last line
+  return !that was the last line
 else
-goto 1000 !append a new line
+  goto 1000 !append a new line
 endif
 
 

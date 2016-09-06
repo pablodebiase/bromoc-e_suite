@@ -17,7 +17,7 @@ logical*1 ok
 logical*1 bondlog,anglog,dihlog,implog,cmaplog,nonblog,nbflog,hbonlog,atomlog
 call countterms()
 ! SECTION B: ATOM
-if (word(1:4).ne.'atom') call error ('readcharmm', 'ATOMS section is not found', faterr)
+if (chmmntype.le.0) call error ('readcharmm', 'ATOMS section is not found or is empty', faterr)
 ! SECTION C: BONDS
 Qchmmbond = chmmbond.ne.0
 ! SECTION D: ANGLES AND UREY-BRADLEY
@@ -1102,7 +1102,7 @@ contains
       endif
     endif
     call getlin(com,iunprm,outu)
-    word=lcase(com(1:4))
+    wrd4=lcase(com(1:4))
   enddo
   return
   end subroutine

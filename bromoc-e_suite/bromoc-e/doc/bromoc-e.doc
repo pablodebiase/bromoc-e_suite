@@ -392,7 +392,16 @@ syntax:
   viscwat       | 0.1225 | : Water Viscosity
   scald            | 1.0 | : Sca;e Factor for self-diffusion calculation
                            
- 
+example:
+
+  OPEN write unit 1 name par_all36.prm
+  OPEN write unit 2 name glu-noh.psf
+  OPEN write unit 3 name glu-noh.crd
+  PTYPE print iunprm 1 iunpsf 2 iuncrd 3
+  CLOSE unit 1
+  CLOSE unit 2
+  CLOSE unit 3
+
 *****************************************
 *** SDIFF: Single Diffusion Constants ***
 *****************************************
@@ -463,7 +472,7 @@ syntax:
 
 example:
 
-  PARTICLES printcrde
+  ADDPART printcrde
   GLU  solute randrot x 1.0 y 1.0 z 1.0
   GLU  randrot x 2.0 y 1.0 z 1.0
   GLU  x 1.0 y 1.0 z 2.0
