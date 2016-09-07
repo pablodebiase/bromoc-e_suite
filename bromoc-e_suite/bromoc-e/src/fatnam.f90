@@ -15,18 +15,17 @@
 !
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-subroutine fatnam(atnam,ntype,wrd4,itype)
+subroutine fatnam(atnam,ninit,nfinal,wrd,itype)
 use stdiomod
 use charfuncmod
 implicit none
-character*4 atnam(*),wrd4
-integer itype,ntype
- 
-do itype = 1, ntype
-  if (lcase(wrd4).eq.lcase(atnam(itype))) return
+character*(*) atnam(*),wrd
+integer itype,ninit,nfinal
+
+do itype = ninit, nfinal
+  if (lcase(wrd).eq.lcase(atnam(itype))) return
 enddo
-write(outu,'(a,a4,a)') ' * error atom ',wrd4,' not found'
+write(outu,'(a,a,a)') ' * error atom ',trim(wrd),' not found'
 stop
-return
-end
+end subroutine
+

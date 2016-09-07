@@ -28,15 +28,14 @@ Qchmmdih = chmmdih.ne.0
 ! SECTION F: IMPROPER
 Qchmmimp = chmmimp.ne.0
 ! SECTION G: CMAP
-if (cmaplog) then
 Qchmmcmap = chmmcmap.ne.0   
 ! SECTION H: NONBONDED
 if (chmmnonb.eq.0) call error ('readcharmm', 'NONBONDED items not found', faterr)
 if (chmmnonb.ne.chmmntype) call error ('readcharmm', 'Wrong number of atom types in NONBONDED section', faterr)
 chmmnonb = chmmntype * (chmmntype+1) / 2
+write(*,*) chmmntype,chmmnonb
 ! SECTION I: NBFIX
 if (chmmnbfix.gt.chmmnonb) call error ('readcharmm', 'Wrong number of VDW interactions between specific atom pair types to be modified', faterr)
-endif
 Qchmmnbfix = chmmnbfix.ne.0 
 ! SECTION J: HBONDS
 Qchmmhbond = chmmhbond.ne.0
@@ -1035,6 +1034,7 @@ contains
   subroutine countterms()
   implicit none
   integer i,j,k,l
+  !real mass
   rewind(unit=iunprm)
   chmmntype = 0 ! Number of CHARMM atom types
   chmmbond  = 0 ! Number of CHARMM bond types
@@ -1083,6 +1083,33 @@ contains
         chmmimp = chmmimp + 1
       elseif (nonblog) then
         chmmnonb = chmmnonb + 1
+        !mass=0
+        !if (wrd4(1:1).eq.'c') mass=12.01100
+        !if (wrd4(1:1).eq.'h') mass=1.00800
+        !if (wrd4(1:1).eq.'n') mass=14.00700
+        !if (wrd4(1:1).eq.'o') mass=15.99900
+        !if (wrd4(1:1).eq.'s') mass=32.06000
+        !if (wrd4(1:1).eq.'p') mass=30.97400
+        !if (wrd4(1:1).eq.'f') mass=18.99800
+        !if (wrd4(1:1).eq.'i') mass=126.90400
+        !if (wrd4(1:1).eq.'k') mass=39.09800
+        !if (wrd4(1:2).eq.'cl') mass=35.45300
+        !if (wrd4(1:2).eq.'br') mass=79.90400
+        !if (wrd4(1:2).eq.'al') mass=26.98200
+        !if (wrd4(1:2).eq.'li') mass=6.94100
+        !if (wrd4(1:2).eq.'mg') mass=24.30500
+        !if (wrd4(1:2).eq.'rb') mass=85.46800
+        !if (wrd4(1:2).eq.'ba') mass=137.32700
+        !if (wrd4(1:2).eq.'zn') mass=65.38000
+        !if (wrd4(1:2).eq.'na') mass=22.99000
+        !if (wrd4(1:3).eq.'cal') mass=40.07800
+        !if (wrd4(1:3).eq.'ces') mass=132.90500
+        !if (wrd4(1:3).eq.'csj') mass=132.90500
+        !if (wrd4(1:3).eq.'rub') mass=85.46800
+        !if (wrd4(1:3).eq.'cad') mass=112.41100
+        !if (wrd4(1:3).eq.'sod') mass=22.99000
+        !if (wrd4(1:3).eq.'pot') mass=39.09800
+        !write(*,'(A4,x,I5,x,A7,x,F10.5)') 'MASS',chmmnonb,trim(com(1:7)),mass
       elseif (cmaplog) then
         i = getiprm(com,9)
         if (mod(360,i).ne.0) call error ('readcharmm', 'Wrong number of CMAP grid points', faterr)

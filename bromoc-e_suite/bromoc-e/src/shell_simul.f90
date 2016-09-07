@@ -50,7 +50,7 @@ real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol,pkind
+real resol,pkind,diffu
 integer ikind
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
@@ -258,6 +258,7 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'nucle') then
   !         ---------------
      if (.not.Qsystem) call error('shell_simul','SYSTEM must be defined before NUCLEOTIDES',faterr)
+     if (Qatexp) call error ('shell_simul', 'NUCLEOTIDES order is defined after PTYPE order', faterr)
      if (Qpar) call error ('shell_simul', 'NUCLEOTIDES order is defined after PARTICLE order', faterr)
      ! number of strand [default=0]
      call gtipar (com,'strands',istrs,0)
@@ -682,6 +683,19 @@ do while (.not. logfinal)
     endif
     call centerptyp(nptyp)
     Qatexp = .true.
+    if (allocated(Qefpot)) deallocate(Qefpot)
+    allocate (Qefpot(netp))
+    Qefpot=.false.
+    if (allocated(Qcol)) deallocate(Qcol)
+    allocate (Qcol(netp))
+    Qcol=.true.
+    if (allocated(Qlj)) deallocate(Qlj)
+    allocate (Qlj(netp))
+    Qlj=.false.
+    if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
+    allocate (Qsrpmfi(netp))
+    Qsrpmfi=.false.
+    cecd=celec/cdie
     write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'addpa') then ! Add Particle
@@ -724,10 +738,7 @@ do while (.not. logfinal)
         else
           call movepar(npar,rr,norot=.true.)
         endif
-        call addmonoptyp(wrd4)
       endif
-      ! Add the particle temporarily to the particle list
-      call addpar(itype,3)
     endif
   enddo
 
@@ -756,22 +767,31 @@ do while (.not. logfinal)
           itype=nptyp
           ! particle charge [real*8,default=0]
           call gtdpar(com,'charge',ptypl(itype)%chg(1),0.0)
-          ! diffusion constant [real*8,default=0.1]
-          call gtdpar(com,'diffusion',etypl(netyp)%dif,0.1)
-          if (etypl(netyp)%dif.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
           ! Update Particle Charge
           call updateptypchg(itype)
         endif
+        ! diffusion constant [real*8,default=0.1]
+        call gtdpar(com,'diffusion',diffu,0.1)
+        if (diffu.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
+        do i=1,ptypl(itype)%ne
+          etypl(ptypl(itype)%etyp(i))%dif=diffu*(1.0/ptypl(itype)%ne)
+        enddo
         ! Add the particle temporarily to the particle list
-        call addpar(itype,3)
+        ! call addpar(itype,3)
       endif
     enddo
     Qpar = .true.
-    !!! Relocate This !! DEVELOP
-    allocate (Qcol(netp),Qefpot(netp),Qlj(netp),Qsrpmfi(netp))
-    Qcol=.true.
+    if (allocated(Qefpot)) deallocate(Qefpot)
+    allocate (Qefpot(netp))
     Qefpot=.false.
+    if (allocated(Qcol)) deallocate(Qcol)
+    allocate (Qcol(netp))
+    Qcol=.true.
+    if (allocated(Qlj)) deallocate(Qlj)
+    allocate (Qlj(netp))
     Qlj=.false.
+    if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
+    allocate (Qsrpmfi(netp))
     Qsrpmfi=.false.
   
     ! ASSIGN CHARGES USING CDIE
@@ -782,8 +802,12 @@ do while (.not. logfinal)
     write(outu,'(6x,a)') 'CHARGE -> ion charge [e]'
     write(outu,'(6x,a)') 'DIFFUSION -> diffusion constant [Ang.**2/ps]'
     write(outu,'(6x,a)') 'NAME---CHARGE---DIFFUSION'
-    do i=nptnuc, nptyp
-      write(outu,'(6x,a,2f8.3)') ptypl(i)%nam,ptypl(i)%tchg,etypl(ptypl(i)%etyp(1))%dif
+    do i=1,nptyp
+      diffu=0.0
+      do j=1,ptypl(i)%ne
+        diffu=diffu+etypl(ptypl(i)%etyp(j))%dif
+      enddo
+      write(outu,'(6x,a,2f8.3)') ptypl(i)%nam,ptypl(i)%tchg,diffu
     enddo
     write(outu,*)
   ! **************************************************************************
@@ -1221,7 +1245,7 @@ do while (.not. logfinal)
      write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'ljsin') then
-    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'LJSIN order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
+    if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'LJSIN order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
     if (Qljpar) call error ('shell_simul', 'LJSIN is defined after LJPAR', faterr)
     endlog = .false.
     do while (.not. endlog)
@@ -1267,7 +1291,7 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'ljpar') then
   !        ---------------     
-    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'LJPAR order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
+    if (.not.Qatexp .and. .not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'LJPAR order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
   !         if (Qionsite) then
   !           call error ('shell_simul', 'Combination rules for LJ'
   !     & //' parameters are desactivated', warning)
@@ -1329,13 +1353,14 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'simul') then
   !        ---------------
-     if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'SIMULATION order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
+     if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'SIMULATION order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
      if (Qpres.and..not.Qpar) then
        write(outu,'(6x,a)') 'Warning: Pressure cannot be calculated if free particles are absent, so deactivated'
        Qpres=.false.
      endif
      if (Qpar.and..not.(Qefpott.or.Qljsin.or.Qljpar)) call error ('shell_simul', 'No effective potential and no Lennard Jones parameters defined', warning)
-     if (.not.allocated(warn)) allocate (warn(netyp))
+     if (allocated(warn)) deallocate (warn)
+     allocate (warn(netyp))
      warn=0
      ! number of steps for BD or MC simulations
      ! [integer,default=0]
@@ -1563,7 +1588,7 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'energ') then
   !        ---------------
-    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'ENERGY order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
+     if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'ENERGY order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
     ! default values 
     ! Qbond = Qnonbond =.true.
     ! Qmemb = Qphix = Qphiv = Qsrpmf = .false.
@@ -1645,7 +1670,7 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'inter') then 
   !        ---------------
-    if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'INTERACT order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
+     if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'INTERACT order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
     ! atom type [integer,default=1]
     call gtipar(com,'part',parn,1) 
     ! default values
@@ -1724,7 +1749,7 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'membr') then
   !        ---------------
-     if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'MEMBRANE order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
+     if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'MEMBRANE order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
      if (.not.Qsystem) call error ('shell_simul', 'MEMBRANE order is defined before SYSTEM order', faterr)
      ! Turn on/off repulsive membrane potential in cylindrical pore
      ! region
@@ -1921,7 +1946,7 @@ do while (.not. logfinal)
   ! **********************************************************************
   elseif (wrd5.eq.'efpot') then ! effective potential
   !       ---------------
-    if (.not.(Qpar.or.Qnucl)) call error ('shell_simul','EFPOT order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
+     if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'EFPOT order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
     cnt=0
     Qepwrt=check(com,'write')
     ! Assume 0 charge for all particles
@@ -2520,14 +2545,13 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'coor') then
   !        ---------------
      if (.not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'COOR order is defined before PARTICLE and/or NUCLEOTIDE orders', faterr)
-     call delparofkind(3)  ! Delete all particles added when ptype were created
-     call delparofkind(4)  ! Delete all particles added when ptype were created
      if (check(com,'read')) then
        call gtipar(com,'unit',iunit,1)
        if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
        if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
        if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in COOR order', faterr)
        iunit = unvec(iunit)
+       !call delparofkind(3)  ! Delete all particles added when ptype were created
        write(outu,'(6x,a,i3)')'Reading coordinates from unit ',iunit
        Qpdb=check(com,'pdb')
        Qpdbe=check(com,'pdbe')
@@ -2629,8 +2653,7 @@ do while (.not. logfinal)
          enddo
        endif
        if (doions) then
-         call delparofkind(3)
-         call delparofkind(4)
+         !call delparofkind(3)
          do ib = 1, nbuffer
            nat(ib) = nint(avnum(ib))
          enddo
@@ -2808,8 +2831,8 @@ do while (.not. logfinal)
          write(outu,*)
          write(outu,'(6x,a)') 'Different ion-accessible space is used for different ions and sites'
          totnumb=netyp
-         if (.not.Qnucl .and. .not. Qpar) then
-           call error ('shell_simul', 'GSBP order is defined before PARTICLE and/or NUCLEOTIDES orders', faterr)
+         if (.not.Qatexp.and..not.Qnucl .and. .not. Qpar) then
+           call error ('shell_simul', 'GSBP order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
          endif
          if (totnumb.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
          call gtcpar(com,'munit',nn,word)
@@ -2897,7 +2920,7 @@ do while (.not. logfinal)
     write(outu,*)
   ! **************************************************************************
   elseif (wrd5.eq.'svdw') then
-    if (.not.Qpar.and..not.Qnucl) call error ('shell_simul', 'SVDW order is defined before PARTICLE and/or NUCLEOTIDE order', faterr)
+    if (.not.Qatexp.and..not.Qpar.and..not.Qnucl) call error ('shell_simul', 'SVDW order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
     if (.not.Qphiv) call error ('shell_simul', 'Repulsion field has not been read', faterr)
     if (Qnmcden) call error ('shell_simul', 'SVDW not compatible with NMCDEN', faterr)
     allocate (scal(netyp))

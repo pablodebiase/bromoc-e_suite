@@ -33,7 +33,6 @@ integer,allocatable :: typen(:,:), non_of_charge(:)
 real,allocatable :: nonbonded(:,:), sdat(:), qat(:)
 character*7,allocatable :: non_labels(:) 
 character*9,allocatable :: atom_labels(:)
-
 ! Bonded terms
 ! ------------
 !
@@ -471,16 +470,6 @@ if (Qlbond) then
   enddo
   ! deallocations
   deallocate(psf_btype)
-! ListMod {
-  ! copy nbonds
-  ptypl(nptyp)%psf%nbonds=nbonds
-  ! transfer bonds
-  if (allocated(ptypl(nptyp)%psf(1)%bonds)) deallocate (ptypl(nptyp)%psf(1)%bonds)
-  call move_alloc(bonds,ptypl(nptyp)%psf(1)%bonds)
-  ! transfer stretch
-  if (allocated(ptypl(nptyp)%psf(1)%stretch)) deallocate (ptypl(nptyp)%psf(1)%stretch)
-  call move_alloc(stretch,ptypl(nptyp)%psf(1)%stretch)
-! } ListMod 
 endif ! Qlbond
 
 ! *** read bond angle section
@@ -590,29 +579,9 @@ if (Qlang) then
     enddo
     ! deallocations
     deallocate(psf_ubtp)
-    ! ListMod {
-    ! copy nubs
-    ptypl(nptyp)%psf%nubs=nubs
-    ! transfer ubs
-    if (allocated(ptypl(nptyp)%psf(1)%ubs)) deallocate (ptypl(nptyp)%psf(1)%ubs)
-    call move_alloc(ubs,ptypl(nptyp)%psf(1)%ubs)
-    ! transfer ubt
-    if (allocated(ptypl(nptyp)%psf(1)%ubt)) deallocate (ptypl(nptyp)%psf(1)%ubt)
-    call move_alloc(ubt,ptypl(nptyp)%psf(1)%ubt)
-    ! } ListMod 
   endif ! Qlubs
   ! deallocations
   deallocate(psf_btype,psf_bendtyp)
-  ! ListMod {
-  ! copy nbends
-  ptypl(nptyp)%psf%nbends=nbends
-  ! transfer bends
-  if (allocated(ptypl(nptyp)%psf(1)%bends)) deallocate (ptypl(nptyp)%psf(1)%bends)
-  call move_alloc(bends,ptypl(nptyp)%psf(1)%bends)
-  ! transfer bend
-  if (allocated(ptypl(nptyp)%psf(1)%bend)) deallocate (ptypl(nptyp)%psf(1)%bend)
-  call move_alloc(bend,ptypl(nptyp)%psf(1)%bend)
-  ! } ListMod 
 endif ! Qlang
 
 ! *** read dihedral angle section
@@ -674,19 +643,6 @@ if (Qldih) then
   enddo
   ! deallocations
   deallocate(psf_btype)
-  ! ListMod {
-  ! copy ntorts
-  ptypl(nptyp)%psf%ntorts=ntorts
-  ! transfer torts
-  if (allocated(ptypl(nptyp)%psf(1)%torts)) deallocate (ptypl(nptyp)%psf(1)%torts)
-  call move_alloc(torts,ptypl(nptyp)%psf(1)%torts)
-  ! transfer ndih
-  if (allocated(ptypl(nptyp)%psf(1)%ndih)) deallocate (ptypl(nptyp)%psf(1)%ndih)
-  call move_alloc(ndih,ptypl(nptyp)%psf(1)%ndih)
-  ! transfer dih
-  if (allocated(ptypl(nptyp)%psf(1)%dih)) deallocate (ptypl(nptyp)%psf(1)%dih)
-  call move_alloc(dih,ptypl(nptyp)%psf(1)%dih)
-  ! } ListMod 
 endif ! Qldih
 
 ! *** read improper angle section
@@ -749,16 +705,6 @@ if (Qldef) then
   enddo
   ! deallocations
   deallocate(psf_btype)
-  ! ListMod {
-  ! copy ndeforms
-  ptypl(nptyp)%psf%ndeforms=ndeforms
-  ! transfer deforms
-  if (allocated(ptypl(nptyp)%psf(1)%deforms)) deallocate (ptypl(nptyp)%psf(1)%deforms)
-  call move_alloc(deforms,ptypl(nptyp)%psf(1)%deforms)
-  ! transfer deform 
-  if (allocated(ptypl(nptyp)%psf(1)%deform)) deallocate (ptypl(nptyp)%psf(1)%deform)
-  call move_alloc(deform,ptypl(nptyp)%psf(1)%deform)
-  ! } ListMod 
 endif ! Qldef
 
 ! *** read cross-term section
@@ -919,34 +865,6 @@ if (Qlcmap) then
     endif
   enddo
   deallocate(psf_btype,cmaptype)
-  ! ListMod {
-  ! copy ncmaps
-  ptypl(nptyp)%psf%ncmaps=ncmaps
-  ! transfer cmaps
-  if (allocated(ptypl(nptyp)%psf(1)%cmaps)) deallocate (ptypl(nptyp)%psf(1)%cmaps)
-  call move_alloc(cmaps,ptypl(nptyp)%psf(1)%cmaps)
-  ! transfer attcmap
-  if (allocated(ptypl(nptyp)%psf(1)%attcmap)) deallocate (ptypl(nptyp)%psf(1)%attcmap)
-  call move_alloc(attcmap,ptypl(nptyp)%psf(1)%attcmap)
-  ! transfer gscmap
-  if (allocated(ptypl(nptyp)%psf(1)%gscmap)) deallocate (ptypl(nptyp)%psf(1)%gscmap)
-  call move_alloc(gscmap,ptypl(nptyp)%psf(1)%gscmap)
-  ! transfer fcmap
-  if (allocated(ptypl(nptyp)%psf(1)%fcmap)) deallocate (ptypl(nptyp)%psf(1)%fcmap)
-  call move_alloc(fcmap,ptypl(nptyp)%psf(1)%fcmap)
-  ! transfer ftcmap
-  if (allocated(ptypl(nptyp)%psf(1)%ftcmap)) deallocate (ptypl(nptyp)%psf(1)%ftcmap)
-  call move_alloc(ftcmap,ptypl(nptyp)%psf(1)%ftcmap)
-  ! transfer fpcmap
-  if (allocated(ptypl(nptyp)%psf(1)%fpcmap)) deallocate (ptypl(nptyp)%psf(1)%fpcmap)
-  call move_alloc(fpcmap,ptypl(nptyp)%psf(1)%fpcmap)
-  ! transfer ftpcmap
-  if (allocated(ptypl(nptyp)%psf(1)%ftpcmap)) deallocate (ptypl(nptyp)%psf(1)%ftpcmap)
-  call move_alloc(ftpcmap,ptypl(nptyp)%psf(1)%ftpcmap)
-  ! transfer ccoef
-  if (allocated(ptypl(nptyp)%psf(1)%ccoef)) deallocate (ptypl(nptyp)%psf(1)%ccoef)
-  call move_alloc(ccoef,ptypl(nptyp)%psf(1)%ccoef)
-  ! } ListMod 
 endif ! Qlcmap
 deallocate(psf_mass,val)
 
@@ -1080,15 +998,107 @@ if (Qprint) then
     enddo
   endif
 endif
+
+! ListMod {
+if (Qlbond) then
+  ! copy nbonds
+  ptypl(nptyp)%psf%nbonds=nbonds
+  ! transfer bonds
+  if (allocated(ptypl(nptyp)%psf(1)%bonds)) deallocate (ptypl(nptyp)%psf(1)%bonds)
+  call move_alloc(bonds,ptypl(nptyp)%psf(1)%bonds)
+  ! transfer stretch
+  if (allocated(ptypl(nptyp)%psf(1)%stretch)) deallocate (ptypl(nptyp)%psf(1)%stretch)
+  call move_alloc(stretch,ptypl(nptyp)%psf(1)%stretch)
+endif
+if (Qlang) then
+  if (Qlubs) then
+    ! copy nubs
+    ptypl(nptyp)%psf%nubs=nubs
+    ! transfer ubs
+    if (allocated(ptypl(nptyp)%psf(1)%ubs)) deallocate (ptypl(nptyp)%psf(1)%ubs)
+    call move_alloc(ubs,ptypl(nptyp)%psf(1)%ubs)
+    ! transfer ubt
+    if (allocated(ptypl(nptyp)%psf(1)%ubt)) deallocate (ptypl(nptyp)%psf(1)%ubt)
+    call move_alloc(ubt,ptypl(nptyp)%psf(1)%ubt)
+  endif ! Qlubs
+  ! copy nbends
+  ptypl(nptyp)%psf%nbends=nbends
+  ! transfer bends
+  if (allocated(ptypl(nptyp)%psf(1)%bends)) deallocate (ptypl(nptyp)%psf(1)%bends)
+  call move_alloc(bends,ptypl(nptyp)%psf(1)%bends)
+  ! transfer bend
+  if (allocated(ptypl(nptyp)%psf(1)%bend)) deallocate (ptypl(nptyp)%psf(1)%bend)
+  call move_alloc(bend,ptypl(nptyp)%psf(1)%bend)
+endif ! Qlang
+if (Qldih) then
+  ! copy ntorts
+  ptypl(nptyp)%psf%ntorts=ntorts
+  ! transfer torts
+  if (allocated(ptypl(nptyp)%psf(1)%torts)) deallocate (ptypl(nptyp)%psf(1)%torts)
+  call move_alloc(torts,ptypl(nptyp)%psf(1)%torts)
+  ! transfer ndih
+  if (allocated(ptypl(nptyp)%psf(1)%ndih)) deallocate (ptypl(nptyp)%psf(1)%ndih)
+  call move_alloc(ndih,ptypl(nptyp)%psf(1)%ndih)
+  ! transfer dih
+  if (allocated(ptypl(nptyp)%psf(1)%dih)) deallocate (ptypl(nptyp)%psf(1)%dih)
+  call move_alloc(dih,ptypl(nptyp)%psf(1)%dih)
+endif ! Qldih
+if (Qldef) then
+  ! copy ndeforms
+  ptypl(nptyp)%psf%ndeforms=ndeforms
+  ! transfer deforms
+  if (allocated(ptypl(nptyp)%psf(1)%deforms)) deallocate (ptypl(nptyp)%psf(1)%deforms)
+  call move_alloc(deforms,ptypl(nptyp)%psf(1)%deforms)
+  ! transfer deform 
+  if (allocated(ptypl(nptyp)%psf(1)%deform)) deallocate (ptypl(nptyp)%psf(1)%deform)
+  call move_alloc(deform,ptypl(nptyp)%psf(1)%deform)
+endif ! Qldef
+if (Qlcmap) then
+  ! copy ncmaps
+  ptypl(nptyp)%psf%ncmaps=ncmaps
+  ! transfer cmaps
+  if (allocated(ptypl(nptyp)%psf(1)%cmaps)) deallocate (ptypl(nptyp)%psf(1)%cmaps)
+  call move_alloc(cmaps,ptypl(nptyp)%psf(1)%cmaps)
+  ! transfer attcmap
+  if (allocated(ptypl(nptyp)%psf(1)%attcmap)) deallocate (ptypl(nptyp)%psf(1)%attcmap)
+  call move_alloc(attcmap,ptypl(nptyp)%psf(1)%attcmap)
+  ! transfer gscmap
+  if (allocated(ptypl(nptyp)%psf(1)%gscmap)) deallocate (ptypl(nptyp)%psf(1)%gscmap)
+  call move_alloc(gscmap,ptypl(nptyp)%psf(1)%gscmap)
+  ! transfer fcmap
+  if (allocated(ptypl(nptyp)%psf(1)%fcmap)) deallocate (ptypl(nptyp)%psf(1)%fcmap)
+  call move_alloc(fcmap,ptypl(nptyp)%psf(1)%fcmap)
+  ! transfer ftcmap
+  if (allocated(ptypl(nptyp)%psf(1)%ftcmap)) deallocate (ptypl(nptyp)%psf(1)%ftcmap)
+  call move_alloc(ftcmap,ptypl(nptyp)%psf(1)%ftcmap)
+  ! transfer fpcmap
+  if (allocated(ptypl(nptyp)%psf(1)%fpcmap)) deallocate (ptypl(nptyp)%psf(1)%fpcmap)
+  call move_alloc(fpcmap,ptypl(nptyp)%psf(1)%fpcmap)
+  ! transfer ftpcmap
+  if (allocated(ptypl(nptyp)%psf(1)%ftpcmap)) deallocate (ptypl(nptyp)%psf(1)%ftpcmap)
+  call move_alloc(ftpcmap,ptypl(nptyp)%psf(1)%ftpcmap)
+  ! transfer ccoef
+  if (allocated(ptypl(nptyp)%psf(1)%ccoef)) deallocate (ptypl(nptyp)%psf(1)%ccoef)
+  call move_alloc(ccoef,ptypl(nptyp)%psf(1)%ccoef)
+endif ! Qlcmap
+! } ListMod 
+
 deallocate (psf_atomtype,psf_atomtype2)
 deallocate (typen,non_of_charge,nonbonded,sdat,qat,non_labels,atom_labels,psf_charge)
-deallocate (bonds,stretch)
-deallocate (bends,bend)
-deallocate (ubs,ubt)
-deallocate (torts,dih,ndih,nprms)
-deallocate (deforms,deform)
-deallocate (cmaps,lthetacmap,lpsicmap,thetacmap,psicmap,attcmap,atpcmap,& 
+if (allocated(bonds)) deallocate (bonds)
+if (allocated(stretch)) deallocate (stretch)
+if (allocated(bends)) deallocate (bends)
+if (allocated(bend)) deallocate (bend)
+if (allocated(ubs)) deallocate (ubs)
+if (allocated(ubt)) deallocate (ubt)
+if (allocated(torts)) deallocate (torts)
+if (allocated(dih)) deallocate (dih)
+if (allocated(ndih)) deallocate (ndih)
+if (allocated(deforms)) deallocate (deforms)
+if (allocated(deform)) deallocate (deform)
+if (allocated(cmaps)) deallocate (cmaps,lthetacmap,lpsicmap,thetacmap,psicmap,attcmap,atpcmap,& 
             nablatcmp,nablapcmp,cmap,gscmap,fcmap,ftcmap,fpcmap,ftpcmap,ccoef)
+deallocate (nprms)
 deallocate (chain,nbondsch,fixed,ghost) 
 return
 contains

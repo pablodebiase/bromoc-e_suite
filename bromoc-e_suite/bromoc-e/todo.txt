@@ -1,0 +1,10 @@
+-Include from CHARMM info to ptype and etype 
+-Make charmm bonded routine for each particle
+-Reorganized arrays for doing the previous point
+-find out why it was using many more rndm function in new bromoc than in old bromoc
+-try to minimize the use of count
+-Add internal non-bonded interactions for charmm particles
+-count particles only of kind 3
+-count ions only of kind 3
+--Add read coor from crd
+--Add feature to read multiple repeated prm sections

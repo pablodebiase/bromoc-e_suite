@@ -378,7 +378,6 @@ integer n,j
 character*(*) stfin,stout
 character stfout*(len(stfin))
 integer,dimension(len_trim(stfin)) :: ll,ul
-
 stout=''
 n=0
 if (len_trim(stfin).gt.0) call findparm(stfin,n,ll,ul)
