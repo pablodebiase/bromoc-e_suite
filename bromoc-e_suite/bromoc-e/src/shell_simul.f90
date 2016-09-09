@@ -695,6 +695,10 @@ do while (.not. logfinal)
     if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
     allocate (Qsrpmfi(netp))
     Qsrpmfi=.false.
+    if (allocated(warn)) deallocate (warn)
+    allocate (warn(netyp))
+    warn=0
+    ! ASSIGN CHARGES USING CDIE
     cecd=celec/cdie
     write(outu,*)
   ! **********************************************************************
@@ -793,7 +797,10 @@ do while (.not. logfinal)
     if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
     allocate (Qsrpmfi(netp))
     Qsrpmfi=.false.
-  
+    if (allocated(warn)) deallocate (warn)
+    allocate (warn(netyp))
+    warn=0
+
     ! ASSIGN CHARGES USING CDIE
     cecd=celec/cdie
   
@@ -1359,9 +1366,6 @@ do while (.not. logfinal)
        Qpres=.false.
      endif
      if (Qpar.and..not.(Qefpott.or.Qljsin.or.Qljpar)) call error ('shell_simul', 'No effective potential and no Lennard Jones parameters defined', warning)
-     if (allocated(warn)) deallocate (warn)
-     allocate (warn(netyp))
-     warn=0
      ! number of steps for BD or MC simulations
      ! [integer,default=0]
      call gti8par(com,'ncycle',ncycle,0)
