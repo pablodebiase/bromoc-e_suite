@@ -934,20 +934,21 @@ end subroutine
 subroutine delparofkind(kind)
 implicit none
 integer :: i,kind
-i=npar
-do while (i.ge.1)
-   if (parl(i)%kind.eq.kind) call delpar(i)
-   i=i-1
+do i=npar,1,-1
+  call delpar(i,kind)
 enddo
 end subroutine
 
-subroutine delpar(parn)
+subroutine delpar(parn,kind)
 implicit none
 integer i,j,ii,jj,n,ne,sr,parn
+integer,optional,intent(in) :: kind
 ! If parn is out of range exit
 !if (parn.gt.npar.or.parn.lt.1) return
-! if particle not of kind 3 return
-!if (parl(parn)%kind.ne.3) return
+! if particle not of kind kind return
+if (present(kind)) then
+  if (parl(parn)%kind.ne.kind) return
+endif
 ! if last particle or no more particles
 if (npar .le. 1) then
     nele=0

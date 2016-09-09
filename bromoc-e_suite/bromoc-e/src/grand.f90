@@ -65,7 +65,7 @@ do igrand = 1, ngcmc
         nat(ib) = nat(ib) + 1
         ninsert(ib) = ninsert(ib) + 1
       else
-        call delpar(npar)
+        call delpar(npar,3)
       endif
     endif 
   else
@@ -89,7 +89,7 @@ do igrand = 1, ngcmc
        ! The destruction is accepted if a random number between 0 and 1 
        ! is less than or equal to destruction transition probability
         nremove(ib) = nremove(ib) + 1
-        call delpar(iat)
+        call delpar(iat,3)
         nat(ib) = nat(ib) - 1
       endif
     endif  
