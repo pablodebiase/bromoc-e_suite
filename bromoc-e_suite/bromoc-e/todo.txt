@@ -4,6 +4,7 @@
 -find out why it was using many more rndm function in new bromoc than in old bromoc
 -try to minimize the use of count
 -Add internal non-bonded interactions for charmm particles
+-Fix nonbonded combination rules from bromocea. Add eps and sigma to element types. Ignore eps/sigma-1,4
 -count particles only of kind 3
 -count ions only of kind 3
 --Add read coor from crd
