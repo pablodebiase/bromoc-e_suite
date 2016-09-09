@@ -871,9 +871,7 @@ deallocate(psf_mass,val)
 ! *** assign additional variables
 nch = 1 
 allocate(chain(natt),nbondsch(1),fixed(natt),ghost(natt))
-do i = 1, natt
-  chain(i) = 1
-enddo
+chain(1:natt)=1
 nbondsch(1)   = nbonds
 fixed         = .false.
 ghost         = .false.
