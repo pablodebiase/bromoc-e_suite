@@ -1022,54 +1022,59 @@ enddo
 ! New 1-4 Pair List
 ! ListMod {
 m=sum(listm14(1:natt))
-ptypl(ptypn)%psf(1)%np14=m
-allocate(ptypn(ptypn)%psf(1)%p14(m))
+ptypl(nptyp)%psf(1)%np14=m
+allocate(ptypl(nptyp)%psf(1)%p14(m))
 l=0
 do i=1,natt
   k=listm14(i)
   do j=1,k
     l=l+1
-    ptypn(ptypn)%psf(1)%p14(l)%a=i
-    ptypn(ptypn)%psf(1)%p14(l)%b=list14(j,i)
+    ptypl(nptyp)%psf(1)%p14(l)%a=i
+    ptypl(nptyp)%psf(1)%p14(l)%b=list14(j,i)
   enddo
 enddo
 if (l.ne.m) call error ('psf_p14', 'Numbers do not match', faterr)
 ! Add list14 to listex
+do i=1,natt
+  m=listm14(i)+listmex(i)
+  if (m.gt.natt) call error ('psf_p14', 'ListEx+List14 greater than num of atoms', faterr)
+  listex(listmex(i)+1:m,i)=list14(1:listm14(i),i)
+  listmex(i)=m
+enddo
 ! Sort new listex
+do i=1,natt
+  m=listmex(i)
+  if (m.gt.0) call msort(listex(1:m,i),m)
+enddo
 ! Make list of complement of listex
-!    ptypn(ptypn)%psf(1)%nnbon
-!    ptypn(ptypn)%psf(1)%nbon(l)%a=i
-!    ptypn(ptypn)%psf(1)%nbon(l)%b=list14(j,i)
+ptypl(nptyp)%psf(1)%nnbon=natt*(natt-1)/2-sum(listmex(1:natt))
+if (ptypl(nptyp)%psf(1)%nnbon.gt.0) then
+  allocate(ptypl(nptyp)%psf(1)%nbon(ptypl(nptyp)%psf(1)%nnbon))
+  k=0
+  do i=1,natt-1
+    do j=i+1,natt
+      ok=.true.
+      do m=1,listmex(i)
+        if (j.eq.listex(m,i)) then
+          ok=.false.
+          exit
+        endif
+      enddo
+      if (ok) then
+        k=k+1
+        ptypl(nptyp)%psf(1)%nbon(k)%a=i    
+        ptypl(nptyp)%psf(1)%nbon(k)%b=j
+      endif
+    enddo
+  enddo
+  if (k.ne.ptypl(nptyp)%psf(1)%nnbon) call error ('psf_nbon', 'k and nnbon do not match', faterr)
+endif
 ! Fix eps and sigma in readcharmm
-! Set the fixes eps and sigma in listmod
+! Set the fixed eps and sigma in listmod
 ! Add the 1,4 eps,sig in a new internal list into psf
 ! Fix energy routine for internal energy
 ! } ListMod
-write(*,*) 'Num, atomtype, atname, mass'
-do i=1,natt
-  write(*,*) i, psf_atomtype(i), psf_non_labels(psf_atomtype(i)), psf_mass(psf_atomtype(i))
-enddo
-write(*,*) 'bond num, at1, at2'
-do i=1,nbonds
-  write(*,*) i, bonds(1,i),bonds(2,i)
-enddo
-write(*,*) 'listmex:'
-do i=1,natt
-  write(*,*) i, listmex(i)
-enddo
-write(*,*) 'listex:'
-do i=1,natt
-  write(*,*) i, (listex(i,j),j=1,natt)
-enddo
-write(*,*) 'listm14:'
-do i=1,natt
-  write(*,*) i, listm14(i)
-enddo
-write(*,*) 'list14:'
-do i=1,natt
-  write(*,*) i, (list14(i,j),j=1,natt)
-enddo
-
+deallocate(list14,listm14,listex,listmex)
 deallocate(psf_non_labels,psf_nq,psf_qat)
 deallocate(psf_mass,val)
 ! ListMod {
