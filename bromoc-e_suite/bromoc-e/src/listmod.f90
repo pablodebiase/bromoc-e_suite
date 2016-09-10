@@ -29,6 +29,10 @@ type :: car
     real :: z
 end type car
 
+type :: pair
+    integer :: a,b
+end type pair
+
 ! PSF Type 
 type :: psftype
     ! Bonds
@@ -62,6 +66,11 @@ type :: psftype
     real,allocatable,dimension(:,:)    :: fpcmap
     real,allocatable,dimension(:,:)    :: ftpcmap
     real,allocatable,dimension(:,:,:)  :: ccoef
+    ! Non-Bonded
+    integer                             :: np14  ! number of p14
+    type(pair),allocatable,dimension(:) :: p14   ! pair 1-4 (dih)
+    integer                             :: nnbon ! number of nbon
+    type(pair),allocatable,dimension(:) :: nbon  ! pair non-1,2/1,3/1,4
 end type psftype
 
 ! Particle Properties Type
@@ -200,6 +209,8 @@ ptypl(ptypn)%psf(1)%nubs=0
 ptypl(ptypn)%psf(1)%ntorts=0
 ptypl(ptypn)%psf(1)%ndeforms=0
 ptypl(ptypn)%psf(1)%ncmaps=0
+ptypl(ptypn)%psf(1)%np14=0
+ptypl(ptypn)%psf(1)%nnbon=0
 end subroutine
 
 subroutine getetchg()
@@ -571,6 +582,7 @@ else
 endif
 allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne),ptypl(nptyp)%chg(ne))
 ptypl(nptyp)%chg(:)=0.0
+ptypl(nptyp)%Qpsf=.false.
 end subroutine
 
 ! Add Particle Type To Particle List

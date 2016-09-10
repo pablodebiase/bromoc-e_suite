@@ -9,3 +9,14 @@
 -count ions only of kind 3
 --Add read coor from crd
 --Add feature to read multiple repeated prm sections
+! Add list14 to listex
+! Sort new listex
+! Make list of complement of listex
+!    ptypn(ptypn)%psf(1)%nnbon
+!    ptypn(ptypn)%psf(1)%nbon(l)%a=i
+!    ptypn(ptypn)%psf(1)%nbon(l)%b=list14(j,i)
+! Fix eps and sigma in readcharmm
+! Set the fixes eps and sigma in listmod
+! Add the 1,4 eps,sig in a new internal list into psf
+! Fix energy routine for internal energy
+
