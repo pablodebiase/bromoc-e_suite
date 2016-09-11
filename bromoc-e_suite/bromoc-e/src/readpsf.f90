@@ -142,7 +142,7 @@ integer :: iat1, iat2, iat3, iat4, iat5, iat6, iat7, iat8, iat9
 integer :: itype, jtype, ktype, ltype, mtype, nntype, otype, ptype, icmap
 integer :: n, nmax
 integer, allocatable :: psf_nq(:), val(:), psf_btype(:,:), psf_bendtyp(:), psf_ubtp(:,:), cmaptype(:)
-real, parameter :: tol=1.0e-3, cte=2**(-5.0/6.0)
+real, parameter :: tol=1.0e-3
 real :: atomchar, atommass, Qnet
 real, allocatable :: psf_qat(:,:), psf_mass(:)
 character*7, allocatable :: psf_non_labels(:)
@@ -151,6 +151,7 @@ character*4 :: ptname
 logical*1 :: dobond, doang, dodih, dodef, docmap
 logical*1 :: ok, ok1, ok2
 integer etypn
+real, allocatable :: lj14(:,:)
 
 ! *** OBTENTION OF DIMENSIONS
 nbonds   = 0
@@ -386,6 +387,7 @@ do itype = 1, maxtypes
 enddo
 allocate(nonbonded(4,intert))
 ! non-bonded forces field
+allocate (lj14(2,netyp))
 ncharge = 0
 do itype = 1, maxtypes
   i = val(itype) 
@@ -395,7 +397,14 @@ do itype = 1, maxtypes
   do k = 1, 4
     nonbonded(k,intert) = charmm_nonbonded(k,j)
   enddo
-  sdat(itype) = scldiff*kbt/(6.0*pi*viscwat*cte*nonbonded(2,intert)) 
+  sdat(itype) = scldiff*kbt/(6.0*pi*viscwat*nonbonded(2,intert)) ! Stokes-Einstein equation 
+  ! ListMod {
+  ! Set Diff, Eps, Sigma in ListMod
+  m=getetyp(psf_non_labels(itype))
+  call editetyp(m,sdat(itype),nonbonded(1,intert),nonbonded(2,intert))
+  lj14(1,m)=nonbonded(3,intert)
+  lj14(2,m)=nonbonded(4,intert)
+  ! } ListMod
   do jtype = 1, psf_nq(itype)
     write(intg,'(i2)') jtype
     ncharge = ncharge + 1
@@ -1069,11 +1078,17 @@ if (ptypl(nptyp)%psf(1)%nnbon.gt.0) then
   enddo
   if (k.ne.ptypl(nptyp)%psf(1)%nnbon) call error ('psf_nbon', 'k and nnbon do not match', faterr)
 endif
-! Fix eps and sigma in readcharmm
-! Set the fixed eps and sigma in listmod
 ! Add the 1,4 eps,sig in a new internal list into psf
-! Fix energy routine for internal energy
+m=ptypl(nptyp)%psf(1)%np14
+allocate(ptypl(nptyp)%psf(1)%lj(m))
+do i=1,m
+  j=ptypl(nptyp)%etyp(ptypl(nptyp)%psf(1)%p14(i)%a)
+  k=ptypl(nptyp)%etyp(ptypl(nptyp)%psf(1)%p14(i)%b)
+  ptypl(nptyp)%psf(1)%lj(i)%epp4=4.0*sqrt(lj14(1,j)*lj14(1,k))
+  ptypl(nptyp)%psf(1)%lj(i)%sgp2=(0.5*(lj14(2,j)+lj14(2,k)))**2
+enddo
 ! } ListMod
+deallocate(lj14)
 deallocate(list14,listm14,listex,listmex)
 deallocate(psf_non_labels,psf_nq,psf_qat)
 deallocate(psf_mass,val)

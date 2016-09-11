@@ -33,6 +33,10 @@ type :: pair
     integer :: a,b
 end type pair
 
+type :: ljpair
+    real :: epp4,sgp2
+end type ljpair
+
 ! PSF Type 
 type :: psftype
     ! Bonds
@@ -67,10 +71,11 @@ type :: psftype
     real,allocatable,dimension(:,:)    :: ftpcmap
     real,allocatable,dimension(:,:,:)  :: ccoef
     ! Non-Bonded
-    integer                             :: np14  ! number of p14
-    type(pair),allocatable,dimension(:) :: p14   ! pair 1-4 (dih)
-    integer                             :: nnbon ! number of nbon
-    type(pair),allocatable,dimension(:) :: nbon  ! pair non-1,2/1,3/1,4
+    integer                               :: np14  ! number of p14
+    type(pair),allocatable,dimension(:)   :: p14   ! pair 1-4 (dih)
+    integer                               :: nnbon ! number of nbon
+    type(pair),allocatable,dimension(:)   :: nbon  ! pair non-1,2/1,3/1,4
+    type(ljpair),allocatable,dimension(:) :: lj    ! lennard jones pair parameters
 end type psftype
 
 ! Particle Properties Type

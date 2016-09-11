@@ -8,7 +8,7 @@ logical*1 Qprint
 ! local variables
 integer i,j,k,l,m,n,o,p,imax,itype,jtype,ktype,ltype,mtype,ntype,otype,ptype,dih1,dih2,diht
 integer, allocatable :: tmp_dtype(:,:),tmp_ndih(:),tmp_nterms(:)
-real, parameter :: tol=1.0e-2,cte=2**(-1.0/6.0)
+real, parameter :: tol=1.0e-2
 real, allocatable :: tmp_dih(:,:)
 character com*2048,word*1024,wrtline*2048 
 character*7 atnam1,atnam2,atnam3,atnam4
@@ -805,7 +805,7 @@ do while (wrd4(1:3).ne.'end'.and.i.le.chmmntype)
       if (charmm_nonbonded(1,j).gt.0.0) call error ('readcharmm', 'Wrong value for well-depth (epsilon) in NONBONDED section', faterr)
       charmm_nonbonded(1,j) = abs(charmm_nonbonded(1,j))
       call getfirst(com,word)
-      charmm_nonbonded(2,j) = 2.0*cte*chr2real(word) ! minimum radius
+      charmm_nonbonded(2,j) = chr2real(word) ! minimum radius
       if (charmm_nonbonded(2,j).lt.0.0) call error ('readcharmm', 'Wrong value for minimum radius in NONBONDED section', faterr)
       call getfirst(com,word) ! ignored (if 1-4 nonbonded interactions)
       if (len_trim(word).ne.0) then ! 1-4 nonbonded interactions
@@ -814,7 +814,7 @@ do while (wrd4(1:3).ne.'end'.and.i.le.chmmntype)
         if (charmm_nonbonded(3,j).gt.0.0) call error ('readcharmm', 'Wrong value for well-depth (epsilon) in NONBONDED section', faterr)
         charmm_nonbonded(3,j) = abs(charmm_nonbonded(3,j))
         call getfirst(com,word)
-        charmm_nonbonded(4,j) = 2.0*cte*chr2real(word) ! minimum radius
+        charmm_nonbonded(4,j) = chr2real(word) ! minimum radius
         if (charmm_nonbonded(4,j).lt.0.0) call error ('readcharmm', 'Wrong value for minimum radius in NONBONDED section', faterr)
       else
         charmm_nonbonded(3,j) = charmm_nonbonded(1,j)
@@ -862,7 +862,7 @@ if (Qchmmnbfix) then
         if (charmm_nonbonded(1,j).gt.0.0) call error ('readcharmm', 'Wrong value for well-depth (epsilon) in NBFIX section', faterr)
         charmm_nonbonded(1,j) = abs(charmm_nonbonded(1,j))
         call getfirst(com,word)
-        charmm_nonbonded(2,j) = cte*chr2real(word) ! minimum radius
+        charmm_nonbonded(2,j) = chr2real(word) ! minimum radius
         if (charmm_nonbonded(2,j).lt.0.0) call error ('readcharmm', 'Wrong value for minimum radius in NBFIX section', faterr)
         call getfirst(com,word)
         if (len_trim(word).ne.0) then ! 1-4 nonbonded interactions
@@ -870,7 +870,7 @@ if (Qchmmnbfix) then
           if (charmm_nonbonded(3,j).gt.0.0) call error ('readcharmm', 'Wrong value for well-depth (epsilon) in NBFIX section', faterr)
           charmm_nonbonded(3,j) = abs(charmm_nonbonded(3,j))
           call getfirst(com,word)
-          charmm_nonbonded(4,j) = cte*chr2real(word) ! minimum radius
+          charmm_nonbonded(4,j) = chr2real(word) ! minimum radius
           if (charmm_nonbonded(4,j).lt.0.0) call error ('readcharmm', 'Wrong value for minimum radius in NBFIX section', faterr)
         else
           charmm_nonbonded(3,j) = charmm_nonbonded(1,j)
