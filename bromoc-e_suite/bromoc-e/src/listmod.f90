@@ -75,7 +75,8 @@ type :: psftype
     type(pair),allocatable,dimension(:)   :: p14   ! pair 1-4 (dih)
     integer                               :: nnbon ! number of nbon
     type(pair),allocatable,dimension(:)   :: nbon  ! pair non-1,2/1,3/1,4
-    type(ljpair),allocatable,dimension(:) :: lj    ! lennard jones pair parameters
+    type(ljpair),allocatable,dimension(:) :: lj14  ! lennard jones pair parameters for 1-4 pairs
+    type(ljpair),allocatable,dimension(:) :: lj    ! lennard jones pair parameters for rest of pairs
 end type psftype
 
 ! Particle Properties Type

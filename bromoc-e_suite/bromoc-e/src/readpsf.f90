@@ -1080,12 +1080,23 @@ if (ptypl(nptyp)%psf(1)%nnbon.gt.0) then
 endif
 ! Add the 1,4 eps,sig in a new internal list into psf
 m=ptypl(nptyp)%psf(1)%np14
-allocate(ptypl(nptyp)%psf(1)%lj(m))
+allocate(ptypl(nptyp)%psf(1)%lj14(m))
 do i=1,m
   j=ptypl(nptyp)%etyp(ptypl(nptyp)%psf(1)%p14(i)%a)
   k=ptypl(nptyp)%etyp(ptypl(nptyp)%psf(1)%p14(i)%b)
-  ptypl(nptyp)%psf(1)%lj(i)%epp4=4.0*sqrt(lj14(1,j)*lj14(1,k))
-  ptypl(nptyp)%psf(1)%lj(i)%sgp2=(0.5*(lj14(2,j)+lj14(2,k)))**2
+  ptypl(nptyp)%psf(1)%lj14(i)%epp4=4.0*sqrt(lj14(1,j)*lj14(1,k))
+  ptypl(nptyp)%psf(1)%lj14(i)%sgp2=(0.5*(lj14(2,j)+lj14(2,k)))**2
+  !write(*,*) etypl(j)%nam,lj14(1,j),lj14(2,j),etypl(k)%nam,lj14(1,k),lj14(2,k)
+enddo
+! Add eps,sig for the rest of non-bonded pairs
+m=ptypl(nptyp)%psf(1)%nnbon
+allocate(ptypl(nptyp)%psf(1)%lj(m))
+do i=1,m
+  j=ptypl(nptyp)%etyp(ptypl(nptyp)%psf(1)%nbon(i)%a)
+  k=ptypl(nptyp)%etyp(ptypl(nptyp)%psf(1)%nbon(i)%b)
+  ptypl(nptyp)%psf(1)%lj(i)%epp4=4.0*sqrt(etypl(j)%eps*etypl(k)%eps)
+  ptypl(nptyp)%psf(1)%lj(i)%sgp2=(0.5*(etypl(j)%sig+etypl(k)%sig))**2
+  !write(*,*) etypl(j)%nam,etypl(j)%eps,etypl(j)%sig,etypl(k)%nam,etypl(k)%eps,etypl(k)%sig
 enddo
 ! } ListMod
 deallocate(lj14)

@@ -665,6 +665,13 @@ do while (.not. logfinal)
     if (Qchmmimp) deallocate (charmm_itype,charmm_imp)
     if (Qchmmcmap) deallocate (charmm_icmap,charmm_icmap2,charmm_ncmap,charmm_cmap,charmm_fcmap)
     deallocate (charmm_typen,charmm_nonbonded)
+    ! DEBUG
+    !do i=1,ptypl(nptyp)%psf(1)%np14
+    !  write(*,*) i,ptypl(nptyp)%psf(1)%p14(i)%a,ptypl(nptyp)%psf(1)%p14(i)%b,ptypl(nptyp)%psf(1)%lj14(i)%epp4,ptypl(nptyp)%psf(1)%lj14(i)%sgp2
+    !enddo
+    !do i=1,ptypl(nptyp)%psf(1)%nnbon
+    !  write(*,*) i,ptypl(nptyp)%psf(1)%nbon(i)%a,ptypl(nptyp)%psf(1)%nbon(i)%b,ptypl(nptyp)%psf(1)%lj(i)%epp4,ptypl(nptyp)%psf(1)%lj(i)%sgp2
+    !enddo
     ! unit number for coordinate [integer,default=0]
     call gtipar (com,'iunpdb',iunpdb,0)
     call gtipar (com,'iuncrd',iuncrd,0)
