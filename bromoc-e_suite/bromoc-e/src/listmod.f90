@@ -90,7 +90,7 @@ end type parpro
 
 ! Particle Type
 type :: partype
-    integer :: ne                                     !! Number of Elements in Particle
+    integer                                 :: ne     !! Number of Elements in Particle
     character*4                             :: nam    !! Particle Name
     real                                    :: tchg   !! Particle Total Charge
     integer,allocatable,dimension(:)        :: etyp   !! Particle Element Types Vector :: Size of ne
@@ -134,7 +134,7 @@ type(car), allocatable, dimension(:) :: f   !! Elements Force Vector
 integer, allocatable, dimension(:)   :: et  !! Elements Type List of nele size
 integer, allocatable, dimension(:)   :: pt  !! Particle Type List nele size
 integer, allocatable, dimension(:)   :: pe  !! Particle List of nele size
-real, allocatable, dimension(:)      :: q !! Charge List of nele size
+real, allocatable, dimension(:)      :: q   !! Charge List of nele size
 
 !! Used Element Types List
 integer nuet                      !! Total Number of Used Element Types in et

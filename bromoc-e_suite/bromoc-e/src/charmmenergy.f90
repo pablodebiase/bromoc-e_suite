@@ -15,192 +15,156 @@
 !
 !    You should have received a copy of the GNU General Public License
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-subroutine charmmenergy(ptypn,energy)
+subroutine charmmenergy(pari,energy)
 use listmod
 implicit none
-integer ptypn
+integer ptypi,pari
 real energy
 energy=0.0
-! bonded interaction among explicit atoms
+
+! bonded interaction among internal particles
 ! Bond terms
-if (ptypl(ptypn)%psf(1)%nbonds.gt.0) call en2cen(ptypn)
+call en2cen(pari,energy)
 ! Angle terms
-if (ptypl(ptypn)%psf(1)%nbends.gt.0) call en3cen(ptypn)
+call en3cen(pari,energy)
 ! UB terms
-if (ptypl(ptypn)%psf(1)%nubs.gt.0) call ubr(ptypn)
+call ubr(pari,energy)
 ! Dihedral angle terms
-if (ptypl(ptypn)%psf(1)%ntorts.gt.0) call en4cen(ptypn)
+call en4cen(pari,energy)
 ! Improper angle terms
-if (ptypl(ptypn)%psf(1)%ndeforms.gt.0) call improper(ptypn)
+call improper(pari,energy)
 ! CMAP terms
-if (ptypl(ptypn)%psf(1)%ncmaps.gt.0) call cmapr(ptypn)
-! include internal non-bonded interactions
-! to do
+call cmapr(pari,energy)
+! Internal non-bonded interactions term
+call nonbonded(pari,energy)
 end subroutine
 
-subroutine en2cen
 ! Bond terms for explicit atoms
+subroutine en2cen(pari,energy)
 use listmod
-use nucleotmod
 use grandmod
-
 implicit none
-! local variables
-integer kk,ibond,iat,jat,itype
-real bondk,rij0,rbij2,rbij,enbond,f1,dij(3),fb(3)
-logical*1 ok
+integer pari,ptypi,sr
+real energy
+integer ibond,iat,jat,itype
+real bondk,rij0,rbij,de,dij(3),fb(3),rdif
 
 !     bond .....
 !
 !     iat --- jat
 !         dij
-
-do ibond = 1,nbonds
+ptypi=parl(pari)%ptyp
+sr=parl(pari)%sr
+do ibond = 1,ptypl(ptypi)%psf(1)%nbonds
   ! force centers
-  iat = nsites + bonds(1,ibond)
-  jat = nsites + bonds(2,ibond)
+  iat = sr + ptypl(ptypi)%psf(1)%bonds(1,ibond)
+  jat = sr + ptypl(ptypi)%psf(1)%bonds(2,ibond)
   ! bond type
-  itype = bonds(3,ibond)
+  itype = ptypl(ptypi)%psf(1)%bonds(3,ibond)
   ! energy constant [Kcal/mole/Angs.**2]
-  bondk = stretch(1,itype)
+  bondk = ptypl(ptypi)%psf(1)%stretch(1,itype)
   ! natural bond [Angs.]
-  rij0 = stretch(2,itype)
+  rij0 = ptypl(ptypi)%psf(1)%stretch(2,itype)
   ! distance
-  dij(1) = x(jat) - x(iat)
-  dij(2) = y(jat) - y(iat)
-  dij(3) = z(jat) - z(iat)
+  dij(1) = r(jat)%x - r(iat)%x
+  dij(2) = r(jat)%y - r(iat)%y
+  dij(3) = r(jat)%z - r(iat)%z
   ! *** Energy contribution
-  rbij2 = dot_product(dij,dij)
-  rbij = sqrt(rbij2)
-  enbond = bondk*(rbij-rij0)*(rbij-rij0)
-  ebond = ebond + enbond
+  rbij = sqrt(dot_product(dij,dij))
+  rdif = rbij-rij0
+  energy = energy + bondk*rdiff**2
   ! *** Forces calculation
-  ok = Qforces .and. (.not.fixat(iat).or..not.fixat(jat))
-  if (ok) then
-    f1 = 2.0*bondk*(rbij-rij0)/rbij
-    do kk = 1,3
-      fb(kk) = f1*dij(kk)
-    end do
-    if (.not.fixat(iat)) then
-      fx(iat) = fx(iat) + fb(1)
-      fy(iat) = fy(iat) + fb(2)
-      fz(iat) = fz(iat) + fb(3)
-    end if
-    if (.not.fixat(jat)) then
-      fx(jat) = fx(jat) - fb(1)
-      fy(jat) = fy(jat) - fb(2)
-      fz(jat) = fz(jat) - fb(3)
-    end if
+  if (Qforces) then
+    de = 2.0*bondk*rdiff/rbij
+    fb = f1*dij
+    f(iat)%x = f(iat)%x + fb(1)
+    f(iat)%y = f(iat)%y + fb(2)
+    f(iat)%z = f(iat)%z + fb(3)
+    f(jat)%x = f(jat)%x - fb(1)
+    f(jat)%y = f(jat)%y - fb(2)
+    f(jat)%z = f(jat)%z - fb(3)
   end if
 end do ! next ibond
-
-return
 end subroutine
 
-subroutine en3cen
 ! Angle terms for explicit atoms
+subroutine en3cen(pari,energy)
 use listmod
-use nucleotmod
 use grandmod
 use constamod
-
 implicit none
-! local variables
+integer pari,ptypi,sr
+real energy
 integer kk,ibend,iat,jat,kat,itype
 real bendk,aijk0,r12,r22,r1r2,modval,cst
-real bondangle,snt,enbend,force,r12inv,r22inv,fiat(3),fjat(3),fkat(3)
-real rji(3),rjk(3)
+real bondangle,snt,force,r12inv,r22inv,fiat(3),fjat(3),fkat(3)
+real rji(3),rjk(3),adif
 real pos1(3),pos2(3),pos3(3)
-real, parameter :: zero=1.0e-15
-logical*1 ok
 
 !     bend angle ......
 !
 !     iat --- jat --- kat
 !     pos1    pos2    pos3
-
-do ibend = 1,nbends
+ptypi=parl(pari)%ptyp
+sr=parl(pari)%sr
+do ibend = 1,ptypl(ptypi)%psf(1)%nbends
   ! force centers
-  iat = nsites + bends(1,ibend)
-  jat = nsites + bends(2,ibend) ! central atom
-  kat = nsites + bends(3,ibend)
+  iat = sr + ptypl(ptypi)%psf(1)%bends(1,ibend)
+  jat = sr + ptypl(ptypi)%psf(1)%bends(2,ibend) ! central atom
+  kat = sr + ptypl(ptypi)%psf(1)%bends(3,ibend)
   ! bend angle type
-  itype  = bends(4,ibend)
+  itype  = ptypl(ptypi)%psf(1)%bends(4,ibend)
   ! energy constant [Kcal/mole/radians**2]
-  bendk  = bend(1,itype)
+  bendk  = ptypl(ptypi)%psf(1)%bend(1,itype)
   ! natural bending angle [radians]
-  aijk0  = bend(2,itype)*radians
+  aijk0  = ptypl(ptypi)%psf(1)%bend(2,itype)*radians
   ! positions
-  pos1(1) = x(iat)
-  pos1(2) = y(iat)
-  pos1(3) = z(iat)
-  pos2(1) = x(jat)
-  pos2(2) = y(jat)
-  pos2(3) = z(jat)
-  pos3(1) = x(kat)
-  pos3(2) = y(kat)
-  pos3(3) = z(kat)
+  pos1(1) = r(iat)%x
+  pos1(2) = r(iat)%y
+  pos1(3) = r(iat)%z
+  pos2(1) = r(jat)%x
+  pos2(2) = r(jat)%y
+  pos2(3) = r(jat)%z
+  pos3(1) = r(kat)%x
+  pos3(2) = r(kat)%y
+  pos3(3) = r(kat)%z
   ! *** Bond angle calculation
   ! interparticle vectors
-  do kk  =  1,3
-    rji(kk) =  pos1(kk) - pos2(kk)
-    rjk(kk) =  pos3(kk) - pos2(kk)
-  end do
+  rji =  pos1 - pos2
+  rjk =  pos3 - pos2
   ! bond angle
   r12 = dot_product(rji,rji)
   r22 = dot_product(rjk,rjk)
-  r1r2 = 1.0/(r12*r22)
-  modval = sqrt(r1r2)
-  cst = dot_product(rji,rjk)*modval
-  if (cst.lt.-1.0) cst = -1.0
-  if (cst.gt.1.0) cst = 1.0
-  bondangle = acos(cst)
+  cst = dot_product(rji,rjk)
+  modval = 1.0/sqrt(r12*r22)
+  bondangle = acos(cst*modval)
+  adif=bondangle-aijk0
   ! **** Energy contribution
-  enbend = bendk*(bondangle-aijk0)*(bondangle-aijk0)
-  eang = eang + enbend
-  ok = Qforces .and. (.not.fixat(iat).or..not.fixat(jat).or..not.fixat(kat))
+  energy = energy + bendk*adif**2
   ! **** Forces calculation
-  if (ok) then
-    snt = sin(bondangle)
-    if (abs(snt).lt.zero) snt = zero
-    r12inv = 1.0/r12
-    r22inv = 1.0/r22
-    force = 2.0*bendk*(bondangle-aijk0)/snt
-    do kk = 1,3
-      fiat(kk) = force*(modval*rjk(kk)-rji(kk)*cst*r12inv)
-      fkat(kk) = force*(modval*rji(kk)-rjk(kk)*cst*r22inv)
-      fjat(kk) = - fiat(kk) - fkat(kk)
-    end do
-    if (.not.fixat(iat)) then
-      fx(iat) = fx(iat) + fiat(1)
-      fy(iat) = fy(iat) + fiat(2)
-      fz(iat) = fz(iat) + fiat(3)
-    end if
-    if (.not.fixat(jat)) then
-      fx(jat) = fx(jat) + fjat(1)
-      fy(jat) = fy(jat) + fjat(2)
-      fz(jat) = fz(jat) + fjat(3)
-    end if
-    if (.not.fixat(kat)) then
-      fx(kat) = fx(kat) + fkat(1)
-      fy(kat) = fy(kat) + fkat(2)
-      fz(kat) = fz(kat) + fkat(3)
-    end if
+  if (Qforces) then
+    force = 2.0*bendk*adif*modval/sin(bondangle)
+    fiat=force*(rjk-rji*cst/r12)
+    fkat=force*(rji-rjk*cst/r22)
+    fjat=-(fiat+fkat)
+    f(iat)%x = f(iat)%x + fiat(1)
+    f(iat)%y = f(iat)%y + fiat(2)
+    f(iat)%z = f(iat)%z + fiat(3)
+    f(jat)%x = f(jat)%x + fjat(1)
+    f(jat)%y = f(jat)%y + fjat(2)
+    f(jat)%z = f(jat)%z + fjat(3)
+    f(kat)%x = f(kat)%x + fkat(1)
+    f(kat)%y = f(kat)%y + fkat(2)
+    f(kat)%z = f(kat)%z + fkat(3)
   end if
 end do ! next ibend
-
-return
 end subroutine
 
-subroutine ubr
 ! UB terms for explicit atoms
+subroutine ubr
 use listmod
-use nucleotmod
 use grandmod
-use listmod
-
 implicit none
-! local variables
 integer kk,iub,iat,jat,itype
 real ubk,rij0,rbij2,rbij,enub,f1,dij(3),fb(3)
 logical*1 ok
@@ -252,15 +216,12 @@ end do ! next iub
 return
 end subroutine
 
-subroutine en4cen
 ! Dihedral angle terms for explicit atoms
+subroutine en4cen
 use listmod
-use nucleotmod
-use grandmod
 use constamod
-
+use grandmod
 implicit none
-! local variables
 integer itort,i,j,iat,jat,kat,lat,itype
 integer nfolds,kk
 integer tcmap,pcmap
@@ -272,12 +233,10 @@ real m2,n2,im2n2,dotmn,acs,dotjin,phi
 real f1,entort,nablai(3),nablal(3),nablaval(3)
 real rjk2,rjk1,irjk2,im2,in2,djijk,dlkjk
 logical*1 ok1,ok2
-
 !     dihedral angle ......
 !
 !     iat --- jat --- kat --- lat
 !     pos1    pos2    pos3    pos4
-
 do itort = 1,ntorts
   ! force centers
   iat = nsites + torts(1,itort) ! terminal atom
@@ -394,15 +353,12 @@ end do ! next itort
 return
 end subroutine
 
-subroutine improper
 ! Improper angle terms for explicit atoms
+subroutine improper
 use listmod
-use nucleotmod
-use grandmod
 use constamod
-
+use grandmod
 implicit none
-! local variables
 integer ideform,iat,jat,kat,lat,itype,kk
 real oopsk,omega 
 real pos1(3),pos2(3),pos3(3),pos4(3)
@@ -412,14 +368,11 @@ real m2,n2,im2n2,dotmn,acs,dotjin,phi
 real f1,enopbs,nablai(3),nablal(3),nablaval(3)
 real rjk2,rjk1,irjk2,im2,in2,djijk,dlkjk
 logical*1 ok
-
 !     improper angle ......
-!
 !     jat --- iat --- kat 
 !     pos2    pos1(4) pos3
 !              | ---- lat
 !                     pos4(1)  
-
 do ideform = 1,ndeforms
   ! force centers
   iat = nsites + deforms(1,ideform) 
@@ -510,22 +463,17 @@ end do ! next ideform
 return
 end subroutine
 
-subroutine cmapr
 ! CMAP terms for explicit atoms
+subroutine cmapr
 use listmod
 use errormod
-use nucleotmod
 use grandmod
-
 implicit none
-! local variables
 integer icmap,i,j,k,itheta,ipsi,n,ic
 integer itype,iat,jat,kat,lat,mat,nnat,oat,ppat
 real theta,psi,dang,idang,thetag,psig,c(4,4)
 real t,u,ansy,ansy1,ansy2
-
 !     CMAP terms 
-
 do icmap = 1,ncmaps
   itype = cmaps(3,icmap)
   ! dihedral angles
@@ -621,4 +569,78 @@ do icmap = 1,ncmaps
 end do ! next icmap 
 
 return
+end subroutine
+
+! Internal non-bonded interactions term
+subroutine nonbonded(pari,energy)
+use listmod
+use grandmod
+use constamod
+implicit none
+integer pari,ptypi,i,j,k,n,a,b,sr
+real energy,qa,qb,epp4,sgp2,elec,evdw,idist2,idist,dist2,dist6,dist12,de
+ptypi=parl(pari)%ptyp
+sr=parl(pari)%sr
+! Compute Nonbonded for 1-4 Pairs
+n=ptypl(ptypi)%psf(1)%np14
+do k=1,n
+  a=ptypl(ptypi)%psf(1)%p14(k)%a
+  b=ptypl(ptypi)%psf(1)%p14(k)%b
+  qa=ptypl(ptypi)%chg(a)
+  qb=ptypl(ptypi)%chg(b)
+  epp4=ptypl(ptypi)%psf(1)%lj14(k)%epp4
+  sgp2=ptypl(ptypi)%psf(1)%lj14(k)%sgp2
+  dist2=dist2car(r(sr+a),r(sr+b))
+  idist2=1.0/dist2
+  idist=sqrt(idist2)
+  elec=celec*qa*qb*idist
+  dist6=(sgp2*idist2)**3
+  dist12=dist6**2
+  evdw=epp4*(dist12-dist6) ! van der waals potential
+  energy = energy + elec + evdw
+  if (Qforces) then
+    i=sr+a
+    j=sr+b
+    de=elec*idist2+epp4*(2.0*dist12-dist6)*6.0*idist2 ! electrostatic & van der waals forces
+    if (de.ne.0.0) then
+      f(j)%x = f(j)%x + de*(r(j)%x-r(i)%x)
+      f(j)%y = f(j)%y + de*(r(j)%y-r(i)%y)
+      f(j)%z = f(j)%z + de*(r(j)%z-r(i)%z)
+      f(i)%x = f(i)%x - de*(r(j)%x-r(i)%x)
+      f(i)%y = f(i)%y - de*(r(j)%y-r(i)%y)
+      f(i)%z = f(i)%z - de*(r(j)%z-r(i)%z)
+    endif
+  endif
+enddo
+! Compute nonbonded for rest of pairs
+n=ptypl(ptypi)%psf(1)%nnbon
+do k=1,n
+  a=ptypl(ptypi)%psf(1)%nbon(k)%a
+  b=ptypl(ptypi)%psf(1)%nbon(k)%b
+  qa=ptypl(ptypi)%chg(a)
+  qb=ptypl(ptypi)%chg(b)
+  epp4=ptypl(ptypi)%psf(1)%lj(k)%epp4
+  sgp2=ptypl(ptypi)%psf(1)%lj(k)%sgp2
+  dist2=dist2car(r(sr+a),r(sr+b))
+  idist2=1.0/dist2
+  idist=sqrt(idist2)
+  elec=celec*qa*qb*idist
+  dist6=(sgp2*idist2)**3
+  dist12=dist6**2
+  evdw=epp4*(dist12-dist6) ! van der waals potential
+  energy = energy + elec + evdw
+  if (Qforces) then
+    i=sr+a
+    j=sr+b
+    de=elec*idist2+epp4*(2.0*dist12-dist6)*6.0*idist2 ! electrostatic & van der waals forces
+    if (de.ne.0.0) then
+      f(j)%x = f(j)%x + de*(r(j)%x-r(i)%x)
+      f(j)%y = f(j)%y + de*(r(j)%y-r(i)%y)
+      f(j)%z = f(j)%z + de*(r(j)%z-r(i)%z)
+      f(i)%x = f(i)%x - de*(r(j)%x-r(i)%x)
+      f(i)%y = f(i)%y - de*(r(j)%y-r(i)%y)
+      f(i)%z = f(i)%z - de*(r(j)%z-r(i)%z)
+    endif
+  endif
+enddo
 end subroutine

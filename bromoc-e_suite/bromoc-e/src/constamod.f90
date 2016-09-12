@@ -34,4 +34,5 @@ real, parameter :: celec2 = Coulomb/(4.0*pi*epermit*angstrom) ! 332.06371
 real, parameter :: rsmall = 1E-3
 real, parameter :: const = epermit*kboltz*1.0e17/(2.0*avogadro*Coulomb**2)
 real, parameter :: kba3bar = kboltz*1e25 ! in Ang**3*bar/K
+real, parameter :: radians = pi/180.0
 end module

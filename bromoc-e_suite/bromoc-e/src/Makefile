@@ -50,7 +50,7 @@ OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmp
 		staefield.o shell_simul.o simul1.o simul.o spline.o staticf1.o switch1.o switch2.o\
 		switch3.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o polynom.o readpsf.o\
 		readcharmm.o fatnam.o parinteract.o dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o\
-		dynamics3.o energy.o
+		dynamics3.o charmmenergy.o energy.o
 
 # Clean objects
 
