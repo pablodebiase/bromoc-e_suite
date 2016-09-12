@@ -97,17 +97,17 @@ do i = 1, nangle
   eang = eang + 700.0*epsnuc*varang**2
   if (Qforces) then
     de = 1400.0*epsnuc*varang*modval/sin(ang)
-    f1=de*v1
-    f2=de*v2
-    f(isite1)%x = f(isite1)%x + f2(1)
-    f(isite1)%y = f(isite1)%y + f2(2)
-    f(isite1)%z = f(isite1)%z + f2(3)
+    f1 = de*(v2-m3/m1*v1)
+    f2 = de*(v1-m3/m2*v2)
+    f(isite1)%x = f(isite1)%x + f1(1)
+    f(isite1)%y = f(isite1)%y + f1(2)
+    f(isite1)%z = f(isite1)%z + f1(3)
     f(isite2)%x = f(isite2)%x - (f1(1)+f2(1))
     f(isite2)%y = f(isite2)%y - (f1(2)+f2(2))
     f(isite2)%z = f(isite2)%z - (f1(3)+f2(3))
-    f(isite3)%x = f(isite3)%x + f1(1)
-    f(isite3)%y = f(isite3)%y + f1(2)
-    f(isite3)%z = f(isite3)%z + f1(3)
+    f(isite3)%x = f(isite3)%x + f2(1)
+    f(isite3)%y = f(isite3)%y + f2(2)
+    f(isite3)%z = f(isite3)%z + f2(3)
   endif
 enddo  
  ! The torsional energy is calculated 
