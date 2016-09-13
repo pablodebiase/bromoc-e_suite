@@ -56,19 +56,21 @@ type :: psftype
     integer,allocatable,dimension(:,:) :: torts
     integer,allocatable,dimension(:,:) :: ndih
     real,allocatable,dimension(:,:)    :: dih
+    integer,allocatable,dimension(:)   :: nprms
     ! Improper
     integer                            :: ndeforms
     integer,allocatable,dimension(:,:) :: deforms
     real,allocatable,dimension(:,:)    :: deform
     ! CMAPS
+    logical                            :: Qlcmap
     integer                            :: ncmaps
+    integer,allocatable,dimension(:)   :: lthetacmap
+    integer,allocatable,dimension(:)   :: lpsicmap
+    integer,allocatable,dimension(:)   :: cmap
     integer,allocatable,dimension(:,:) :: cmaps
     integer,allocatable,dimension(:,:) :: attcmap
+    integer,allocatable,dimension(:,:) :: atpcmap
     real,allocatable,dimension(:)      :: gscmap
-    real,allocatable,dimension(:,:)    :: fcmap
-    real,allocatable,dimension(:,:)    :: ftcmap
-    real,allocatable,dimension(:,:)    :: fpcmap
-    real,allocatable,dimension(:,:)    :: ftpcmap
     real,allocatable,dimension(:,:,:)  :: ccoef
     ! Non-Bonded
     integer                               :: np14  ! number of p14
@@ -209,6 +211,7 @@ implicit none
 integer ptypn
 ptypl(ptypn)%Qpsf=.true.
 if (.not.allocated(ptypl(ptypn)%psf)) allocate (ptypl(ptypn)%psf(1))
+ptypl(ptypn)%psf(1)%Qlcmap=.false.
 ptypl(ptypn)%psf(1)%nbonds=0
 ptypl(ptypn)%psf(1)%nbends=0
 ptypl(ptypn)%psf(1)%nubs=0

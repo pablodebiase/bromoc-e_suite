@@ -1146,6 +1146,9 @@ if (Qldih) then
   ! transfer dih
   if (allocated(ptypl(nptyp)%psf(1)%dih)) deallocate (ptypl(nptyp)%psf(1)%dih)
   call move_alloc(dih,ptypl(nptyp)%psf(1)%dih)
+  ! transfer nprms
+  if (allocated(ptypl(nptyp)%psf(1)%nprms)) deallocate (ptypl(nptyp)%psf(1)%nprms)
+  call move_alloc(nprms,ptypl(nptyp)%psf(1)%nprms)
 endif ! Qldih
 if (Qldef) then
   ! copy ndeforms
@@ -1157,30 +1160,33 @@ if (Qldef) then
   if (allocated(ptypl(nptyp)%psf(1)%deform)) deallocate (ptypl(nptyp)%psf(1)%deform)
   call move_alloc(deform,ptypl(nptyp)%psf(1)%deform)
 endif ! Qldef
+
 if (Qlcmap) then
+  ! Cmap enabled
+  ptypl(nptyp)%psf(1)%Qlcmap=.true.
   ! copy ncmaps
-  ptypl(nptyp)%psf%ncmaps=ncmaps
+  ptypl(nptyp)%psf(1)%ncmaps=ncmaps
+  ! transfer lthetacmap
+  if (allocated(ptypl(nptyp)%psf(1)%lthetacmap)) deallocate (ptypl(nptyp)%psf(1)%lthetacmap)
+  call move_alloc(lthetacmap,ptypl(nptyp)%psf(1)%lthetacmap)
+  ! transfer lpsicmap
+  if (allocated(ptypl(nptyp)%psf(1)%lpsicmap)) deallocate (ptypl(nptyp)%psf(1)%lpsicmap)
+  call move_alloc(lpsicmap,ptypl(nptyp)%psf(1)%lpsicmap)
+  ! transfer cmap
+  if (allocated(ptypl(nptyp)%psf(1)%cmap)) deallocate (ptypl(nptyp)%psf(1)%cmap)
+  call move_alloc(cmap,ptypl(nptyp)%psf(1)%cmap)
   ! transfer cmaps
   if (allocated(ptypl(nptyp)%psf(1)%cmaps)) deallocate (ptypl(nptyp)%psf(1)%cmaps)
   call move_alloc(cmaps,ptypl(nptyp)%psf(1)%cmaps)
   ! transfer attcmap
   if (allocated(ptypl(nptyp)%psf(1)%attcmap)) deallocate (ptypl(nptyp)%psf(1)%attcmap)
   call move_alloc(attcmap,ptypl(nptyp)%psf(1)%attcmap)
+  ! transfer atpcmap
+  if (allocated(ptypl(nptyp)%psf(1)%atpcmap)) deallocate (ptypl(nptyp)%psf(1)%atpcmap)
+  call move_alloc(atpcmap,ptypl(nptyp)%psf(1)%atpcmap)
   ! transfer gscmap
   if (allocated(ptypl(nptyp)%psf(1)%gscmap)) deallocate (ptypl(nptyp)%psf(1)%gscmap)
   call move_alloc(gscmap,ptypl(nptyp)%psf(1)%gscmap)
-  ! transfer fcmap
-  if (allocated(ptypl(nptyp)%psf(1)%fcmap)) deallocate (ptypl(nptyp)%psf(1)%fcmap)
-  call move_alloc(fcmap,ptypl(nptyp)%psf(1)%fcmap)
-  ! transfer ftcmap
-  if (allocated(ptypl(nptyp)%psf(1)%ftcmap)) deallocate (ptypl(nptyp)%psf(1)%ftcmap)
-  call move_alloc(ftcmap,ptypl(nptyp)%psf(1)%ftcmap)
-  ! transfer fpcmap
-  if (allocated(ptypl(nptyp)%psf(1)%fpcmap)) deallocate (ptypl(nptyp)%psf(1)%fpcmap)
-  call move_alloc(fpcmap,ptypl(nptyp)%psf(1)%fpcmap)
-  ! transfer ftpcmap
-  if (allocated(ptypl(nptyp)%psf(1)%ftpcmap)) deallocate (ptypl(nptyp)%psf(1)%ftpcmap)
-  call move_alloc(ftpcmap,ptypl(nptyp)%psf(1)%ftpcmap)
   ! transfer ccoef
   if (allocated(ptypl(nptyp)%psf(1)%ccoef)) deallocate (ptypl(nptyp)%psf(1)%ccoef)
   call move_alloc(ccoef,ptypl(nptyp)%psf(1)%ccoef)
@@ -1200,8 +1206,22 @@ if (allocated(dih)) deallocate (dih)
 if (allocated(ndih)) deallocate (ndih)
 if (allocated(deforms)) deallocate (deforms)
 if (allocated(deform)) deallocate (deform)
-if (allocated(cmaps)) deallocate (cmaps,lthetacmap,lpsicmap,thetacmap,psicmap,attcmap,atpcmap,nablatcmp,nablapcmp,cmap,gscmap,fcmap,ftcmap,fpcmap,ftpcmap,ccoef)
-deallocate (nprms)
+if (allocated(cmaps)) deallocate (cmaps)
+if (allocated(lthetacmap)) deallocate (lthetacmap)                                                                  
+if (allocated(lpsicmap)) deallocate (lpsicmap)                                                                      
+if (allocated(thetacmap)) deallocate (thetacmap)                                                                    
+if (allocated(psicmap)) deallocate (psicmap)                                                                        
+if (allocated(attcmap)) deallocate (attcmap)                                                                        
+if (allocated(atpcmap)) deallocate (atpcmap)                                                                        
+if (allocated(nablatcmp)) deallocate (nablatcmp)                                                                    
+if (allocated(nablapcmp)) deallocate (nablapcmp)                                                                    
+if (allocated(cmap)) deallocate (cmap)                                                                              
+if (allocated(gscmap)) deallocate (gscmap)                                                                          
+if (allocated(fcmap)) deallocate (fcmap)                                                                            
+if (allocated(ftcmap)) deallocate (ftcmap)                                                                          
+if (allocated(fpcmap)) deallocate (fpcmap)                                                                          
+if (allocated(ftpcmap)) deallocate (ftpcmap)                                                                        
+if (allocated(ccoef)) deallocate (ccoef)                                                                            
 deallocate (chain,nbondsch,fixed,ghost) 
 return
 contains
