@@ -42,6 +42,7 @@ do ib = 1, nbuffer
    nat(ib) = 0 
 enddo
 do i = nparnuc+1, npar
+  if (parl(i)%kind.ne.3) cycle
 ! To which buffer does a particle of type (i) at this location belongs?
   parl(i)%ibuf = 0
   itype = parl(i)%ptyp

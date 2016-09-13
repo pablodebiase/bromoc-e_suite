@@ -59,6 +59,7 @@ cnst2=coulomb*ipico**2/(dt*float(svcntfq))
 
 ncount = 0
 do i = nparnuc+1, npar
+  if (parl(i)%kind.ne.3) cycle
   j = parl(i)%ptyp
   ncount(j) = ncount(j) + 1
 enddo
