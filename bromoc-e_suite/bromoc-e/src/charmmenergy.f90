@@ -144,7 +144,7 @@ contains
     ener = ener + bendk*adif**2
     ! **** Forces calculation
     if (Qforces) then
-      force = 2.0*bendk*adif*modval/sin(bondangle)
+      force = 2.0*bendk*adif*modval/nonzero(sin(bondangle))
       fiat=force*(rjk-rji*cst/r12)
       fkat=force*(rji-rjk*cst/r22)
       fjat=-(fiat+fkat)
@@ -571,4 +571,14 @@ contains
     endif
   enddo
   end subroutine
+
+  real function nonzero(num)
+  real num
+  real,parameter :: small=1e-15
+  if (abs(num).lt.small) then
+    nonzero=small
+  else
+    nonzero=num
+  endif
+  end function
 end subroutine
