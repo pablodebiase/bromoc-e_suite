@@ -1,6 +1,6 @@
----Include from CHARMM info to ptype and etype 
----Make charmm bonded routine for each particle
----Reorganized arrays for doing the previous point
+--Include from CHARMM info to ptype and etype 
+--Make charmm bonded routine for each particle
+--Reorganized arrays for doing the previous point
 --try to minimize the use of count
 --Add internal non-bonded interactions for charmm particles
 --Fix nonbonded combination rules from bromocea. Add eps and sigma to element types. Ignore eps/sigma-1,4

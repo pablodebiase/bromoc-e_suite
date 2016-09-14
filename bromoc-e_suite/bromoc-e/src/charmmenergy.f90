@@ -36,19 +36,19 @@ endif
 energy=0.0
 ! bonded interaction among internal particles
 ! Bond terms
-call en2cen
+call en2cen(energy)
 ! Angle terms
-call en3cen
+call en3cen(energy)
 ! UB terms
-call ubr
+call ubr(energy)
 ! Dihedral angle terms
-call en4cen
+call en4cen(energy)
 ! Improper angle terms
-call improper
+call improper(energy)
 ! CMAP terms
-call cmapr
+call cmapr(energy)
 ! Internal non-bonded interactions term
-call nonbonded
+call nonbonded(energy)
 ! Deallocate
 if (ptypl(ptypi)%psf(1)%Qlcmap) then
   deallocate(nablatcmp,nablapcmp)
@@ -56,10 +56,10 @@ if (ptypl(ptypi)%psf(1)%Qlcmap) then
 endif
 contains 
   ! Bond terms for explicit atoms
-  subroutine en2cen
+  subroutine en2cen(ener)
   implicit none
   integer ibond,iat,jat,itype
-  real bondk,rij0,rbij,de,dij(3),fb(3),rdif
+  real bondk,rij0,rbij,de,dij(3),fb(3),rdif,ener
   !     bond .....
   !
   !     iat --- jat
@@ -81,7 +81,7 @@ contains
     ! *** Energy contribution
     rbij = sqrt(dot_product(dij,dij))
     rdif = rbij-rij0
-    energy = energy + bondk*rdif*rdif
+    ener = ener + bondk*rdif*rdif
     ! *** Forces calculation
     if (Qforces) then
       de = 2.0*bondk*rdif/rbij
@@ -97,12 +97,12 @@ contains
   end subroutine
   
   ! Angle terms for explicit atoms
-  subroutine en3cen
+  subroutine en3cen(ener)
   implicit none
   integer ibend,iat,jat,kat,itype
   real bendk,aijk0,r12,r22,modval,cst
   real bondangle,force,fiat(3),fjat(3),fkat(3)
-  real rji(3),rjk(3),adif
+  real rji(3),rjk(3),adif,ener
   real pos1(3),pos2(3),pos3(3)
   !     bend angle ......
   !
@@ -141,7 +141,7 @@ contains
     bondangle = acos(cst*modval)
     adif=bondangle-aijk0
     ! **** Energy contribution
-    energy = energy + bendk*adif**2
+    ener = ener + bendk*adif**2
     ! **** Forces calculation
     if (Qforces) then
       force = 2.0*bendk*adif*modval/sin(bondangle)
@@ -162,10 +162,10 @@ contains
   end subroutine
   
   ! UB terms for explicit atoms
-  subroutine ubr
+  subroutine ubr(ener)
   implicit none
   integer iub,iat,jat,itype
-  real ubk,rij0,rbij,rdif,enub,f1,dij(3),fb(3)
+  real ubk,rij0,rbij,rdif,enub,f1,dij(3),fb(3),ener
   !     Urey-Bradley term (1,3 distance) .....
   !
   !     iat --- jat
@@ -188,7 +188,7 @@ contains
     rbij = sqrt(dot_product(dij,dij))
     rdif = rbij-rij0
     enub = ubk*rdif*rdif
-    energy = energy + enub
+    ener = ener + enub
     ! *** Forces calculation
     if (Qforces) then
       f1 = 2.0*ubk*rdif/rbij
@@ -204,7 +204,7 @@ contains
   end subroutine
   
   ! Dihedral angle terms for explicit atoms
-  subroutine en4cen
+  subroutine en4cen(ener)
   implicit none
   integer itort,i,j,iat,jat,kat,lat,itype
   integer nfolds
@@ -212,7 +212,7 @@ contains
   real Kdih,delta 
   real pos1(3),pos2(3),pos3(3),pos4(3)
   real rji(3),rjk(3),rlk(3)
-  real m(3),n(3)
+  real m(3),n(3),ener
   real m2,n2,im2n2,dotmn,acs,dotjin,phi
   real f1,entort,nablai(3),nablal(3),nablaval(3)
   real rjk2,rjk1,irjk2,im2,in2,djijk,dlkjk
@@ -302,7 +302,7 @@ contains
       delta = ptypl(ptypi)%psf(1)%dih(j+2,itype)*radians ! radians
       ! **** Energy contribution
       entort = Kdih*(1.0+cos(nfolds*phi-delta))
-      energy = energy + entort 
+      ener = ener + entort 
       ! **** Forces calculation
       if (Qforces) then
         f1 = -Kdih*nfolds*sin(nfolds*phi-delta)
@@ -326,13 +326,13 @@ contains
   end subroutine
   
   ! Improper angle terms for explicit atoms
-  subroutine improper
+  subroutine improper(ener)
   implicit none
   integer ideform,iat,jat,kat,lat,itype
   real oopsk,omega 
   real pos1(3),pos2(3),pos3(3),pos4(3)
   real rji(3),rjk(3),rlk(3)
-  real m(3),n(3)
+  real m(3),n(3),ener
   real m2,n2,im2n2,dotmn,acs,dotjin,phi
   real f1,enopbs,nablai(3),nablal(3),nablaval(3)
   real rjk2,rjk1,irjk2,im2,in2,djijk,dlkjk
@@ -386,7 +386,7 @@ contains
     phi = sign(acs,dotjin) ! IUPAC convention
     ! *** Energy contribution
     enopbs = oopsk*(phi-omega)*(phi-omega)
-    energy = energy + enopbs
+    ener = ener + enopbs
     ! *** Forces calculation
     if (Qforces) then
       rjk2 = dot_product(rjk,rjk)
@@ -417,12 +417,12 @@ contains
   end subroutine
   
   ! CMAP terms for explicit atoms
-  subroutine cmapr
+  subroutine cmapr(ener)
   implicit none
   integer icmap,i,j,k,itheta,ipsi,n,ic
   integer itype,iat,jat,kat,lat,mat,nnat,oat,ppat
   real theta,psi,dang,idang,thetag,psig,c(4,4)
-  real t,u,ansy,ansy1,ansy2
+  real t,u,ansy,ansy1,ansy2,ener
   !     CMAP terms 
   do icmap = 1,ptypl(ptypi)%psf(1)%ncmaps
     itype = ptypl(ptypi)%psf(1)%cmaps(3,icmap)
@@ -464,7 +464,7 @@ contains
     ansy1 = ansy1*idang
     ansy2 = ansy2*idang
     ! *** CMAP energy
-    energy = energy + ansy
+    ener = ener + ansy
     ! *** CMAP forces
     if (Qforces) then
       iat  = sr + ptypl(ptypi)%psf(1)%attcmap(1,icmap)
@@ -504,10 +504,10 @@ contains
   end subroutine
   
   ! Internal non-bonded interactions term
-  subroutine nonbonded
+  subroutine nonbonded(ener)
   implicit none
   integer i,j,k,n,a,b
-  real qa,qb,epp4,sgp2,elecpsf,evdwpsf,idist2,idist,dist2,dist6,dist12,de
+  real qa,qb,epp4,sgp2,elecpsf,evdwpsf,idist2,idist,dist2,dist6,dist12,de,ener
   ! Compute Nonbonded for 1-4 Pairs
   n=ptypl(ptypi)%psf(1)%np14
   do k=1,n
@@ -524,7 +524,7 @@ contains
     dist6=(sgp2*idist2)**3
     dist12=dist6**2
     evdwpsf=epp4*(dist12-dist6) ! van der waals potential
-    energy = energy + elecpsf + evdwpsf
+    ener = ener + elecpsf + evdwpsf
     if (Qforces) then
       i=sr+a
       j=sr+b
@@ -555,7 +555,7 @@ contains
     dist6=(sgp2*idist2)**3
     dist12=dist6**2
     evdwpsf=epp4*(dist12-dist6) ! van der waals potential
-    energy = energy + elecpsf + evdwpsf
+    ener = ener + elecpsf + evdwpsf
     if (Qforces) then
       i=sr+a
       j=sr+b

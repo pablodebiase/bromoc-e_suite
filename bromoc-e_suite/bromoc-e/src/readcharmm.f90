@@ -31,7 +31,11 @@ Qchmmimp = chmmimp.ne.0
 Qchmmcmap = chmmcmap.ne.0   
 ! SECTION H: NONBONDED
 if (chmmnonb.eq.0) call error ('readcharmm', 'NONBONDED items not found', faterr)
-if (chmmnonb.ne.chmmntype) call error ('readcharmm', 'Wrong number of atom types in NONBONDED section', faterr)
+
+if (chmmnonb.ne.chmmntype) then
+  write(*,*) 'NONBONDED: ',chmmnonb,' ATOMS: ',chmmntype
+  call error ('readcharmm', 'Wrong number of atom types in NONBONDED section', faterr)
+endif
 chmmnonb = chmmntype * (chmmntype+1) / 2
 ! SECTION I: NBFIX
 if (chmmnbfix.gt.chmmnonb) call error ('readcharmm', 'Wrong number of VDW interactions between specific atom pair types to be modified', faterr)

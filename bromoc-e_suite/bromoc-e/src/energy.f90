@@ -88,7 +88,7 @@ if (Qenergy) then
     pener=0.0
     do i=1+nparnuc,npar
       if (parl(i)%ne.eq.1) cycle
-      if (ptypl(parl(i)%ptyp)%Qpsf) call charmmenergy(pener)
+      if (ptypl(parl(i)%ptyp)%Qpsf) call charmmenergy(i,pener)
       eintern=eintern+pener
     enddo
   endif
