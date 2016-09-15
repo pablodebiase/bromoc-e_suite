@@ -1148,11 +1148,8 @@ syntax:
   The following cases cannot be used together in a same line.
 
   * case 1:
-  COOR gener [all] [dna] [ions] 
-  gener       : generates DNA and/or ions initial position
-  all         : generates DNA and ions (if this is not present dna and/or ions must be present)
-  dna         : generates DNA (useful when reading only ions)
-  ions        : generates ions (useful when reading only DNA)
+  COOR gener
+  gener       : generates ions initial position
 
   * case 2:
   COOR tras [xtras (real)] [ytras (real)] [ztras (real)]
