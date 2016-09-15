@@ -2263,25 +2263,25 @@ do while (.not. logfinal)
          call printpdbe(iunit)
        else if (check(com,'crd')) then
          if (Qsphere) then
-           write(iunit,'(6x,a,f12.3)') '* System shape: Spherical, Radius: ',Rsphe
+           write(iunit,'(a,f12.3)') '* System shape: Spherical, Radius: ',Rsphe
          elseif (Qecyl) then
-           write(iunit,'(6x,a,2f12.3,a,f12.3)') '* System shape: Elliptical Cylinder, Ellipse diameters x and y:',lx,ly,' Cylinder Length: ',lz
+           write(iunit,'(a,2f12.3,a,f12.3)') '* System shape: Elliptical Cylinder, Ellipse diameters x and y:',lx,ly,' Cylinder Length: ',lz
          else
-           write(iunit,'(6x,3(a,f12.3))') '* System shape: Box, Dimensions ->  LX: ',lx,'  LY: ',ly,'  LZ: ',lz
+           write(iunit,'(3(a,f12.3))') '* System shape: Box, Dimensions ->  LX: ',lx,'  LY: ',ly,'  LZ: ',lz
          endif
-         write(iunit,'(6x,3(a,f12.3))') '* System Center:  X ',cx,'  Y ',cy,'  Z ',cz
-         write(iunit,'(6x,a,f20.3)') '* Total System Volume (Ang**3): ',tvol
+         write(iunit,'(3(a,f12.3))') '* System Center:  X ',cx,'  Y ',cy,'  Z ',cz
+         write(iunit,'(a,f20.3)') '* Total System Volume (Ang**3): ',tvol
          call printcrd(iunit)
        else if (check(com,'crde')) then
          if (Qsphere) then
-           write(iunit,'(6x,a,f12.3)') '* System shape: Spherical, Radius: ',Rsphe
+           write(iunit,'(a,f12.3)') '* System shape: Spherical, Radius: ',Rsphe
          elseif (Qecyl) then
-           write(iunit,'(6x,a,2f12.3,a,f12.3)') '* System shape: Elliptical Cylinder, Ellipse diameters x and y:',lx,ly,' Cylinder Length: ',lz
+           write(iunit,'(a,2f12.3,a,f12.3)') '* System shape: Elliptical Cylinder, Ellipse diameters x and y:',lx,ly,' Cylinder Length: ',lz
          else
-           write(iunit,'(6x,3(a,f12.3))') '* System shape: Box, Dimensions ->  LX: ',lx,'  LY: ',ly,'  LZ: ',lz
+           write(iunit,'(3(a,f12.3))') '* System shape: Box, Dimensions ->  LX: ',lx,'  LY: ',ly,'  LZ: ',lz
          endif
-         write(iunit,'(6x,3(a,f12.3))') '* System Center:  X ',cx,'  Y ',cy,'  Z ',cz
-         write(iunit,'(6x,a,f20.3)') '* Total System Volume (Ang**3): ',tvol
+         write(iunit,'(3(a,f12.3))') '* System Center:  X ',cx,'  Y ',cy,'  Z ',cz
+         write(iunit,'(a,f20.3)') '* Total System Volume (Ang**3): ',tvol
          call printcrde(iunit)
        else !if (check(com,'pdb')) then
          if (Qsphere) then
