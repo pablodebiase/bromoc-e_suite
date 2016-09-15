@@ -79,7 +79,7 @@ integer*4 nsc
 integer narg,arg
 character inpfile*256,outfile*256,line*256,bs*8
 real*8 low,up
-logical*1 inpopen
+logical*1 inpopen,bool
 
 bs=repeat(achar(8),len(bs))
 
@@ -103,7 +103,8 @@ call readarg('Upper Limit for indexes: ',narg,arg,line)
 read(line,*) up
 
 ! Read btr input file
-call readbtrhead(inpfile,.false.,nsc,inpopen)
+bool=.false.
+call readbtrhead(inpfile,bool,nsc,inpopen)
 call readbtrbody(nsc,inpopen)
 
 call typeradius()
