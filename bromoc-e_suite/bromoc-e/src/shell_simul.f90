@@ -75,7 +75,7 @@ integer    nsec
 type(car) :: rr
 !for TEST order
 real       maxl,minl,maxlg,minlg
-real       dener
+real       dener, rate
 !for MEMBRANE and ION-ION orders
 !for effective dielectric constant for DNA
 real       conc
@@ -87,8 +87,8 @@ integer      isite
 real       sum1, sum2, sum3
 real       xold, yold, zold
 !forgotten to declare
-integer r1i,z1i,itype,jtype,i,j,k,ib,ifirst,ii,ij,ik,ilast
-integer iunit,lfnam,ngcmc,nmcm,nbd,ntypold,ntype
+integer r1i,z1i,itype,jtype,i,j,k,ib,ii,ij,ik
+integer iunit,lfnam,ngcmc,nmcm,nbd,ntypold,ntype,ilast
 integer*8 ncycle,nsave,nsfbs
 integer,allocatable :: iunitv(:)
 real cc0,cc1,cc2,cc3,cc4
@@ -2585,7 +2585,6 @@ do while (.not. logfinal)
            if (com(1:4).eq.'ATOM') exit
          else
            if (com(1:1).ne.'*') then
-             read(iunit,'(A)') com
              read(com, *) nelem
              exit
            endif
@@ -2595,6 +2594,7 @@ do while (.not. logfinal)
          ilast=0
          if ((Qcrd.or.Qcrde).and.nelem.lt.nelenuc) call error ('shell_simul', 'Less number of elements than expected in COOR', faterr)
          do i = 1, nelenuc
+           if (Qcrd.or.Qcrde) read(iunit,'(a)') com
            if (Qpdbe) then 
              read(com,'(6x,5x,x,5x,5x,I4,4x,3F16.8)') itype,rr%x,rr%y,rr%z
            elseif (Qpdb) then
@@ -2608,7 +2608,7 @@ do while (.not. logfinal)
            call putcoorinpar(itype,jtype,rr%x,rr%y,rr%z)
            ilast=itype
            jtype=jtype+1
-           read(iunit,'(a)') com
+           if (Qpdb.or.Qpdbe) read(iunit,'(a)') com
          enddo
        endif
        ilast=0
@@ -2629,7 +2629,8 @@ do while (.not. logfinal)
            read(iunit,'(a)') com
          enddo
        else
-         do i=nelenuc,nelem
+         do i=nelenuc+1,nelem
+           read(iunit,'(a)') com
            if (Qcrde) then
              read (com,'(10x,I10,2x,A4,6x,4x,4x,3F20.10,2X,I4)') itype,wrd4,rr%x,rr%y,rr%z,ikind
            else
@@ -2642,47 +2643,31 @@ do while (.not. logfinal)
            call putcoorinpar(npar,jtype,rr%x,rr%y,rr%z)
            ilast=itype
            jtype=jtype+1
-           read(iunit,'(a)') com
          enddo
        endif
        write(outu,'(6x,a)') 'coordinates have been read'
        call count
      elseif (check(com,'gener')) then
-       dodna=.false.
-       doions=.false.
-       if (check(com,'all')) then
-         doions=Qbuf
-         dodna=Qnucl
-       else
-         if (check(com,'dna')) dodna=Qnucl
-         if (check(com,'ions')) doions=Qbuf
-       endif
-       if (.not.doions.and..not.dodna) call error ('shell_simul', 'all, dna or ions missing after COOR gener', faterr)
-       if (dodna) then
-         do i = 1, nelenuc
-           call setcar(r(i),xnat(i),ynat(i),znat(i))
-         enddo
-       endif
+       doions=Qbuf
+       if (.not.doions) call error ('shell_simul', 'ions missing after COOR gener', faterr)
        if (doions) then
          !call delparofkind(3)
          do ib = 1, nbuffer
            nat(ib) = nint(avnum(ib))
          enddo
-         ifirst = nelenuc + 1 ! first position
-         ilast  = nelenuc + nat(1) ! last position
-         if (ilast.gt.datom) call error ('shell_simul', 'numbers of ions/sites is greater than datom', faterr)
          do ib = 1, nbuffer
            itype = ibfftyp(ib)
-           do i = ifirst, ilast
-             call insert(ib,rr%x,rr%y,rr%z) ! find new center of particle
-             call addpar(itype,kind=3,ibuf=ib) ! add particle to list
-             call movepar(npar,rr) ! locate and rotate
+           do i = 1, nat(ib)
+             do
+               call insert(ib,rr%x,rr%y,rr%z) ! find new center of particle
+               call addpar(itype,kind=3,ibuf=ib) ! add particle to list
+               call movepar(npar,rr) ! locate and rotate
+               call par_interact(npar, dener)
+               rate = (avnum(ib)/float(nat(ib)+1))*exp(-(dener-mu(ib))*ikBT)
+               if (rndm().le.rate) exit
+               call delpar(npar,3)
+             enddo
            enddo
-           ifirst = ifirst + nat(ib)
-           ilast = ifirst + nat(ib+1) - 1
-           if (ilast.gt.datom) then
-             call error ('shell_simul', 'numbers of ions/sites is greater than datom', faterr)
-           endif
          enddo
        endif ! Qbuf
        call count() 
