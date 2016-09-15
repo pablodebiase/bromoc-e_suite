@@ -147,7 +147,22 @@ integer nptnuc,netnuc,nelenuc,nparnuc
 
 contains
 
+subroutine inivars()
+implicit none
+nptnuc       = 0
+netnuc       = 0
+nelenuc      = 0
+nparnuc      = 0
+npar         = 0
+netyp        = 0
+netp         = 0
+nptyp        = 0
+nele         = 0
+nuet         = 0
+end subroutine
+
 subroutine merge(a,na,b,nb,c,nc)
+implicit none
 integer, intent(in) :: na,nb,nc         ! normal usage: na+nb = nc
 integer, intent(in out) :: a(na)        ! b overlays c(na+1:nc)
 integer, intent(in)     :: b(nb)
@@ -173,6 +188,7 @@ return
 end subroutine merge
  
 recursive subroutine mergesort(a,n,t)
+implicit none
 integer, intent(in) :: n
 integer, dimension(n), intent(in out) :: a
 integer, dimension((n+1)/2), intent (out) :: t
@@ -200,6 +216,7 @@ return
 end subroutine mergesort
 
 subroutine msort(a,n)
+implicit none
 integer n
 integer, dimension(n) :: a       ! variable type to sort
 integer, dimension ((n+1)/2) :: t
@@ -511,6 +528,7 @@ end function
 
 ! Edit Element Type
 subroutine editetyp(etype,dif,eps,sig)
+implicit none
 integer,intent(in)        :: etype  ! Element Type Number
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
