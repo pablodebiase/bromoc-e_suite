@@ -381,7 +381,7 @@ example3:
 
 syntax:
 
-  [PTYPE] iunprm (integer) iunpsf (integer) {print} [viscwat (real)] [scald (real)] [iunpdb (integer)] [iuncrd (integer)]
+  [PTYPE] iunprm (integer) iunpsf (integer) {print} [viscwat (real)] [scald (real)] [iunpdb (integer)] [iuncrd (integer)] {nocmap} {charmmdih} {bbgdih}
 
   iunprm             | 0 | : File unit number for the CHARMM Parameter file (.prm)
   iunpsf             | 0 | : File unit number for the connectivity file (.psf)
@@ -389,9 +389,18 @@ syntax:
                              IMPORTANT NOTE: Coordinates from pdb or crd must be present
   [iuncrd]           | 0 | : File unit number for the coordinates file (.crd)
   {print}                  : Prints information when reading each file
+  {bbgdih}                 : BBG* dihedral algorithm (default)
+  {charmmdih}              : CHARMM equivalent dihedrals (not working)
+  {nocmap}                 : Ignores CMAP
+  {print}                  : Prints information when reading each file
   viscwat       | 0.1225 | : Water Viscosity
-  scald            | 1.0 | : Sca;e Factor for self-diffusion calculation
+  scald            | 1.0 | : Scale Factor for self-diffusion calculation
                            
+* Force and virial of torsional-angle-dependent potentials
+  H Bekker, HJC Berendsen, WF van Gunsteren
+  J. Comp. Chem. 16(5), 1995, 527
+  DOI: 10.1002/jcc.540160502
+
 example:
 
   OPEN write unit 1 name par_all36.prm

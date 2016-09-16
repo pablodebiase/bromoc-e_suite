@@ -28,10 +28,12 @@ real,allocatable,dimension(:)     :: thetacmap(:), psicmap(:)
 ptypi=parl(pari)%ptyp
 sr=parl(pari)%sr
 ! Allocate
-if (ptypl(ptypi)%psf(1)%Qlcmap) then
-  ncmaps=ptypl(ptypi)%psf(1)%ncmaps
-  allocate(nablatcmp(3,4,ncmaps),nablapcmp(3,4,ncmaps))
-  allocate(thetacmap(ncmaps),psicmap(ncmaps))
+if (.not.Qnocmap) then 
+  if (ptypl(ptypi)%psf(1)%Qlcmap) then
+    ncmaps=ptypl(ptypi)%psf(1)%ncmaps
+    allocate(nablatcmp(3,4,ncmaps),nablapcmp(3,4,ncmaps))
+    allocate(thetacmap(ncmaps),psicmap(ncmaps))
+  endif
 endif
 energy=0.0
 ! bonded interaction among internal particles
@@ -42,17 +44,23 @@ call en3cen(energy)
 ! UB terms
 call ubr(energy)
 ! Dihedral angle terms
-call en4cen(energy)
+if (Qdihbbg) then
+  call en4cenBBG(energy)
+else 
+  call en4cen(energy)
+endif
 ! Improper angle terms
 call improper(energy)
 ! CMAP terms
-call cmapr(energy)
+if (.not.Qnocmap) call cmapr(energy)
 ! Internal non-bonded interactions term
 call nonbonded(energy)
 ! Deallocate
-if (ptypl(ptypi)%psf(1)%Qlcmap) then
-  deallocate(nablatcmp,nablapcmp)
-  deallocate(thetacmap,psicmap)
+if (Qnocmap) then
+  if (ptypl(ptypi)%psf(1)%Qlcmap) then
+    deallocate(nablatcmp,nablapcmp)
+    deallocate(thetacmap,psicmap)
+  endif
 endif
 contains 
   ! Bond terms for explicit atoms
@@ -205,7 +213,22 @@ contains
     end if
   end do ! next iub
   end subroutine
-  
+ 
+  ! Force and virial of torsional-angle-dependent potentials
+  ! H Bekker, HJC Berendsen, WF van Gunsteren
+  ! J. Comp. Chem. 16(5), 1995, 527
+  ! DOI: 10.1002/jcc.540160502
+  subroutine en4cenBBG(ener)
+  implicit none
+  rij=ri-rj
+  rkj=rk-rj
+  rkl=rk-rl
+  m=rij x rkj
+  n=rkj x rkl
+
+  atan2(n,m)
+  end subroutine
+
   ! Dihedral angle terms for explicit atoms
   subroutine en4cen(ener)
   implicit none
@@ -265,7 +288,7 @@ contains
     phi = sign(acs,dotjin) ! IUPAC convention
     ok1 = .false.
     ok2 = .false.
-    if (ptypl(ptypi)%psf(1)%Qlcmap) then
+    if (.not.Qnocmap.and.ptypl(ptypi)%psf(1)%Qlcmap) then
       tcmap = ptypl(ptypi)%psf(1)%lthetacmap(itort)
       pcmap = ptypl(ptypi)%psf(1)%lpsicmap(itort)
       ok1 = tcmap.gt.0
@@ -305,6 +328,7 @@ contains
       delta = ptypl(ptypi)%psf(1)%dih(j+2,itype)*radians ! radians
       ! **** Energy contribution
       entort = Kdih*(1.0+cos(nfolds*phi-delta))
+      !write(*,*) iat,jat,kat,lat,nfolds,Kdih,delta,phi,entort ! debug
       ener = ener + entort 
       ! **** Forces calculation
       if (Qforces) then
