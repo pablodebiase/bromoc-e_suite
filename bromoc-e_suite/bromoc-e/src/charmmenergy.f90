@@ -70,7 +70,7 @@ contains
     jat = sr + ptypl(ptypi)%psf(1)%bonds(2,ibond)
     ! bond type
     itype = ptypl(ptypi)%psf(1)%bonds(3,ibond)
-    ! energy constant [Kcal/mole/Angs.**2]
+    ! energy constant [Kcal/mol/Angs.**2]
     bondk = ptypl(ptypi)%psf(1)%stretch(1,itype)
     ! natural bond [Angs.]
     rij0 = ptypl(ptypi)%psf(1)%stretch(2,itype)
@@ -100,7 +100,7 @@ contains
   subroutine en3cen(ener)
   implicit none
   integer ibend,iat,jat,kat,itype
-  real bendk,aijk0,r12,r22,modval,cst
+  real bendk,aijk0,r11,r22,r12,modval,cst
   real bondangle,force,fiat(3),fjat(3),fkat(3)
   real rji(3),rjk(3),adif,ener
   real pos1(3),pos2(3),pos3(3)
@@ -115,7 +115,7 @@ contains
     kat = sr + ptypl(ptypi)%psf(1)%bends(3,ibend)
     ! bend angle type
     itype  = ptypl(ptypi)%psf(1)%bends(4,ibend)
-    ! energy constant [Kcal/mole/radians**2]
+    ! energy constant [Kcal/mol/radians**2]
     bendk  = ptypl(ptypi)%psf(1)%bend(1,itype)
     ! natural bending angle [radians]
     aijk0  = ptypl(ptypi)%psf(1)%bend(2,itype)*radians
@@ -134,19 +134,22 @@ contains
     rji =  pos1 - pos2
     rjk =  pos3 - pos2
     ! bond angle
-    r12 = dot_product(rji,rji)
+    r11 = dot_product(rji,rji)
     r22 = dot_product(rjk,rjk)
-    cst = dot_product(rji,rjk)
-    modval = 1.0/sqrt(r12*r22)
-    bondangle = acos(cst*modval)
+    r12 = dot_product(rji,rjk)
+    modval = 1.0/sqrt(r11*r22)
+    cst=r12*modval
+    if (cst.lt.-1.0) cst = -1.0
+    if (cst.gt.1.0) cst = 1.0
+    bondangle = acos(cst)
     adif=bondangle-aijk0
     ! **** Energy contribution
     ener = ener + bendk*adif**2
     ! **** Forces calculation
     if (Qforces) then
       force = 2.0*bendk*adif*modval/nonzero(sin(bondangle))
-      fiat=force*(rjk-rji*cst/r12)
-      fkat=force*(rji-rjk*cst/r22)
+      fiat=force*(rjk-(r12/r11)*rji)
+      fkat=force*(rji-(r12/r22)*rjk)
       fjat=-(fiat+fkat)
       f(iat)%x = f(iat)%x + fiat(1)
       f(iat)%y = f(iat)%y + fiat(2)
@@ -176,7 +179,7 @@ contains
     jat = sr + ptypl(ptypi)%psf(1)%ubs(2,iub)
     ! UB type
     itype = ptypl(ptypi)%psf(1)%ubs(3,iub)
-    ! energy constant [Kcal/mole/Angs.**2]
+    ! energy constant [Kcal/mol/Angs.**2]
     ubk = ptypl(ptypi)%psf(1)%ubt(1,itype)
     ! natural distance [Angs.]
     rij0 = ptypl(ptypi)%psf(1)%ubt(2,itype)
@@ -298,7 +301,7 @@ contains
       j = (i-1)*2
       ! energy constants
       nfolds = ptypl(ptypi)%psf(1)%ndih(i,itype)
-      Kdih = ptypl(ptypi)%psf(1)%dih(j+1,itype) ! Kcal/mole
+      Kdih = ptypl(ptypi)%psf(1)%dih(j+1,itype) ! Kcal/mol
       delta = ptypl(ptypi)%psf(1)%dih(j+2,itype)*radians ! radians
       ! **** Energy contribution
       entort = Kdih*(1.0+cos(nfolds*phi-delta))
@@ -349,7 +352,7 @@ contains
     lat = sr + ptypl(ptypi)%psf(1)%deforms(4,ideform) 
     ! improper angle type
     itype = ptypl(ptypi)%psf(1)%deforms(5,ideform)
-    ! energy constant [Kcal/mole/radians**2]
+    ! energy constant [Kcal/mol/radians**2]
     oopsk = ptypl(ptypi)%psf(1)%deform(1,itype)
     ! natural improper angle [radians]
     omega = ptypl(ptypi)%psf(1)%deform(2,itype)*radians

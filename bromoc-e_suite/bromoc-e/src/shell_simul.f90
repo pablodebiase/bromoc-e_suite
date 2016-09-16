@@ -146,7 +146,6 @@ doions       = .false.
 dodna        = .false.
 iseed        = 3141593
 ntype        = 0
-netnuc       = 0
 nbuffer      = 0
 nsites       = 0
 istrs        = 0
@@ -178,6 +177,7 @@ c            = 0.0
 d            = 0.0
 
 ! initialize lists
+call inivars()
 call deltypall()
 call delparall()
 
