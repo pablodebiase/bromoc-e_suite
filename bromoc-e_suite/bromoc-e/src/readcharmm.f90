@@ -306,6 +306,28 @@ if (Qchmmdih) then
           endif
           write(wrtline,*) 'DIHEDRAL: ',atnam1,charmm_label(jtype),charmm_label(ktype),atnam4
           write(outu,'(a)') trim(adjustl(wrtline))
+          write(wrtline,*) 'Kchi = ',tmp_dih(1,i)
+          write(outu,'(a)') trim(adjustl(wrtline))
+        endif
+        call getfirst(com,word)
+        tmp_ndih(i) = chr2int(word) ! n
+        if (tmp_ndih(i).lt.1 .or. tmp_ndih(i).gt.6) call error ('readcharmm', 'Wrong value for periodicity in DIHEDRALS section', faterr)
+        call getfirst(com,word)
+        tmp_dih(2,i) = chr2real(word) ! delta
+        if (tmp_dih(2,i).ne.0.0 .and. tmp_dih(2,i).ne.180.0) then
+          call error ('readcharmm', 'Unusual value for phase in DIHEDRALS section', warning)
+          if (itype.eq.0) then
+           atnam1 = 'X'
+          else
+           atnam1 = charmm_label(itype)
+          endif
+          if (ltype.eq.0) then
+            atnam4 = 'X'
+          else
+            atnam4 = charmm_label(ltype)
+          endif
+          write(wrtline,*) 'DIHEDRAL: ',atnam1,charmm_label(jtype),charmm_label(ktype),atnam4
+          write(outu,'(a)') trim(adjustl(wrtline))
           write(wrtline,*) 'PHASE VALUE = ',tmp_dih(2,i)
           write(outu,'(a)') trim(adjustl(wrtline))
         endif

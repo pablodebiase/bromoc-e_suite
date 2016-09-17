@@ -644,10 +644,6 @@ do while (.not. logfinal)
     iunpsf = unvec(iunpsf)
     ! Print additional information in outputfile
     ok = check(com,'print')
-    !Qdihbbg = check(com,'bbgdih') !  H Bekker, HJC Berendsen, WF van Gunsteren dihedral algorithm 
-    Qdihbbg = .not.check(com,'charmmdih') !  H Bekker, HJC Berendsen, WF van Gunsteren dihedral algorithm 
-    Qnocmap = check(com,'nocmap') ! disables cmap
-    if (.not.Qnocmap.and.Qdihbbg) Qnocmap=.true. ! cmap not implemented for dihbbg
     ! water viscosity (Kcal ps mole^(-1) Angs.^(-1)) [real,default=0.123]
     call gtdpar(com,'viscwat',viscwat,0.1225)
     if (viscwat.lt.0.0) call error ('shell_simul', 'Wrong value for water viscosity in PTYPE order', faterr)
