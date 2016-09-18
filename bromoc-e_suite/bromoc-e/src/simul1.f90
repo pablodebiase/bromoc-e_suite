@@ -944,14 +944,14 @@ endif ! Qpar
 contains 
   subroutine showener()
   implicit none
-  write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded------------PHIsf------------PHIrf------------PHIvdW'
+  write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded------------PHIsf------------PHIrf------------PHIvdW---'
   write(outu,'(5x,i10,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
 
   end subroutine
 
   subroutine printline()
   implicit none
-  write(outu,'(10x,a)') '-----------------------------------------------------------------------------------------------------------'
+  write(outu,'(10x,a)') '--------------------------------------------------------------------------------------------------------------'
   end subroutine
 end subroutine
 
