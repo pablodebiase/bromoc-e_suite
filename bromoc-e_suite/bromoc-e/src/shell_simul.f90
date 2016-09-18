@@ -100,6 +100,7 @@ integer parn
 !------------------------------
 unvec        = -1
 Qsystem      = .false.
+Qatexp       = .false.
 Qpar         = .false.
 Qbuf         = .false.
 Qdeby        = .false.
