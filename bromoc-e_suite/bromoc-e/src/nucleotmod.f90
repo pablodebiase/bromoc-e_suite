@@ -93,7 +93,7 @@ real,allocatable :: kx(:),ky(:),kz(:),contrx(:),contry(:),contrz(:)
 integer     ctn
 integer,allocatable ::  csn(:)
 logical*1   Qcontrans,Qcontprint,Qunsplit
-logical*1   Qnucl, Qatexp, Qassign, Qpar, Qsystem, Qbuf, Qtraj, Qtrajcont, Qdie, Qsolv, Qfmemb
+logical*1   Qnucl, Qassign, Qpar, Qsystem, Qbuf, Qtraj, Qtrajcont, Qdie, Qsolv, Qfmemb
 logical*1   Qtras, Qrot, Qnotrans, Qnotrx, Qnotry, Qnotrz, Qdnafree, Qinvstr, QfirstP
 real cylall(6,3),din,ain
 

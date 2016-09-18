@@ -55,7 +55,7 @@ integer ikind
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
 logical*1 logmemb, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
-logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdb,Qxyz,Qpdbe,Qcrd,Qcrde
+logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdb,Qxyz,Qpdbe,Qcrd,Qcrde,Qatexp
 real*8 zero
 !for time
 integer*8       start,finish,timer
@@ -689,6 +689,7 @@ do while (.not. logfinal)
       call loadcoorfromcrdtoptyp(nptyp,iuncrd)
     endif
     call centerptyp(nptyp)
+    Qpar=.true.
     Qatexp = .true.
     if (allocated(Qefpot)) deallocate(Qefpot)
     allocate (Qefpot(netp))

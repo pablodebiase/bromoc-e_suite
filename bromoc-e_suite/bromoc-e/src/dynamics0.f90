@@ -37,8 +37,6 @@ do i = nelenuc+1, nele
   r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
   r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
   r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
-  ! Fix Coor
-  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
 return
 end

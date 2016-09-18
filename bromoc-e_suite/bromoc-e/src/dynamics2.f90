@@ -78,9 +78,6 @@ do i=nelenuc+1, nele
   r(i)%y = r(i)%y + dely + fact2*rgauss()
   r(i)%z = r(i)%z + delz + fact2*rgauss() + delDz
 
-! Keep track of the net flux of particle
-  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
-
 enddo
 return
 end

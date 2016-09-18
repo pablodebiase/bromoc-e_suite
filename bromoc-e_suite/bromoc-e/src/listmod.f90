@@ -673,7 +673,8 @@ endif
 end subroutine
 
 ! Displaces a particle by rd (position vector)
-! use center true when rotating a particle that is not at the origin
+! use center=.true. when rotating a particle that is not at the origin
+! use norot=.true. when not intended to randomly rotate the particle
 subroutine movepar(parn,rd,center,norot)
 implicit none
 type(car) :: rd  ! Vector Shift
@@ -869,8 +870,8 @@ integer i,ne,sr,parn ! Particle Number
 ne=parl(parn)%ne
 sr=parl(parn)%sr
 ! Add each position vector to rc
-do i=1,ne
-   call addcar(r(sr+i),rc)
+do i=1+sr,ne+sr
+   call addcar(r(i),rc)
 enddo
 end subroutine 
 

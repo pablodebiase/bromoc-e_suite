@@ -62,7 +62,6 @@ do i=nelenuc+1, nele
   r(i)%x=r(i)%x+delx+fact2*rgauss()+delDx
   r(i)%y=r(i)%y+dely+fact2*rgauss()+delDy
   r(i)%z=r(i)%z+delz+fact2*rgauss()+delDz
-  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
 return
 end

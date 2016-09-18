@@ -76,7 +76,5 @@ do i = nelenuc+1, nele
   r(i)%y = r(i)%y + dely + fact2*rgauss()
   r(i)%z = r(i)%z + delz + fact2*rgauss() + delDz
 
-  call fixcoor(r(i)%x,r(i)%y,r(i)%z)
-
 enddo
 end subroutine

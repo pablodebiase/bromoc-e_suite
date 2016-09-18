@@ -56,10 +56,10 @@ if (ptypl(ptypi)%psf(1)%Qlcmap) then
 endif
 contains 
   ! Bond terms for explicit atoms
-  subroutine en2cen(ener)
+  subroutine en2cen(pener)
   implicit none
   integer ibond,iat,jat,itype
-  real bondk,rij0,rbij,de,dij(3),fb(3),rdif,ener
+  real bondk,rij0,rbij,de,dij(3),fb(3),rdif,pener
   !     bond .....
   !
   !     iat --- jat
@@ -81,7 +81,7 @@ contains
     ! *** Energy contribution
     rbij = sqrt(dot_product(dij,dij))
     rdif = rbij-rij0
-    ener = ener + bondk*rdif*rdif
+    pener = pener + bondk*rdif*rdif
     ! *** Forces calculation
     if (Qforces) then
       de = 2.0*bondk*rdif/rbij
@@ -97,12 +97,12 @@ contains
   end subroutine
   
   ! Angle terms for explicit atoms
-  subroutine en3cen(ener)
+  subroutine en3cen(pener)
   implicit none
   integer ibend,iat,jat,kat,itype
   real bendk,aijk0,r11,r22,r12,modval,cst
   real bondangle,force,fiat(3),fjat(3),fkat(3)
-  real rji(3),rjk(3),adif,ener
+  real rji(3),rjk(3),adif,pener
   real pos1(3),pos2(3),pos3(3)
   !     bend angle ......
   !
@@ -144,7 +144,7 @@ contains
     bondangle = acos(cst)
     adif=bondangle-aijk0
     ! **** Energy contribution
-    ener = ener + bendk*adif**2
+    pener = pener + bendk*adif**2
     ! **** Forces calculation
     if (Qforces) then
       force = 2.0*bendk*adif*modval/nonzero(sin(bondangle))
@@ -165,10 +165,10 @@ contains
   end subroutine
   
   ! UB terms for explicit atoms
-  subroutine ubr(ener)
+  subroutine ubr(pener)
   implicit none
   integer iub,iat,jat,itype
-  real ubk,rij0,rbij,rdif,enub,f1,dij(3),fb(3),ener
+  real ubk,rij0,rbij,rdif,enub,f1,dij(3),fb(3),pener
   !     Urey-Bradley term (1,3 distance) .....
   !
   !     iat --- jat
@@ -191,7 +191,7 @@ contains
     rbij = sqrt(dot_product(dij,dij))
     rdif = rbij-rij0
     enub = ubk*rdif*rdif
-    ener = ener + enub
+    pener = pener + enub
     ! *** Forces calculation
     if (Qforces) then
       f1 = 2.0*ubk*rdif/rbij
@@ -207,7 +207,7 @@ contains
   end subroutine
  
   ! Dihedral angle terms for explicit atoms
-  subroutine en4cen(ener)
+  subroutine en4cen(pener)
   implicit none
   integer itort,i,j,iat,jat,kat,lat,itype
   integer nfolds
@@ -215,10 +215,10 @@ contains
   real Kdih,delta 
   real pos1(3),pos2(3),pos3(3),pos4(3)
   real rji(3),rjk(3),rlk(3)
-  real m(3),n(3),ener
-  real m2,n2,im2n2,dotmn,acs,dotjin,phi
+  real m(3),n(3),pener
+  real m2,n2,m2n2,dotmn,acs,dotjin,phi
   real f1,entort,nablai(3),nablal(3),nablaval(3)
-  real rjk2,rjk1,irjk2,im2,in2,djijk,dlkjk
+  real rjk2,rjk1,djijk,dlkjk
   logical*1 ok1,ok2
   !     dihedral angle ......
   !
@@ -256,8 +256,8 @@ contains
     ! dihedral angle
     m2 = dot_product(m,m)
     n2 = dot_product(n,n)
-    im2n2 = 1.0/(m2*n2)
-    dotmn = dot_product(m,n)*sqrt(im2n2)
+    m2n2 = m2*n2
+    dotmn = dot_product(m,n)/sqrt(m2n2)
     if (dotmn.lt.-1.0) dotmn = -1.0
     if (dotmn.gt.1.0) dotmn = 1.0
     acs = acos(dotmn)
@@ -276,14 +276,11 @@ contains
     if (Qforces) then
       rjk2 = dot_product(rjk,rjk)
       rjk1 = sqrt(rjk2)
-      irjk2 = 1.0/rjk2
-      im2 = 1.0/m2
-      in2 = 1.0/n2
       djijk = dot_product(rji,rjk)
       dlkjk = dot_product(rlk,rjk)
-      nablai = rjk1*m*im2
-      nablal = - rjk1*n*in2
-      nablaval = (djijk*nablai-dlkjk*nablal)*irjk2
+      nablai = rjk1*m/m2
+      nablal = - rjk1*n/n2
+      nablaval = (djijk*nablai-dlkjk*nablal)/rjk2
       if (ok1) then
         nablatcmp(:,1,tcmap) = nablai
         nablatcmp(:,2,tcmap) = - nablai + nablaval
@@ -305,7 +302,7 @@ contains
       delta = ptypl(ptypi)%psf(1)%dih(j+2,itype)*radians ! radians
       ! **** Energy contribution
       entort = Kdih*(1.0+cos(nfolds*phi-delta))
-      ener = ener + entort 
+      pener = pener + entort 
       ! **** Forces calculation
       if (Qforces) then
         f1 = -Kdih*nfolds*sin(nfolds*phi-delta)
@@ -329,13 +326,13 @@ contains
   end subroutine
   
   ! Improper angle terms for explicit atoms
-  subroutine improper(ener)
+  subroutine improper(pener)
   implicit none
   integer ideform,iat,jat,kat,lat,itype
   real oopsk,omega 
   real pos1(3),pos2(3),pos3(3),pos4(3)
   real rji(3),rjk(3),rlk(3)
-  real m(3),n(3),ener
+  real m(3),n(3),pener
   real m2,n2,im2n2,dotmn,acs,dotjin,phi
   real f1,enopbs,nablai(3),nablal(3),nablaval(3)
   real rjk2,rjk1,irjk2,im2,in2,djijk,dlkjk
@@ -389,7 +386,7 @@ contains
     phi = sign(acs,dotjin) ! IUPAC convention
     ! *** Energy contribution
     enopbs = oopsk*(phi-omega)*(phi-omega)
-    ener = ener + enopbs
+    pener = pener + enopbs
     ! *** Forces calculation
     if (Qforces) then
       rjk2 = dot_product(rjk,rjk)
@@ -420,12 +417,12 @@ contains
   end subroutine
   
   ! CMAP terms for explicit atoms
-  subroutine cmapr(ener)
+  subroutine cmapr(pener)
   implicit none
   integer icmap,i,j,k,itheta,ipsi,n,ic
   integer itype,iat,jat,kat,lat,mat,nnat,oat,ppat
   real theta,psi,dang,idang,thetag,psig,c(4,4)
-  real t,u,ansy,ansy1,ansy2,ener
+  real t,u,ansy,ansy1,ansy2,pener
   !     CMAP terms 
   do icmap = 1,ptypl(ptypi)%psf(1)%ncmaps
     itype = ptypl(ptypi)%psf(1)%cmaps(3,icmap)
@@ -467,7 +464,7 @@ contains
     ansy1 = ansy1*idang
     ansy2 = ansy2*idang
     ! *** CMAP energy
-    ener = ener + ansy
+    pener = pener + ansy
     ! *** CMAP forces
     if (Qforces) then
       iat  = sr + ptypl(ptypi)%psf(1)%attcmap(1,icmap)
@@ -507,10 +504,10 @@ contains
   end subroutine
   
   ! Internal non-bonded interactions term
-  subroutine nonbonded(ener)
+  subroutine nonbonded(pener)
   implicit none
   integer i,j,k,n,a,b
-  real qa,qb,epp4,sgp2,elecpsf,evdwpsf,idist2,idist,dist2,dist6,dist12,de,ener
+  real qa,qb,epp4,sgp2,elecpsf,evdwpsf,idist2,idist,dist2,dist6,dist12,de,pener
   ! Compute Nonbonded for 1-4 Pairs
   n=ptypl(ptypi)%psf(1)%np14
   do k=1,n
@@ -528,7 +525,7 @@ contains
     dist6=(sgp2*idist2)**3
     dist12=dist6**2
     evdwpsf=epp4*(dist12-dist6) ! van der waals potential
-    ener = ener + elecpsf + evdwpsf
+    pener = pener + elecpsf + evdwpsf
     if (Qforces) then
       i=sr+a
       j=sr+b
@@ -560,7 +557,7 @@ contains
     dist6=(sgp2*idist2)**3
     dist12=dist6**2
     evdwpsf=epp4*(dist12-dist6) ! van der waals potential
-    ener = ener + elecpsf + evdwpsf
+    pener = pener + elecpsf + evdwpsf
     if (Qforces) then
       i=sr+a
       j=sr+b

@@ -109,12 +109,12 @@ if (ncycle*nbd.ne.0) then
 endif
 133    format(6x,a,e10.3,a)
 
+icycle=0
 if (Qenergy) then
   write(outu,*)
   call energy()
   if (Qpar.and.Qnucl) then
-    write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i10,6f17.4)') 0,ener,enonbond,eintern,estaticf,erfpar,evdwgd   
+    call showener()
     if (Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -128,8 +128,8 @@ if (Qenergy) then
           write(outu,'(10x,2i4,x,a5,x,3(a,f10.5))') ii,j,namsite(j),' dx=',r(j)%x-contrx(ii),' dy=',r(j)%y-contry(ii),' dz=',r(j)%z-contrz(ii)
         endif
       enddo
-    endif 
-    write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
+    endif
+    call printline() 
     if (ngcmc.gt.0) then
       ncount = 0
       do iat = nparnuc+1, npar
@@ -138,12 +138,11 @@ if (Qenergy) then
       enddo
       write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
-      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
+      call printline() 
     endif         
   else if (Qpar.and..not.Qnucl) then
-    write(outu,'(10x,a)') 'CYCLE--------Total-PMF--------Nonbonded------------PHIsf------------PHIrf-----------PHIvdW' 
-    write(outu,'(5x,i10,5f17.4)') 0,ener,enonbond,estaticf,erfpar,evdwgd 
-    write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'
+    call showener()
+    call printline() 
     if (ngcmc.gt.0) then
       ncount = 0
       do iat = nparnuc+1, npar
@@ -152,11 +151,10 @@ if (Qenergy) then
       enddo
       write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
-      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'
+      call printline() 
     endif
   else if (Qnucl.and..not.Qpar) then 
-    write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded------------PHIsf------------PHIrf------------PHIvdW' 
-    write(outu,'(5x,i10,6f17.4)') 0,ener,enonbond,eintern,estaticf,erfpar,evdwgd 
+    call showener()
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -171,7 +169,7 @@ if (Qenergy) then
         endif
       enddo
     endif 
-    write(outu,'(10x,a)') '-----------------------------------------------------------------------------------------------------------'  
+    call printline() 
   endif
 endif ! Qenergy  
    
@@ -378,11 +376,13 @@ do icycle = 1, ncycle
         else
           call dynamics0() ! using uniform diffusion constant
         endif
+        call fixcoor()
         ! Count ions
         if (Qcountion) call countallions()
       endif
       if (Qnucl) then
         call dynamics0nuc()
+        call fixcoornuc()
         if (Qnotrans) then
           if (Qnotrx) r(1:nelenuc)%x=r(1:nelenuc)%x-sum(r(1:nelenuc)%x)*inelenuc+notrx
           if (Qnotry) r(1:nelenuc)%y=r(1:nelenuc)%y-sum(r(1:nelenuc)%y)*inelenuc+notry
@@ -605,8 +605,7 @@ do icycle = 1, ncycle
   if (nprint.gt.0 .and. mod(icycle,nprint).eq.0) then  
     if (ncycle*nbd.eq.0) call energy()
     if (Qpar .and. Qnucl) then
-      write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded---------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-      write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
+      call showener()
       if(Qcontrans.and.Qcontprint) then
         write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
         do ii=1,ctn
@@ -621,11 +620,10 @@ do icycle = 1, ncycle
           endif
         enddo
       endif 
-      write(outu,'(10x,a)') '-------------------------------------------------------------------------------------------------------'
+      call printline() 
     else if (Qpar.and..not.Qnucl) then        
-      write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded-----------PHIsf------------PHIrf----------PHIvdW'
-      write(outu,'(5x,i12,5f17.4)') icycle,ener,enonbond,estaticf,erfpar,evdwgd
-      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------'
+      call showener()
+      call printline() 
     else if (Qnucl.and..not.Qpar) then
       write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,estaticf,erfpar,evdwgd
       if(Qcontrans.and.Qcontprint) then
@@ -652,7 +650,7 @@ do icycle = 1, ncycle
       write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
       if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
-      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
+      call printline() 
     endif
   endif
 
@@ -664,8 +662,7 @@ if (Qchdencnt) chden=sng(1.0/float(ncycle))*chden
 call energy()
 if (nprint.eq.0) then
   if (Qpar .and. Qnucl) then
-    write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
+    call showener()
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -680,13 +677,12 @@ if (nprint.eq.0) then
         endif
       enddo
     endif 
-    write(outu,'(10x,a)') '--------------------------------------------------------------------------------------------------------'
+    call printline() 
   else if (Qpar.and..not.Qnucl) then
-    write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded-----------PHIsf------------PHIrf----------PHIvdW'
-    write(outu,'(5x,i12,5f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
-    write(outu,'(10x,a)') '----------------------------------------------------------------------------------------'
+    call showener()
+    call printline() 
   else if (Qnucl.and..not.Qpar) then 
-    write(outu,'(5x,i12,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
+    call showener()
     if(Qcontrans.and.Qcontprint) then
       write(outu,'(10x,a,f17.10)') 'Constrain Energy=',econ
       do ii=1,ctn
@@ -701,7 +697,7 @@ if (nprint.eq.0) then
         endif
       enddo
     endif 
-    write(outu,'(10x,a)') '----------------------------------------------------------------------------------------'
+    call printline() 
   endif   
   if (Qpar.and.ngcmc.gt.0) then
     ncount = 0
@@ -712,7 +708,7 @@ if (nprint.eq.0) then
     write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
     write(outu,'(a)') trim(ln)
     if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
-      write(outu,'(10x,a)') '------------------------------------------------------------------------------------------------------'  
+      call printline() 
   endif  
 endif
 
@@ -945,7 +941,17 @@ if (Qpar) then
   endif ! Qenerprofile
 
 endif ! Qpar
+contains 
+  subroutine showener()
+  implicit none
+  write(outu,'(10x,a)') 'CYCLE----------Total-PMF--------Nonbonded--------Bonded------------PHIsf------------PHIrf------------PHIvdW'
+  write(outu,'(5x,i10,6f17.4)') icycle,ener,enonbond,eintern,estaticf,erfpar,evdwgd
 
-return
+  end subroutine
+
+  subroutine printline()
+  implicit none
+  write(outu,'(10x,a)') '-----------------------------------------------------------------------------------------------------------'
+  end subroutine
 end subroutine
 

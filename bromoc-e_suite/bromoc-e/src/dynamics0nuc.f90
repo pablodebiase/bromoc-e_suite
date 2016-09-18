@@ -38,8 +38,6 @@ do i = 1,nelenuc
   r(i)%x = r(i)%x + delx + fact2a(itype)*rgauss()
   r(i)%y = r(i)%y + dely + fact2a(itype)*rgauss()
   r(i)%z = r(i)%z + delz + fact2a(itype)*rgauss()
-  ! Fix Coor
-  if (.not.Qdnafree) call fixcoor(r(i)%x,r(i)%y,r(i)%z)
 enddo
 end subroutine
 
