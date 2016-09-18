@@ -2247,7 +2247,7 @@ do while (.not. logfinal)
          enddo
        endif
      elseif (check(com,'coor')) then
-       call gtipar(com,'unit',iunit,1)
+       call gtipar(com,'unit',iunit,0)
        if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
        if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
        if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in PRINT order', faterr)
