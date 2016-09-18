@@ -51,10 +51,6 @@
 !                          and sites (combination rules)
 ! sg(P,S,Ab,Tb,Cb,Gb)   -> Lennard-Jones parameter for interaction between ions
 !                          and sites (combination rules)
-! epsLJ(dtype,dtype)    -> Lennard-Jones parameter for interaction between ions
-!                          and sites
-! sgLJ(dtype,dtype)     -> Lennard-Jones parameter for interaction between ions
-!                          and sites
 ! epsolv                -> Energy scale for solvnet-induced contribution
 ! maxsite               -> Maximum number of interaction sites
 ! maxpar                -> Maximum number of interaction pairs
