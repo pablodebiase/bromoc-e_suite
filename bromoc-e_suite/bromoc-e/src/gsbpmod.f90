@@ -46,7 +46,7 @@ real    xbcen1,ybcen1,zbcen1,xbcen2,ybcen2,zbcen2,idcel2,idcel1
 integer    nclx3,ncly3,nclz3                                   ! rfpar
 real    dcel3,tranx3,trany3,tranz3,xbcen3,ybcen3,zbcen3,idcel3 ! rfpar
 integer nclx4,ncly4,nclz4                                      ! charge density
-real*8  dcel4,tranx4,trany4,tranz4,xbcen4,ybcen4,zbcen4,idcel4 ! charge density
+real    dcel4,tranx4,trany4,tranz4,xbcen4,ybcen4,zbcen4,idcel4 ! charge density
 real*4,allocatable :: chden(:)                                 ! charge density
 logical*1 Qchden,Qchdencnt,Qchdenorm                           ! charge density
 real    sqrfac,reffac                                          ! rfpar

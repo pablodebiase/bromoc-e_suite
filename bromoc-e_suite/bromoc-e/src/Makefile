@@ -11,8 +11,6 @@ FCOMPL = gfortran
 #FFLAGC = -C -fno-align-commons
 #Double Precision Real
 FFLAGC = -fno-align-commons -fdefault-real-8 
-CCOMPL = gcc
-CFLAGC =
 OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
 
 # Implicit rules
@@ -46,27 +44,55 @@ OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmp
 		ioinit.o lualloc.o lunalloc.o m3.o dm3.o rpowerl2.o cross_product.o factori.o find.o\
 		angles.o bbonds.o count.o proxdiff.o dihedral.o countions.o repwalls.o nucenergy.o\
 		fixcoor.o go_qq.o grand.o header.o mapsplot.o help.o insert.o membrane.o metropolis.o\
-		move.o native_structure.o rfpar.o feedseed.o random.o chrden.o readphi.o rgauss.o\
+		move.o native_structure.o rfpar.o feedseed.o chrden.o readphi.o rgauss.o energy.o\
 		staefield.o shell_simul.o simul1.o simul.o spline.o staticf1.o switch1.o switch2.o\
 		switch3.o vdwgd1spln.o vdwgd1trln.o wrttraj.o angbond.o angdih.o polynom.o readpsf.o\
 		readcharmm.o fatnam.o parinteract.o dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o\
-		dynamics3.o charmmenergy.o energy.o
+		dynamics3.o charmmenergy.o
+
+ORANDOM =	random.o
 
 # Clean objects
 
 clean:
-	@rm -f core $(OBJECTSMOD) $(OBJECTS) $(OBJ) *.mod
+	@rm -f core $(OBJ) *.mod *.o
 
 cleano:
 	@rm -f core *.o *.mod
 
+# GFORTRAN Single Precision
+single: FFLAGC = -fno-align-commons
+single: $(OBJ)
+
+# GFORTRAN Debug
 debug: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
 debug: $(OBJ)	
 
+# INTEL Single Precision
+intelsp: FCOMPL = ifort
+intelsp: FFLAGC = -real-size 32 -integer-size 32 -heap-arrays 0
+intelsp: OPT = -ip -O3 -xHost
+intelsp: ORANDOM = random-i.o
+intelsp: $(OBJ)
+
+# INTEL Debug
+inteldbg: FCOMPL = ifort
+inteldbg: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
+inteldbg: OPT = -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all
+inteldbg: ORANDOM = random-i.o
+inteldbg: $(OBJ)
+
+# INTEL Optimized double precision
+intel: FCOMPL = ifort
+intel: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
+intel: OPT = -ip -O3 -xHost
+intel: ORANDOM = random-i.o
+intel: $(OBJ)
+
 # Main program target
 
-$(OBJ):	$(OBJECTSMOD) $(OBJECTS)
-	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS)
+$(OBJ):	$(OBJECTSMOD) $(OBJECTS) $(ORANDOM)
+	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM)
 
 install:
 	@mv $(OBJ) ../bin/
