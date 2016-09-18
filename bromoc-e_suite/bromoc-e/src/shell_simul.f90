@@ -293,12 +293,12 @@ do while (.not. logfinal)
      call gtdpar(com,'diffusion',diffnuc,0.01)
      if (.not. Qnucl) then
        ! Add Mono-element Particle Types
-       call addetyp('S',dif=diffnuc)   ! 1
-       call addetyp('P',dif=diffnuc)   ! 2
-       call addetyp('Ab',dif=diffnuc)  ! 3
-       call addetyp('Tb',dif=diffnuc)  ! 4
-       call addetyp('Cb',dif=diffnuc)  ! 5
-       call addetyp('Gb',dif=diffnuc)  ! 6
+       call addetyp('S', dif=diffnuc,eps=0.0647,sig=4.16)  ! 1
+       call addetyp('P', dif=diffnuc,eps=0.1796,sig=3.14)  ! 2
+       call addetyp('Ab',dif=diffnuc,eps=0.4598,sig=4.10)  ! 3
+       call addetyp('Tb',dif=diffnuc,eps=0.4598,sig=4.90)  ! 4
+       call addetyp('Cb',dif=diffnuc,eps=0.4598,sig=3.40)  ! 5
+       call addetyp('Gb',dif=diffnuc,eps=0.4598,sig=3.80)  ! 6
      endif
      if (diffnuc.lt.0.0) call error ('shell_simul', 'Diffusion coefficient for each nucleotide is negative', faterr)
      ! Parameter to calculate bonded and non-bonded potential
@@ -623,12 +623,13 @@ do while (.not. logfinal)
      ! nonbonded terms
      call go_qq
      Qnucl = .true.
+     call allocateqsome()
+     call setuplj()
      write(outu,*) 
      ! assert 
      if (nsites.ne.nele) stop 'nsites is not equal to nele'
      if (allocated(nucnam)) deallocate(nucnam)
      deallocate(xnat,ynat,znat,rnat,phinat)
-     !call printpdb(outu) ! debug
   ! **********************************************************************
   elseif (wrd5.eq.'ptype') then
   !       ---------------
@@ -666,13 +667,6 @@ do while (.not. logfinal)
     if (Qchmmimp) deallocate (charmm_itype,charmm_imp)
     if (Qchmmcmap) deallocate (charmm_icmap,charmm_icmap2,charmm_ncmap,charmm_cmap,charmm_fcmap)
     deallocate (charmm_typen,charmm_nonbonded)
-    ! DEBUG
-    !do i=1,ptypl(nptyp)%psf(1)%np14
-    !  write(*,*) i,ptypl(nptyp)%psf(1)%p14(i)%a,ptypl(nptyp)%psf(1)%p14(i)%b,ptypl(nptyp)%psf(1)%lj14(i)%epp4,ptypl(nptyp)%psf(1)%lj14(i)%sgp2
-    !enddo
-    !do i=1,ptypl(nptyp)%psf(1)%nnbon
-    !  write(*,*) i,ptypl(nptyp)%psf(1)%nbon(i)%a,ptypl(nptyp)%psf(1)%nbon(i)%b,ptypl(nptyp)%psf(1)%lj(i)%epp4,ptypl(nptyp)%psf(1)%lj(i)%sgp2
-    !enddo
     ! unit number for coordinate [integer,default=0]
     call gtipar (com,'iunpdb',iunpdb,0)
     call gtipar (com,'iuncrd',iuncrd,0)
@@ -692,23 +686,7 @@ do while (.not. logfinal)
     call centerptyp(nptyp)
     Qpar=.true.
     Qatexp = .true.
-    if (allocated(Qefpot)) deallocate(Qefpot)
-    allocate (Qefpot(netp))
-    Qefpot=.false.
-    if (allocated(Qcol)) deallocate(Qcol)
-    allocate (Qcol(netp))
-    Qcol=.true.
-    if (allocated(Qlj)) deallocate(Qlj)
-    allocate (Qlj(netp))
-    Qlj=.false.
-    if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
-    allocate (Qsrpmfi(netp))
-    Qsrpmfi=.false.
-    if (allocated(warn)) deallocate (warn)
-    allocate (warn(netyp))
-    warn=0
-    ! ASSIGN CHARGES USING CDIE
-    cecd=celec/cdie
+    call allocateqsome()
     write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'addpa') then ! Add Particle
@@ -794,25 +772,7 @@ do while (.not. logfinal)
       endif
     enddo
     Qpar = .true.
-    if (allocated(Qefpot)) deallocate(Qefpot)
-    allocate (Qefpot(netp))
-    Qefpot=.false.
-    if (allocated(Qcol)) deallocate(Qcol)
-    allocate (Qcol(netp))
-    Qcol=.true.
-    if (allocated(Qlj)) deallocate(Qlj)
-    allocate (Qlj(netp))
-    Qlj=.false.
-    if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
-    allocate (Qsrpmfi(netp))
-    Qsrpmfi=.false.
-    if (allocated(warn)) deallocate (warn)
-    allocate (warn(netyp))
-    warn=0
-
-    ! ASSIGN CHARGES USING CDIE
-    cecd=celec/cdie
-  
+    call allocateqsome()
     write(outu,*)
     write(outu,'(6x,a,i3,a)') 'There are ',netyp-netnuc,' atom types'
     write(outu,'(6x,a)') 'CHARGE -> ion charge [e]'
@@ -1261,7 +1221,7 @@ do while (.not. logfinal)
      write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'ljsin') then
-    if (.not.Qatexp.and..not.Qpar .and. .not.Qnucl) call error ('shell_simul', 'LJSIN order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
+    if (.not.Qatexp.and..not.Qpar.and..not.Qnucl) call error ('shell_simul', 'LJSIN order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
     if (Qljpar) call error ('shell_simul', 'LJSIN is defined after LJPAR', faterr)
     endlog = .false.
     do while (.not. endlog)
@@ -1279,30 +1239,13 @@ do while (.not. logfinal)
   
     write(outu,*)
     write(outu,'(6x,a)') 'LJ Single Parameters:'
-    write(outu,'(6x,a)') '--------------'
+    write(outu,'(6x,a)') '---------------------'
     write(outu,'(6x,a)') 'type---epsilon(kcal/mol)---sigma(Ang)'
     write(outu,'(6x,a)') '-------------------------------------'
     do  i = 1, netyp
        write(outu,'(6x,a,2f12.4)') etypl(i)%nam,etypl(i)%eps,etypl(i)%sig
     enddo
-    allocate (epp4(netp),sgp2(netp),epsLJ(netp),sgLJ(netp))
-    epsLJ=0.0
-    sgLJ=0.0
-    epp4=0.0
-    sgp2=0.0
-    call updateuetl()
-    do i=1,netyp
-      do j=i,netyp
-        if (etypl(i)%eps.gt.0.0.and.etypl(i)%sig.gt.0.0.and.etypl(j)%eps.gt.0.0.and.etypl(j)%sig.gt.0.0) then
-          is=etpidx(i,j)
-          epp4(is)=4.0*sqrt(etypl(i)%eps*etypl(j)%eps)
-          sgp2(is)=(0.5*(etypl(i)%sig+etypl(j)%sig))**2
-          Qlj(is)=.true.
-        else
-          if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)')'Warning: Missing single LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
-        endif
-      enddo
-    enddo
+    call setuplj()
     write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'ljpar') then
@@ -1313,6 +1256,11 @@ do while (.not. logfinal)
   !     & //' parameters are desactivated', warning)
   !           Qionsite = .false.
   !         endif
+    if (allocated(epsLJ)) deallocate (epsLJ)
+    if (allocated(sgLJ)) deallocate (sgLJ)
+    allocate (epsLJ(netp),sgLJ(netp))
+    epsLJ=0.0
+    sgLJ=0.0
     endlog = .false.
     do while (.not. endlog)
       call getlin(com,inpu,outu) ! new commands line
@@ -1333,9 +1281,9 @@ do while (.not. logfinal)
   
     write(outu,*)
     write(outu,'(6x,a)') 'LJ Pair Parameters:'
-    write(outu,'(6x,a)') '-------------'
+    write(outu,'(6x,a)') '-------------------'
     write(outu,'(6x,a)') 'type1---type2---epsilon(kcal/mol)---sigma(Ang)'
-    write(outu,'(6x,a)') '-----------------------------------------'
+    write(outu,'(6x,a)') '----------------------------------------------'
     if (.not.allocated(epp4)) then
       allocate (epp4(netp),sgp2(netp))
       epp4=0.0
@@ -1345,7 +1293,7 @@ do while (.not. logfinal)
     do i = 1, netyp
       do j = i, netyp
         is=etpidx(i,j)
-        if (epsLJ(is).gt.0.0 .and. sgLJ(is).gt.0.0) then
+        if (epsLJ(is).gt.0.0.and.sgLJ(is).gt.0.0) then
           write(outu,'(6x,a,a,2f12.4,$)') etypl(i)%nam,etypl(j)%nam,epsLJ(is),sgLJ(is) 
           if (Qlj(is)) then
             write(outu,'(a)') ' (replaced)'
@@ -2784,23 +2732,7 @@ do while (.not. logfinal)
        write(outu,'(6x,a,3(f12.6,a))')'DNA geometric center is now at  (',xm,',',ym,',',zm,')'
      endif
      ! Print out data
-     if (Qnucl) then
-       write(outu,'(6x,a)') 'Native structure for B isoform of DNA'
-       write(outu,*)
-       write(outu,'(6x,a,1x,a,1x,a,1x,a)') 'STRAND','SITE','CARTESIAN COORDINATES (X,Y,Z)'
-       write(outu,'(6x,a,1x,a,1x,a,1x,a)') '------','----','-----------------------------'
-       do i = 1, nelenuc
-        write(outu,'(6x,i5,2x,a4,3(1x,f15.8))') pe(i), etypl(et(i))%nam, r(i)%x, r(i)%y, r(i)%z
-       enddo
-     endif
-     if (Qpar) then
-       write(outu,'(6x,a)') 'Free Ions'
-       write(outu,'(6x,a,1x,a)') 'ION','CARTESIAN COORDINATES (X,Y,Z)'
-       write(outu,'(6x,a,1x,a)') '---','-----------------------------'
-       do i = nelenuc+1, nele
-         write(outu,'(6x,i5,1x,A5,3(1x,f15.8),1x,i4)') i,etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,parl(pe(i))%ibuf
-       enddo
-     endif
+     call printcrde(outu)
      write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'gsbp') then !  generalized solvent boundary potential
@@ -2966,5 +2898,48 @@ do while (.not. logfinal)
     write(outu,'(6x,a)') '*ERROR*  Unrecognized command:'
   endif
 enddo
-return
+contains
+  subroutine allocateqsome()
+  implicit none
+  ! Allocate Qefpot, Qcol, Qlj, Qsrpmfi, warn
+  if (allocated(Qefpot)) deallocate(Qefpot)
+  allocate (Qefpot(netp))
+  Qefpot=.false.
+  if (allocated(Qcol)) deallocate(Qcol)
+  allocate (Qcol(netp))
+  Qcol=.true.
+  if (allocated(Qlj)) deallocate(Qlj)
+  allocate (Qlj(netp))
+  Qlj=.false.
+  if (allocated(Qsrpmfi)) deallocate(Qsrpmfi)
+  allocate (Qsrpmfi(netp))
+  Qsrpmfi=.false.
+  if (allocated(warn)) deallocate (warn)
+  allocate (warn(netyp))
+  warn=0
+  ! ASSIGN CHARGES USING CDIE
+  cecd=celec/cdie
+  end subroutine
+
+  subroutine setuplj()
+  implicit none
+  if (allocated(epp4)) deallocate(epp4)
+  if (allocated(sgp2)) deallocate(sgp2)
+  allocate (epp4(netp),sgp2(netp))
+  epp4=0.0
+  sgp2=0.0
+  call updateuetl()
+  do i=1,netyp
+    do j=i,netyp
+      if (etypl(i)%eps.gt.0.0.and.etypl(i)%sig.gt.0.0.and.etypl(j)%eps.gt.0.0.and.etypl(j)%sig.gt.0.0) then
+        is=etpidx(i,j)
+        epp4(is)=4.0*sqrt(etypl(i)%eps*etypl(j)%eps)
+        sgp2(is)=(0.5*(etypl(i)%sig+etypl(j)%sig))**2
+        Qlj(is)=.true.
+      else
+        if (etul(i).and.etul(j)) write(outu,'(6x,a,x,a,x,a)')'Warning: Missing single LJ parameters to compute pairs for:',etypl(i)%nam,etypl(j)%nam
+      endif
+    enddo
+  enddo
+  end subroutine
 end
