@@ -325,7 +325,7 @@ do i=1,nele
   if (q(i).eq.0.0) cycle
   if (srfe(i).eq.0.0) cycle
   if (reff(i).eq.0.0) cycle
-  dist2 = (r(i)%x-xj)**2+(r(i)%y-yj)**2+(r(i)%z-zj)**2
+  dist2 = dist2car(r(i),r(j))
   reffij = reff(j)*reff(i)
   ! reaction field energy 
   energy=energy+tau*q(i)*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)

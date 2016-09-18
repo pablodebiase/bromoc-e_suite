@@ -89,6 +89,7 @@ real gaux1,gaux2
 real tau,dist2,rfdn,aux1,aux2,srfeij,reffij
 real xi,yi,zi,ai,bi,ci,fi
 real aisign,bisign,cisign
+logical iOk,jOk
 ncyz=ncly3*nclz3
 ncel3=nclx3*ncyz
 energy=0.0
@@ -146,15 +147,17 @@ do i=1,nele
   ! self reaction field energy minus Born energy
   if (srfe(i).eq.0.0) cycle
   tau=celec*q(i)
-  energy=energy+0.5*tau*q(i)*srfe(i)**2
+  iOk=i.gt.sr.and.i.le.ne+sr
+  if (iOk) energy=energy+0.5*tau*q(i)*srfe(i)**2
   if (reff(i).eq.0.0) cycle
   ! reaction field energy 
   do j=1,i-1
     if (q(j).eq.0.0) cycle
     if (srfe(j).eq.0.0) cycle
     if (reff(j).eq.0.0) cycle
-    if (.not.((i.gt.sr.and.i.le.ne+sr).or.(j.gt.sr.and.j.le.ne+sr))) cycle
-    dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
+    jOk=j.gt.sr.and.j.le.ne+sr
+    if (.not.(iOk.or.jOk)) cycle
+    dist2 = dist2car(r(j),r(i))
     srfeij = srfe(j)*srfe(i)
     reffij = reff(j)*reff(i)
     rfdn = 1.0/sqrt(reffij*reffij+dist2)
