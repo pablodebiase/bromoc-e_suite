@@ -101,6 +101,6 @@ $(OBJI): $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI)
 install:
 	@if [ -e $(OBJ) ]; then  mv -f $(OBJ) ../bin/; fi
 	@if [ -e $(OBJI) ]; then  mv -f $(OBJI) ../bin/; fi
-	@if [ ! -e ../../bin/$(OBJ) ] ; then ln -s ../cg-gcmc-bd/bin/$(OBJ) ../../bin/$(OBJ); fi
-	@if [ ! -e ../../bin/$(OBJI) ] ; then ln -s ../cg-gcmc-bd/bin/$(OBJI) ../../bin/$(OBJI); fi
+	@if [ ! -e ../../bin/$(OBJ) ] ; then ln -s ../bromoc-e/bin/$(OBJ) ../../bin/$(OBJ); fi
+	@if [ ! -e ../../bin/$(OBJI) ] ; then ln -s ../bromoc-e/bin/$(OBJI) ../../bin/$(OBJI); fi
  
