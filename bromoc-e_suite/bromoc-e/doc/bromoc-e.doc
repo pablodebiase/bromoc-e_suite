@@ -470,6 +470,11 @@ syntax:
   z            |0.0| : new z location of the geometric center of the particle to add
  
   NOTE: Solute particles must be added before solvent particles
+  NOTE2: Kind of Particle (DNA/Solute/Solvent) and coordinates can be entered using a crd/pdn/crde format (see COOR read)
+         Kind of Particle:
+                1 DNA (unaffected by GCMC)
+                2 Solute (not solvent/ion) (Unaffected by GCMC)
+                3 Solvent/ion (Affected by GCMC)
 
 example:
 
@@ -1171,9 +1176,13 @@ syntax:
                 align site1-site2 along z axis and site2-site3 to x axis
 
   * case 4:
-  COOR read unit (integer) 
+  COOR read unit (integer) {pdb} {pdbe} {crd} {crde}
 
   read        : read DNA and ions initial position
+  {pdb}       : specify that the file to be read has pdb format
+  {pdbe}       : specify that the file to be read has pdb with extended decimals format
+  {crd}       : specify that the file to be read has NAMD XPlot  format
+  {crde}       : specify that the file to be read has NAMD XPlor Extended format
 
   * case 5:
   COOR setori [x (real)] [y (real)] [z (real)]
@@ -1186,10 +1195,22 @@ syntax:
 
 example1: coor gener 
 
-example2: open read unit 12 name ions.crd
+example2: open read unit 12 name ions.crde
+          coor read unit 12 crde
           close unit 12
 
+          * Denotes the kind of particle:
+                1 DNA (unaffected by GCMC)
+                2 Solute (not solvent/ion) (Unaffected by GCMC)
+                3 Solvent/ion (Affected by GCMC)
+                                                                                                         *
+                                                                                                         V
+        59         1  DNA1      S              -0.7796238000        0.9252487900       47.5069797100     1         1            0.0000000000
+        60         2  POT       POT           -25.9297085404        3.0416083336       58.1221643090     2         3            1.0000000000
+        61         3  POT       POT            20.2884716988       16.7391548157       58.5197114944     3         3            1.0000000000
 
+
+example3 
 
 ************
 *** OPEN ***
