@@ -96,10 +96,11 @@ $(OBJ):	$(OBJECTSMOD) $(OBJECTS) $(ORANDOM)
 	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM)
 
 $(OBJI): $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI)
-	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI)
+	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJI) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI)
 
 install:
-	@mv -f $(OBJ $(OBJI)) ../bin/
+	@if [ -e $(OBJ) ]; then  mv -f $(OBJ) ../bin/; fi
+	@if [ -e $(OBJI) ]; then  mv -f $(OBJI) ../bin/; fi
 	@if [ ! -e ../../bin/$(OBJ) ] ; then ln -s ../cg-gcmc-bd/bin/$(OBJ) ../../bin/$(OBJ); fi
 	@if [ ! -e ../../bin/$(OBJI) ] ; then ln -s ../cg-gcmc-bd/bin/$(OBJI) ../../bin/$(OBJI); fi
  
