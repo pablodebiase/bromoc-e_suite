@@ -3,6 +3,7 @@
 # Main program and default target
 
 OBJ    = bromoc
+OBJI   = bromoc-intel
 all : $(OBJ)
 
 # System dependent compilation commands
@@ -34,7 +35,6 @@ OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-no
 	make -f $(<:.lib=.Makefile) clean
 
 # Vectorization of selected files where available
-
 # Object files
 
 OBJECTSMOD = 	ioxmod.o charfuncmod.o listmod.o constamod.o strtoolsmod.o errormod.o nucleotmod.o\
@@ -51,6 +51,7 @@ OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmp
 		dynamics3.o charmmenergy.o
 
 ORANDOM =	random.o
+ORANDOMI =	random-i.o
 
 # Clean objects
 
@@ -73,28 +74,32 @@ intelsp: FCOMPL = ifort
 intelsp: FFLAGC = -real-size 32 -integer-size 32 -heap-arrays 0
 intelsp: OPT = -ip -O3 -xHost
 intelsp: ORANDOM = random-i.o
-intelsp: $(OBJ)
+intelsp: $(OBJI)
 
 # INTEL Debug
 inteldbg: FCOMPL = ifort
 inteldbg: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
 inteldbg: OPT = -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all
 inteldbg: ORANDOM = random-i.o
-inteldbg: $(OBJ)
+inteldbg: $(OBJI)
 
 # INTEL Optimized double precision
 intel: FCOMPL = ifort
 intel: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
 intel: OPT = -ip -O3 -xHost
 intel: ORANDOM = random-i.o
-intel: $(OBJ)
+intel: $(OBJI)
 
 # Main program target
 
 $(OBJ):	$(OBJECTSMOD) $(OBJECTS) $(ORANDOM)
 	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM)
 
+$(OBJI): $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI)
+	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI)
+
 install:
-	@mv $(OBJ) ../bin/
+	@mv -f $(OBJ $(OBJI)) ../bin/
 	@if [ ! -e ../../bin/$(OBJ) ] ; then ln -s ../cg-gcmc-bd/bin/$(OBJ) ../../bin/$(OBJ); fi
+	@if [ ! -e ../../bin/$(OBJI) ] ; then ln -s ../cg-gcmc-bd/bin/$(OBJI) ../../bin/$(OBJI); fi
  
