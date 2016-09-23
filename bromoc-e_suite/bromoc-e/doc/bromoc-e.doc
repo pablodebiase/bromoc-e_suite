@@ -479,9 +479,9 @@ syntax:
 example:
 
   ADDPART printcrde
-  GLU  solute randrot x 1.0 y 1.0 z 1.0
-  GLU  randrot x 2.0 y 1.0 z 1.0
-  GLU  x 1.0 y 1.0 z 2.0
+  ACE  solute randrot x 1.0 y 1.0 z 1.0
+  ACE  randrot x 2.0 y 1.0 z 1.0
+  ACE  x 1.0 y 1.0 z 2.0
   POT  x 5.0 y 4.0 z 3.0
   END
 
