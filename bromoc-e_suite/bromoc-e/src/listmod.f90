@@ -37,41 +37,48 @@ type :: ljpair
     real :: epp4,sgp2
 end type ljpair
 
+! Harmonic Constrained Element Type
+type :: elefix
+    integer,allocatable                   :: fen   ! Fixed Element Number 
+    type(car),allocatable                 :: fc    ! Force Constant Car 
+    type(car),allocatable                 :: rfx   ! Equilibrium position Car
+end type elefix
+
 ! PSF Type 
 type :: psftype
     ! Bonds
-    integer                            :: nbonds
-    integer,allocatable,dimension(:,:) :: bonds
-    real,allocatable,dimension(:,:)    :: stretch
+    integer                               :: nbonds
+    integer,allocatable,dimension(:,:)    :: bonds
+    real,allocatable,dimension(:,:)       :: stretch
     ! Angles
-    integer                            :: nbends
-    integer,allocatable,dimension(:,:) :: bends
-    real,allocatable,dimension(:,:)    :: bend 
+    integer                               :: nbends
+    integer,allocatable,dimension(:,:)    :: bends
+    real,allocatable,dimension(:,:)       :: bend 
     ! UB
-    integer                            :: nubs
-    integer,allocatable,dimension(:,:) :: ubs
-    real,allocatable,dimension(:,:)    :: ubt
+    integer                               :: nubs
+    integer,allocatable,dimension(:,:)    :: ubs
+    real,allocatable,dimension(:,:)       :: ubt
     ! Dihedral
-    integer                            :: ntorts
-    integer,allocatable,dimension(:,:) :: torts
-    integer,allocatable,dimension(:,:) :: ndih
-    real,allocatable,dimension(:,:)    :: dih
-    integer,allocatable,dimension(:)   :: nprms
+    integer                               :: ntorts
+    integer,allocatable,dimension(:,:)    :: torts
+    integer,allocatable,dimension(:,:)    :: ndih
+    real,allocatable,dimension(:,:)       :: dih
+    integer,allocatable,dimension(:)      :: nprms
     ! Improper
-    integer                            :: ndeforms
-    integer,allocatable,dimension(:,:) :: deforms
-    real,allocatable,dimension(:,:)    :: deform
+    integer                               :: ndeforms
+    integer,allocatable,dimension(:,:)    :: deforms
+    real,allocatable,dimension(:,:)       :: deform
     ! CMAPS
-    logical                            :: Qlcmap
-    integer                            :: ncmaps
-    integer,allocatable,dimension(:)   :: lthetacmap
-    integer,allocatable,dimension(:)   :: lpsicmap
-    integer,allocatable,dimension(:)   :: cmap
-    integer,allocatable,dimension(:,:) :: cmaps
-    integer,allocatable,dimension(:,:) :: attcmap
-    integer,allocatable,dimension(:,:) :: atpcmap
-    real,allocatable,dimension(:)      :: gscmap
-    real,allocatable,dimension(:,:,:)  :: ccoef
+    logical                               :: Qlcmap
+    integer                               :: ncmaps
+    integer,allocatable,dimension(:)      :: lthetacmap
+    integer,allocatable,dimension(:)      :: lpsicmap
+    integer,allocatable,dimension(:)      :: cmap
+    integer,allocatable,dimension(:,:)    :: cmaps
+    integer,allocatable,dimension(:,:)    :: attcmap
+    integer,allocatable,dimension(:,:)    :: atpcmap
+    real,allocatable,dimension(:)         :: gscmap
+    real,allocatable,dimension(:,:,:)     :: ccoef
     ! Non-Bonded
     integer                               :: np14  ! number of p14
     type(pair),allocatable,dimension(:)   :: p14   ! pair 1-4 (dih)
@@ -138,6 +145,10 @@ integer, allocatable, dimension(:)   :: pt  !! Particle Type List nele size
 integer, allocatable, dimension(:)   :: pe  !! Particle List of nele size
 real, allocatable, dimension(:)      :: q   !! Charge List of nele size
 
+!! Harmonic Constrain
+integer                               :: nefix ! Number of Elements with Harmonic Constrains
+type(elefix),allocatable,dimension(:) :: efix  ! EleFix Type Vector
+
 !! Used Element Types List
 integer nuet                      !! Total Number of Used Element Types in et
 integer, allocatable, dimension(:) :: uetl
@@ -158,6 +169,7 @@ netyp        = 0
 netp         = 0
 nptyp        = 0
 nele         = 0
+nefix        = 0
 nuet         = 0
 end subroutine
 
@@ -358,6 +370,26 @@ else
 endif
 end function
 
+subroutine addefix()
+implicit none
+integer vdim,newsize
+type(elefix),allocatable,dimension(:)  :: efixtmp
+if (allocated(efix)) then
+  newsize=nefix+1
+  vdim=size(efix)
+  allocate (efixtmp(newsize))
+  if (vdim.lt.nefix) stop 'Error in addefix'
+  if (vdim.gt.nefix) vdim=nefix
+  efixtmp(1:vdim)=efix(1:vdim)
+  deallocate (efix)
+  call move_alloc(efixtmp,efix)
+  nefix=newsize
+else
+  allocate(efix(1))
+  nefix=1
+endif
+end subroutine
+ 
 subroutine resizeetypl(newsize)
 implicit none
 integer vdim,newsize

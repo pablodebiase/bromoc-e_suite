@@ -1,6 +1,6 @@
-                     -----------------------------------------------
+                     ----------------------------------------------
                     |  BROMOC-E 5.00 Documentation file            |
-                     -----------------------------------------------
+                     ----------------------------------------------
 
 
   Coarse Grain, Grand Canonical Monte Carlo and Brownian Dynamics Simulation Program
@@ -104,6 +104,7 @@ SVDW         define SVDW (see GSBP) scalar factor for each type
 COOR         set up, manage, read coordinates and setup constants
 NOTRANS      enable/disable translation of DNA centroid
 CONTRANS     enable/disable constrains DNA centroid and/or sites translation
+HCONS        enable and defines harmonic contrains to the position of solute elements
 CHDEN        enable computing charge density (use in combination with chden keyword in SIMUL and PRINT)
 SIMULATION   run simulation
 ENERGY       compute energy
@@ -372,6 +373,41 @@ example3:
  CONTRANS
  0 kz 0.1
  END
+
+
+**************
+*** HCONS  ***
+**************
+
+  Enables and defines harmonic constrains to elements in solute particles
+  This must be placed after particles are added to the particle list (after ADDPAR and/or COOR). 
+  Particle number and element number within particle must be defined. Harmonic constant must be non-zero.
+
+syntax:
+
+  [HCONS]
+  par (integer) pen (integer) [k (real)] [kx (real)] [ky (real)] [kz (real)] [rx (real)] [ry (real)] [rz (real)]
+  ...
+  par (integer) pen (integer) [k (real)] [kx (real)] [ky (real)] [kz (real)] [rx (real)] [ry (real)] [rz (real)]
+  END
+
+
+  par      |0|      : Particle number in Particle List order. (Cannot be ommited or zero)
+  pen      |0|      : Particle Element Number. If the particle has ne elements --->   1 <= pen <= ne
+  rx       |actual| : Define x position
+  ry       |actual| : Define y position
+  rz       |actual| : Define z position
+  k        |0.0|    : Is the force constant in all dimensions (x,y,z). Is the force constant used in the harmonic potential. Units in (kcal/mol)/A^2.
+  kx       |k|      : Enable constrain of solute element in x direction using kx force constant. Units in (kcal/mol)/A^2.
+  ky       |kx|     : Enable constrain of solute element in y direction using ky force constant. Units in (kcal/mol)/A^2.
+  kz       |kx|     : Enable constrain of solute element in z direction using kz force constant. Units in (kcal/mol)/A^2.
+
+example:
+HCONS
+par 1 pen 2 k 0.1
+par 2 pen 1 kz 0.1 
+par 2 pen 2 ky 0.1 rx 0 ry 0 rz 0
+END
 
 
 ***************************************

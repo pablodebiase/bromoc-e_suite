@@ -95,6 +95,9 @@ real cc0,cc1,cc2,cc3,cc4
 real xtras, ytras, ztras, rot(3,3)
 real,allocatable :: xnat(:), ynat(:), znat(:), rnat(:), phinat(:)
 integer parn
+! hcons vars
+integer hcpar, hcen
+type(car) hcr,hck
 
 !Default parameters and options
 !------------------------------
@@ -933,7 +936,43 @@ do while (.not. logfinal)
     else
       write(outu,'(6x,a)') 'CONTRANSLATION is off'
     endif
-  
+  ! **********************************************************************
+  elseif (wrd5.eq.'hcons') then ! HARMONIC CONSTRAIN
+  !        ---------------
+  ! Constrain translation with an harmonic potential of DNA by the geometric center
+    if (npar.eq.0) call error ('shell_simul', 'No Particles added to List. Add this section after solute particles are added.', faterr)
+    if (allocated(efix)) deallocate (efix)
+    nefix = 0
+    endlog = .false.
+    do while (.not.endlog)
+      call getlin(com,inpu,outu) ! new commands line
+      endlog = lcase(com(1:3)).eq.'end'
+      if (endlog) exit
+      call gtipar(com,'par', hcpar, 0) ! Particle Number in List
+      if (hcpar.eq.0) call error ('shell_simul', 'particle number not present', faterr)
+      if (hcpar.gt.npar) call error ('shell_simul', 'particle selected not yet inserted', faterr)
+      if (parl(hcpar)%kind.gt.2) call error ('shell_simul', 'particle selected is not solute', faterr)
+      call gtipar(com,'pen', hcen, 0) ! Particle Element Number
+      if (hcen.eq.0) call error ('shell_simul', 'particle element number not present', faterr)
+      if (hcen.gt.parl(hcpar)%ne) call error ('shell_simul', 'particle element number is greater than the number of elements in particle', faterr)
+      call addefix()
+      efix(nefix)%fen = parl(hcpar)%sr+hcen
+      call gtdpar(com,'k',hck%x,0.0)
+      call gtdpar(com,'kx',hck%x,hck%x)
+      call gtdpar(com,'ky',hck%y,hck%x)
+      call gtdpar(com,'kz',hck%z,hck%x)
+      if (hck%x.eq.0.0.and.hck%y.eq.0.0.and.hck%z.eq.0) call error ('shell_simul', 'force constant defined is null; senseless', faterr)
+      efix(nefix)%fc=hck
+      call gtdpar(com,'rx',hcr%x,r%x)
+      call gtdpar(com,'ry',hcr%y,r%x)
+      call gtdpar(com,'rz',hcr%z,r%x)
+    enddo
+    write(outu,'(6x,a)') 'HARMONIC CONSTRAIN for Solutes defined'
+    write(outu,'(6x,a)') 'Constrain Number-----Element Number----------kx----ky----kz----------rx----ry----rz'
+    do i=1,nefix
+      write(outu,'(6x,i5,i5,2(3x,3f10.5))') i, efix(i)%fen, efix(i)%fc%x,efix(i)%fc%y,efix(i)%fc%z,efix(i)%rfx%x,efix(i)%rfx%y,efix(i)%rfx%z
+    enddo
+    write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'syste') then
   !        ---------------
