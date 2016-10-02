@@ -1,6 +1,6 @@
-!    BROMOCng  -  CG-GCMC-BD
+!    BROMOC-E
 !    Electrodiffusion, Gran Canonical Monte Carlo, Brownian,Dynamics 
-!    and Coarse Grain Model DNA Simulation Program.
+!    and Coarse Grain Model DNA with External Force Field for Explicit Particles Program.
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)
 !
 !    This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ real de, dc
 real  esrpmf0,esrpmf1,esrpmf2,esrpmf3
 real  cofo
 real  eefp,fdf,fdv
-real  pener
+real  pener, ehcons
 real  dist12
 real qiqj
 logical*1 Qchr
@@ -46,6 +46,7 @@ eefpot   = 0.0
 eelec    = 0.0
 evdw     = 0.0
 esrpmf   = 0.0
+ehcons   = 0.0
 
 if (Qenergy) then
   ! Initializations
@@ -176,7 +177,25 @@ if (Qenergy) then
   !  write(*,*) eefpot, eelec, evdw, esrpmf
   endif !Qnonbond
 
-  ener = ememb + estaticf + evdwgd + erfpar + eintern + enonbond
+  ! Apply Harmonic Constrains
+  do i=1,nefix
+    j=efix(i)%fen
+    if (efix(i)%fc%x.ne.0.0) then
+      if (Qforces) f(j)%x=f(j)%x-efix(i)%fc%x*(r(j)%x-efix(i)%rfx%x)
+      ehcons = ehcons + 0.5*efix(i)%fc%x*(r(j)%x-efix(i)%rfx%x)**2
+    endif
+    if (efix(i)%fc%y.ne.0.0) then
+      if (Qforces) f(j)%y=f(j)%y-efix(i)%fc%y*(r(j)%y-efix(i)%rfx%y)
+      ehcons = ehcons + 0.5*efix(i)%fc%y*(r(j)%y-efix(i)%rfx%y)**2
+    endif
+    if (efix(i)%fc%z.ne.0.0) then
+      if (Qforces) f(j)%z=f(j)%z-efix(i)%fc%z*(r(j)%z-efix(i)%rfx%z)
+      ehcons = ehcons + 0.5*efix(i)%fc%z*(r(j)%z-efix(i)%rfx%z)**2
+    endif
+  enddo
+ 
+  ! Add all energies
+  ener = ememb + estaticf + evdwgd + erfpar + eintern + enonbond + ehcons
 !  write(*,*) ener, ememb, estaticf, evdwgd, erfpar, eintern, enonbond
 endif !Qenergy
 
