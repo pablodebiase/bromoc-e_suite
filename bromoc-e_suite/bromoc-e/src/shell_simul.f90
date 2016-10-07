@@ -50,12 +50,12 @@ real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol,pkind,diffu
+real resol,pkind,diffu,totdiffu,pardiffu
 integer ikind
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
 logical*1 logmemb, logphix, logphiv, logsrpmf,logbuff,Qefpott,Qepwrt,logrfpar,Qnohead
-logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdb,Qxyz,Qpdbe,Qcrd,Qcrde,Qatexp
+logical*1 Qexpl2nd,Qinputpar,Qonlychden,Qpdb,Qxyz,Qpdbe,Qcrd,Qcrde,Qatexp,Qhomodiffu
 real*8 zero
 !for time
 integer*8       start,finish,timer
@@ -765,11 +765,24 @@ do while (.not. logfinal)
           call updateptypchg(itype)
         endif
         ! diffusion constant [real*8,default=0.1]
-        call gtdpar(com,'diffusion',diffu,0.1)
+        call gtdpar(com,'diffusion',diffu,0.0)
+        Qhomodiffu=check(com,'homodiffu') 
+        if (diffu.eq.0.0) call error ('shell_simul', 'diffusion coefficient omitted or 0', faterr)
         if (diffu.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
-        do i=1,ptypl(itype)%ne
-          etypl(ptypl(itype)%etyp(i))%dif=diffu*(1.0/ptypl(itype)%ne)
-        enddo
+        if (Qhomodiffu) then
+          do i=1,ptypl(itype)%ne
+            etypl(ptypl(itype)%etyp(i))%dif=diffu*(1.0/ptypl(itype)%ne)
+          enddo
+        else
+          totdiffu=0.0
+          do i=1,ptypl(itype)%ne
+            totdiffu=etypl(ptypl(itype)%etyp(i))%dif
+          enddo
+          do i=1,ptypl(itype)%ne
+            pardiffu=etypl(ptypl(itype)%etyp(i))%dif  
+            etypl(ptypl(itype)%etyp(i))%dif=diffu*pardiffu/totdiffu
+          enddo
+        endif
         ! Add the particle temporarily to the particle list
         ! call addpar(itype,3)
       endif
