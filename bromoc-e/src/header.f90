@@ -31,7 +31,7 @@ write (lus,500)
  1x,'*******        Monte Carlo, Brownian Dynamics, Coarse Grain Model DNA         *******'/ &
  1x,'*******        and CHARMM force field reader for Solute and Solvent           *******'/ &
  1x,'*******        (c) 2016 Pablo M. De Biase,   Superluminal Technologies Ltd.   *******'/ &
- 1x,'*******                       Version 5.00 (2016/08/24)                       *******'/ &
+ 1x,'*******                       Version 5.00 (2016/10/11)                       *******'/ &
  1x,'*************************************************************************************'/ &
  1x,'*******                                                                       *******'/ & 
  1x,'******* Copyright (C) 2016 Pablo M. De Biase (pablodebiase@gmail.com)         *******'/ &
