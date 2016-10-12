@@ -1,6 +1,6 @@
 #/bin/bash
 echo
-echo 'BROMOC Suite' 
+echo 'BROMOC-E Suite' 
 echo '************'
 echo 'Created: 2011-2016'
 echo 'author: Pablo M. De Biase'

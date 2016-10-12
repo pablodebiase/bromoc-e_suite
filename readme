@@ -1,5 +1,5 @@
-BROMOC-E Suite  (2011-2014)
-************
+BROMOC-E Suite  (2011-2016)
+***************
 ---------------------------------------------------------------
 If you use this program please site us:
 
@@ -46,17 +46,17 @@ BROMOC-E
 $ cd bromoc-e/src
 
 #For GNU Compilers
-$ make clean -f Makefile_gfortran
-$ make -f Makefile_gfortran           
-$ make install -f Makefile_gfortran
+$ make clean 
+$ make 
+$ make install
    
    --or--
 
 #For INTEL Compilers
 
-$ make clean -f Makefile_intel
-$ make -f Makefile_intel
-$ make install -f Makefile_intel
+$ make clean 
+$ make intel 
+$ make install 
 
 
 IMC-MACRO
