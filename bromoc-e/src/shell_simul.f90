@@ -1,6 +1,6 @@
-!    BROMOC  -  CG-GCMC-BD
+!    BROMOC-E
 !    Electrodiffusion, Gran Canonical Monte Carlo, Brownian,Dynamics 
-!    and Coarse Grain Model DNA Simulation Program.
+!    and Coarse Grain Model DNA Simulation Program with CHARMM Force Field Reader.
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)
 !
 !    This program is free software: you can redistribute it and/or modify
