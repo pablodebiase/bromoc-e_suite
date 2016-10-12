@@ -2,16 +2,16 @@
 echo
 echo 'BROMOC Suite' 
 echo '************'
-echo 'Created: 2011-2014'
+echo 'Created: 2011-2016'
 echo 'author: Pablo M. De Biase'
 echo 'e-mail: pablodebiase@gmail.com'
 
 echo
-echo 'Installing BROMOC Suite ...'
+echo 'Installing BROMOC-E Suite ...'
 echo
 if [ "$1" == "intel" ]; then
   echo  
-  echo 'Installing BROMOC (CG-GCMC-BD) ...'
+  echo 'Installing BROMOC-E ...'
   echo  
   if [ ! -d bin ]; then 
     mkdir bin 
@@ -68,7 +68,7 @@ if [ "$1" == "intel" ]; then
   cd ../..
 else
   echo  
-  echo 'Installing BROMOC (CG-GCMC-BD) ...'
+  echo 'Installing BROMOC-E ...'
   echo  
   if [ ! -d bin ]; then
     mkdir bin
