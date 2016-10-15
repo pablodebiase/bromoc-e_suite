@@ -32,7 +32,7 @@ real  cofo
 real  eefp,fdf,fdv
 real  pener, ehcons
 real  dist12
-real qiqj
+real qiqj,einternloc
 logical*1 Qchr
 
 ! Initializations
@@ -86,12 +86,20 @@ if (Qenergy) then
   ! bonded energy
   if (Qbond) then
     if (nparnuc .gt. 0) call nucenergy(eintern)
+    !$omp parallel private (pener,i,einternloc)
     pener=0.0
+    einternloc=0.0    
+    !$omp do
     do i=1+nparnuc,npar
       if (parl(i)%ne.eq.1) cycle
       if (ptypl(parl(i)%ptyp)%Qpsf) call charmmenergy(i,pener)
-      eintern=eintern+pener
+      einternloc=einternloc+pener
     enddo
+    !$omp end do
+    !$omp critical
+    eintern=eintern+einternloc
+    !$omp end critical
+    !$omp end parallel 
   endif
 
   ! nonbonded interaction between elements
