@@ -23,8 +23,7 @@ use constamod
 use efpmod
 use listmod
 implicit none
-integer i, j, itype, jtype, is, qq, pp
-integer neq, srq, nep, srp
+integer i, j, k, l, itype, jtype, is
 real dist, dist2, dist6, idist, idist2
 real de, dc
 real  esrpmf0,esrpmf1,esrpmf2,esrpmf3
@@ -32,8 +31,11 @@ real  cofo
 real  eefp,fdf,fdv
 real  pener, ehcons
 real  dist12
-real qiqj,einternloc
+real qiqj
+real einternloc,eefpotloc,eelecloc,esrpmfloc,evdwloc
 logical*1 Qchr
+type(car) floc(nele)
+type(pair) la(nele*(nele-1)/2)
 
 ! Initializations
 ener     = 0.0
@@ -105,84 +107,107 @@ if (Qenergy) then
   ! nonbonded interaction between elements
   if (Qnonbond) then
     if (Qproxdiff) dids(1:5,nelenuc+1:nele)=0.0
-    do qq = nparnuc+1,npar
-      neq=parl(qq)%ne
-      srq=parl(qq)%sr
-      do pp = 1,qq-1
-        nep=parl(pp)%ne
-        srp=parl(pp)%sr
-        do i = srq+1, srq+neq
-          itype  = et(i)
-          do j = srp+1, srp+nep
-            jtype  = et(j)
-            is=etpidx(itype,jtype)
-            dist2 = dist2car(r(i),r(j))
-            if (Qefpot(is)) then
-              if (Qforces) then
-                call getyd(is,dist2,eefp,de,dist)
-              else
-                call gety(is,dist2,eefp,dist)
-              endif
-              eefpot = eefpot + eefp
-              if (Qproxdiff) call proxdiff(i,j,is,dist)
-            else 
-              idist2 = 1.0/dist2
-              qiqj=q(i)*q(j)
-              Qchr=qiqj.ne.0.0
-              if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
-              if (Qchr) then 
-                cofo=cecd*qiqj*idist
-                eelec = eelec + cofo
-              endif
-              if (Qlj(is)) then
-                dist6 =(sgp2(is)*idist2)**3
-                dist12=dist6**2
-                evdw = evdw + epp4(is)*(dist12-dist6) ! van der waals potential
-              endif
-              if (Qsrpmfi(is)) then 
-                if (dist2.le.rth) then
-                  dist=1.0/idist
-                  esrpmf1 = exp((c1(is)-dist)*c2(is))
-                  esrpmf2 = cos(c3(is)*pi*(c1(is)-dist))
-                  esrpmf3 = (c1(is)*idist)**6
-                  esrpmf0 = c0(is)*esrpmf1*esrpmf2+c4(is)*esrpmf3 
-                  if (dist.ge.srpx) then ! smoothly fix discontinuity 
-                    fdf=exp(-srpk*(dist-srpx))-srpy
-                    fdv=esrpmf0 
-                    esrpmf0=fdv*fdf
-                  endif
-                  esrpmf = esrpmf + esrpmf0
-                endif
-              endif
-            endif  
-            if (Qforces) then
-              if (.not.Qefpot(is)) then
-                de=0.0
-                if (Qchr) de=cofo*idist2
-                if (Qlj(is)) de=de+epp4(is)*(2.0*dist12-dist6)*6.0*idist2 ! van der waals forces
-                if (Qsrpmfi(is)) then 
-                  if (dist2.le.rth) then 
-                    dc=(-c2(is)*esrpmf2+c3(is)*pi*sin(c3(is)*pi*(c1(is)-dist)))*c0(is)*esrpmf1-6.0*c4(is)*esrpmf3*idist! forces
-                    if (dist.ge.srpx) dc=dc*fdf-fdv*srpk*(fdf+srpy)  ! smoothly fix discontinuity 
-                    de=de-dc*idist
-                  endif
-                endif
-              endif
-              if (de.ne.0.0) then 
-                f(j)%x = f(j)%x + de*(r(j)%x-r(i)%x)
-                f(j)%y = f(j)%y + de*(r(j)%y-r(i)%y)
-                f(j)%z = f(j)%z + de*(r(j)%z-r(i)%z)
-                f(i)%x = f(i)%x - de*(r(j)%x-r(i)%x)
-                f(i)%y = f(i)%y - de*(r(j)%y-r(i)%y)
-                f(i)%z = f(i)%z - de*(r(j)%z-r(i)%z)
-              endif
-            endif
-          enddo 
-        enddo
-      enddo
+    ! Create List to divide jobs in threads
+    l=0
+    do k=1,nele
+      if (pe(lu(k)%a).eq.pe(lu(k)%b)) cycle ! if elements belongs to the same particle skip
+      if (pe(lu(k)%a).le.nparnuc.and.pe(lu(k)%b).le.nparnuc) cycle ! if elements belongs to DNA skip, double stranded DNA is handled by nucenergy
+      l=l+1
+      la(l)=lu(k)
     enddo
+    !$omp parallel private (k,i,j,itype,jtype,is,dist2,eefpotloc,eefp,de,idist2,qiqj,Qchr,idist,cofo,eelecloc,dist6,dist12,evdwloc,dist,esrpmf1,esrpmf2,esrpmf3,esrpmf0,fdf,fdv,esrpmfloc,dc,floc)
+    eefpotloc=0.0
+    eelecloc=0.0
+    evdwloc=0.0
+    esrpmfloc=0.0
+    if (Qforces) then
+      do i=1,nele
+        call setcarzero(floc(i))
+      enddo
+    endif
+    !$omp do
+    do k=1,l
+      i=la(k)%a
+      j=la(k)%b
+      itype=et(i)
+      jtype=et(j)
+      is=etpidx(itype,jtype)
+      dist2 = dist2car(r(i),r(j))
+      if (Qefpot(is)) then
+        if (Qforces) then
+          call getyd(is,dist2,eefp,de,dist)
+        else
+          call gety(is,dist2,eefp,dist)
+        endif
+        eefpotloc = eefpotloc + eefp
+        if (Qproxdiff) call proxdiff(i,j,is,dist)
+      else 
+        idist2 = 1.0/dist2
+        qiqj=q(i)*q(j)
+        Qchr=qiqj.ne.0.0
+        if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
+        if (Qchr) then 
+          cofo=cecd*qiqj*idist
+          eelecloc = eelecloc + cofo
+        endif
+        if (Qlj(is)) then
+          dist6 =(sgp2(is)*idist2)**3
+          dist12=dist6**2
+          evdwloc = evdwloc + epp4(is)*(dist12-dist6) ! van der waals potential
+        endif
+        if (Qsrpmfi(is)) then 
+          if (dist2.le.rth) then
+            dist=1.0/idist
+            esrpmf1 = exp((c1(is)-dist)*c2(is))
+            esrpmf2 = cos(c3(is)*pi*(c1(is)-dist))
+            esrpmf3 = (c1(is)*idist)**6
+            esrpmf0 = c0(is)*esrpmf1*esrpmf2+c4(is)*esrpmf3 
+            if (dist.ge.srpx) then ! smoothly fix discontinuity 
+              fdf=exp(-srpk*(dist-srpx))-srpy
+              fdv=esrpmf0 
+              esrpmf0=fdv*fdf
+            endif
+            esrpmfloc = esrpmfloc + esrpmf0
+          endif
+        endif
+      endif  
+      if (Qforces) then
+        if (.not.Qefpot(is)) then
+          de=0.0
+          if (Qchr) de=cofo*idist2
+          if (Qlj(is)) de=de+epp4(is)*(2.0*dist12-dist6)*6.0*idist2 ! van der waals forces
+          if (Qsrpmfi(is)) then 
+            if (dist2.le.rth) then 
+              dc=(-c2(is)*esrpmf2+c3(is)*pi*sin(c3(is)*pi*(c1(is)-dist)))*c0(is)*esrpmf1-6.0*c4(is)*esrpmf3*idist! forces
+              if (dist.ge.srpx) dc=dc*fdf-fdv*srpk*(fdf+srpy)  ! smoothly fix discontinuity 
+              de=de-dc*idist
+            endif
+          endif
+        endif
+        if (de.ne.0.0) then 
+          floc(j)%x = floc(j)%x + de*(r(j)%x-r(i)%x)
+          floc(j)%y = floc(j)%y + de*(r(j)%y-r(i)%y)
+          floc(j)%z = floc(j)%z + de*(r(j)%z-r(i)%z)
+          floc(i)%x = floc(i)%x - de*(r(j)%x-r(i)%x)
+          floc(i)%y = floc(i)%y - de*(r(j)%y-r(i)%y)
+          floc(i)%z = floc(i)%z - de*(r(j)%z-r(i)%z)
+        endif
+      endif
+    enddo
+    !$omp end do
+    !$omp critical
+    eefpot = eefpot + eefpotloc
+    eelec = eelec + eelecloc
+    evdw = evdw + evdwloc
+    esrpmf = esrpmf + esrpmfloc
+    if (Qforces) then 
+      do i=1,nele
+        call addcar(f(i),floc(i))
+      enddo
+    endif
+    !$omp end critical
+    !$omp end parallel 
     enonbond = eefpot + eelec + evdw + esrpmf 
-  !  write(*,*) eefpot, eelec, evdw, esrpmf
   endif !Qnonbond
 
   ! Apply Harmonic Constrains

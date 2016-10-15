@@ -236,9 +236,7 @@ enddo
 erfpar = erfpar + erfparloc
 if (Qforces) then
   do i=1,nele
-    f(i)%x = f(i)%x + floc(i)%x
-    f(i)%y = f(i)%y + floc(i)%y
-    f(i)%z = f(i)%z + floc(i)%z
+    call addcar(f(i),floc(i))
   enddo
 endif
 !$omp end critical
