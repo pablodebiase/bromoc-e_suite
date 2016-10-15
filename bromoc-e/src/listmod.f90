@@ -1,4 +1,4 @@
-!    BROMOC  -  CG-GCMC-BD
+!    BROMOC-E
 !    Electrodiffusion, Gran Canonical Monte Carlo, Brownian,Dynamics 
 !    and Coarse Grain Model DNA Simulation Program.
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)
@@ -144,6 +144,10 @@ integer, allocatable, dimension(:)   :: et  !! Elements Type List of nele size
 integer, allocatable, dimension(:)   :: pt  !! Particle Type List nele size
 integer, allocatable, dimension(:)   :: pe  !! Particle List of nele size
 real, allocatable, dimension(:)      :: q   !! Charge List of nele size
+
+!! triangular list
+type(pair), allocatable, dimension(:) :: lu !! nele * (nele - 1) / 2
+type(pair), allocatable, dimension(:) :: lv !! nele * (nele + 1) / 2
 
 !! Harmonic Constrain
 integer                               :: nefix ! Number of Elements with Harmonic Constrains
@@ -455,7 +459,7 @@ end subroutine
 
 subroutine resizecvec(newsize)
 implicit none
-integer vdim,newsize
+integer vdim,newsize,i,j,k
 type(car), allocatable, dimension(:) :: rtmp   !! Elements Position Vector
 type(car), allocatable, dimension(:) :: ftmp   !! Elements Force Vector
 real, allocatable, dimension(:)      :: qtmp   !! Elements Charge Vector
@@ -471,6 +475,8 @@ if (newsize .lt. 1) then
     if (allocated(et)) deallocate (et)
     if (allocated(pt)) deallocate (pt)
     if (allocated(pe)) deallocate (pe)
+    if (allocated(lu)) deallocate (lu)
+    if (allocated(lv)) deallocate (lv)
 endif
 ! Measure Vector Size
 vdim=size(r)
@@ -498,6 +504,25 @@ call move_alloc(qtmp,q)
 call move_alloc(ettmp,et)
 call move_alloc(pttmp,pt)
 call move_alloc(petmp,pe)
+if (allocated(lu)) deallocate (lu)
+if (allocated(lv)) deallocate (lv)
+allocate (lu(newsize*(newsize-1)/2),lv(newsize*(newsize+1)/2))
+k=0
+do i=1,newsize
+  do j=1,i-1
+    k=k+1
+    lu(k)%a=i
+    lu(k)%b=j
+  enddo
+enddo
+k=0
+do i=1,newsize
+  do j=1,i
+    k=k+1
+    lv(k)%a=i
+    lv(k)%b=j
+  enddo
+enddo
 end subroutine
 
 ! Add Mono Particle (Particle with Single Element)

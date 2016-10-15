@@ -35,7 +35,7 @@ integer ncyz,ncel3,i,ix,iy,iz,ifir
 integer k,l,m,ipx,ipy,ipz
 real  vdwfx,vdwfy,vdwfz,esvdw
 real  xi,yi,zi,ai,bi,ci,fi,dai,dbi,dci,prefac
-real  xc,yc,zc,m3,dm3
+real  xc,yc,zc,m3,dm3,evdwgdloc
 real  phisum,phivi,phivsv
 logical*1 ok
 
@@ -46,7 +46,9 @@ ifir = 0
 esvdw = svdw
 
 !Main loop by atoms
-
+!$omp parallel private(i,ok,xi,yi,zi,ifir,esvdw,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,k,ipx,xc,ai,dai,l,ipy,yc,bi,dbi,m,ipz,zc,ci,dci,fi,phivi,phivsv,prefac,evdwgdloc)
+evdwgdloc=0.0
+!$omp do
 do i = 1, nele
   ok=r(i)%x.le.xbcen2+tranx2-dcel2.and.r(i)%x.ge.xbcen2-tranx2+dcel2.and. &
      r(i)%y.le.ybcen2+trany2-dcel2.and.r(i)%y.ge.ybcen2-trany2+dcel2.and. &
@@ -111,21 +113,22 @@ do i = 1, nele
                 vdwfz = vdwfz + ai*bi*dci*prefac
               endif
               !Repulsive Energy 
-              evdwgd = evdwgd + fi*phivsv
+              evdwgdloc = evdwgdloc + fi*phivsv
             endif
           enddo
         endif
       enddo
     endif
   enddo
-  if (phisum.ge.thold27) then
-    warn(et(i))=warn(et(i))+1
-    if (Qwarn) write(outu,'(a,i5,a,5f10.5)') 'Warning in routine vdwgd1spln :: particle inside membrane or protein - ',i,'  '//etypl(et(i))%nam,r(i)%x,r(i)%y,r(i)%z,phisum,thold27
-  endif
   if (Qforces) then 
     f(i)%x = f(i)%x + vdwfx
     f(i)%y = f(i)%y + vdwfy
     f(i)%z = f(i)%z + vdwfz
   endif
 enddo
+!$omp end do
+!$omp critical
+evdwgd = evdwgd + evdwgdloc
+!$omp end critical
+!$omp end parallel
 end subroutine

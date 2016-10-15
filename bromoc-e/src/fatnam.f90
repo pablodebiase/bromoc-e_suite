@@ -1,4 +1,4 @@
-!    BROMOC  -  CG-GCMC-BD
+!    BROMOC-E
 !    Electrodiffusion, Gran Canonical Monte Carlo, Brownian,Dynamics 
 !    and Coarse Grain Model DNA Simulation Program.
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)

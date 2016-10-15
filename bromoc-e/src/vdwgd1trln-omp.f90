@@ -1,4 +1,4 @@
-!    BROMOC  -  CG-GCMC-BD
+!    BROMOC-E
 !    Electrodiffusion, Gran Canonical Monte Carlo, Brownian,Dynamics 
 !    and Coarse Grain Model DNA Simulation Program.
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)
@@ -46,7 +46,7 @@ esvdw = svdw
 
 !Main loop by atoms
 
-!$omp parallel private(i,ok,xi,yi,zi,ifir,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,n1,n2,n3,ai,bi,ci,aisign,bisign,cisign,fi,in3,phis,prefac)
+!$omp parallel private(i,ok,xi,yi,zi,ifir,esvdw,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,n1,n2,n3,ai,bi,ci,aisign,bisign,cisign,fi,in3,phis,prefac,evdwgdloc)
 evdwgdloc=0.0
 !$omp do
 do i = 1, nele

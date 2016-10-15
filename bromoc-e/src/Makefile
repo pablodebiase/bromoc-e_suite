@@ -46,12 +46,12 @@ OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmp
 		fixcoor.o go_qq.o grand.o header.o mapsplot.o help.o insert.o membrane.o metropolis.o\
 		move.o native_structure.o rfpar.o feedseed.o chrden.o readphi.o rgauss.o\
 		staefield.o shell_simul.o simul1.o simul.o spline.o switch1.o switch2.o\
-		switch3.o vdwgd1spln.o wrttraj.o angbond.o angdih.o polynom.o readpsf.o\
+		switch3.o wrttraj.o angbond.o angdih.o polynom.o readpsf.o\
 		readcharmm.o fatnam.o parinteract.o charmmenergy.o
 OBJSER = 	dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o dynamics3.o energy.o staticf1.o\
-		vdwgd1trln.o
+		vdwgd1trln.o vdwgd1spln.f90 rfparion.f90
 PARALLEL =	dynamics0nuc-omp.f90 dynamics0-omp.f90 dynamics1-omp.f90 dynamics2-omp.f90 dynamics3-omp.f90\
-		energy-omp.f90 staticf1-omp.f90 vdwgd1trln-omp.f90
+		energy-omp.f90 staticf1-omp.f90 vdwgd1trln-omp.f90 vdwgd1spln-omp.f90 rfparion-omp.f90
 ORANDOM =	random.o
 ORANDOMI =	random-i.o
 
@@ -103,23 +103,25 @@ $(OBJ)$(INTEL): $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(OBJSER)
 	$(FCOMPL) $(FFLAGC) $(OPT) -openmp -o $(OBJ)$(INTEL)$(OMP) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(PARALLEL)
 
 install:
-	@if [ ! -d ../bin ]; then mkdir ../bin; fi
-	@if [ ! -d ../../bin ]; then mkdir ../../bin; fi
-	@if [ -e $(OBJ) ]; then mv -f $(OBJ) ../bin/; fi
-	@if [ -e $(OBJ)$(OMP) ]; then mv -f $(OBJ)$(OMP) ../bin/; fi
-	@if [ -e $(OBJ)$(INTEL) ]; then mv -f $(OBJ)$(INTEL) ../bin/; fi
-	@if [ -e $(OBJ)$(INTEL)$(OMP) ]; then mv -f $(OBJ)$(INTEL)$(OMP) ../bin/; fi
-	@if [ ! -e ../../bin/$(OBJ) -a -e ../bromoc-e/bin/$(OBJ) ] ; then ln -s ../bromoc-e/bin/$(OBJ) ../../bin/$(OBJ); fi
-	@if [ ! -e ../../bin/$(OBJ)$(OMP) -a -e ../bromoc-e/bin/$(OBJ)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(OMP) ../../bin/$(OBJ)$(OMP); fi
-	@if [ ! -e ../../bin/$(OBJ)$(INTEL) -a -e ../bromoc-e/bin/$(OBJ)$(INTEL) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL) ../../bin/$(OBJ)$(INTEL); fi
-	@if [ ! -e ../../bin/$(OBJ)$(INTEL)$(OMP) -a -e ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ../../bin/$(OBJ)$(INTEL)$(OMP); fi
+	@
+	if [ ! -d ../bin ]; then mkdir ../bin; fi
+	if [ ! -d ../../bin ]; then mkdir ../../bin; fi
+	if [ -e $(OBJ) ]; then mv -f $(OBJ) ../bin/; fi
+	if [ -e $(OBJ)$(OMP) ]; then mv -f $(OBJ)$(OMP) ../bin/; fi
+	if [ -e $(OBJ)$(INTEL) ]; then mv -f $(OBJ)$(INTEL) ../bin/; fi
+	if [ -e $(OBJ)$(INTEL)$(OMP) ]; then mv -f $(OBJ)$(INTEL)$(OMP) ../bin/; fi
+	if [ ! -e ../../bin/$(OBJ) -a -e ../bromoc-e/bin/$(OBJ) ] ; then ln -s ../bromoc-e/bin/$(OBJ) ../../bin/$(OBJ); fi
+	if [ ! -e ../../bin/$(OBJ)$(OMP) -a -e ../bromoc-e/bin/$(OBJ)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(OMP) ../../bin/$(OBJ)$(OMP); fi
+	if [ ! -e ../../bin/$(OBJ)$(INTEL) -a -e ../bromoc-e/bin/$(OBJ)$(INTEL) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL) ../../bin/$(OBJ)$(INTEL); fi
+	if [ ! -e ../../bin/$(OBJ)$(INTEL)$(OMP) -a -e ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ../../bin/$(OBJ)$(INTEL)$(OMP); fi
 
 uninstall:
-	@rm -f ../bin/$(OBJ)
-	@rm -f ../bin/$(OBJ)$(OMP)
-	@rm -f ../bin/$(OBJ)$(INTEL)
-	@rm -f ../bin/$(OBJ)$(INTEL)$(OMP)
-	@rm -f ../../bin/$(OBJ)
-	@rm -f ../../bin/$(OBJ)$(OMP)
-	@rm -f ../../bin/$(OBJ)$(INTEL)
-	@rm -f ../../bin/$(OBJ)$(INTEL)$(OMP)
+	@
+	rm -f ../bin/$(OBJ)
+	rm -f ../bin/$(OBJ)$(OMP)
+	rm -f ../bin/$(OBJ)$(INTEL)
+	rm -f ../bin/$(OBJ)$(INTEL)$(OMP)
+	rm -f ../../bin/$(OBJ)
+	rm -f ../../bin/$(OBJ)$(OMP)
+	rm -f ../../bin/$(OBJ)$(INTEL)
+	rm -f ../../bin/$(OBJ)$(INTEL)$(OMP)
