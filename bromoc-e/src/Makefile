@@ -109,10 +109,10 @@ install:
 	if [ -e $(OBJ)$(OMP) ]; then mv -f $(OBJ)$(OMP) ../bin/; fi
 	if [ -e $(OBJ)$(INTEL) ]; then mv -f $(OBJ)$(INTEL) ../bin/; fi
 	if [ -e $(OBJ)$(INTEL)$(OMP) ]; then mv -f $(OBJ)$(INTEL)$(OMP) ../bin/; fi
-	if [ ! -e ../../bin/$(OBJ) -a -e ../bromoc-e/bin/$(OBJ) ] ; then ln -s ../bromoc-e/bin/$(OBJ) ../../bin/$(OBJ); fi
-	if [ ! -e ../../bin/$(OBJ)$(OMP) -a -e ../bromoc-e/bin/$(OBJ)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(OMP) ../../bin/$(OBJ)$(OMP); fi
-	if [ ! -e ../../bin/$(OBJ)$(INTEL) -a -e ../bromoc-e/bin/$(OBJ)$(INTEL) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL) ../../bin/$(OBJ)$(INTEL); fi
-	if [ ! -e ../../bin/$(OBJ)$(INTEL)$(OMP) -a -e ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ../../bin/$(OBJ)$(INTEL)$(OMP); fi
+	if [ ! -e ../../bin/$(OBJ) -a -e ../bin/$(OBJ) ] ; then ln -s ../bromoc-e/bin/$(OBJ) ../../bin/$(OBJ); fi
+	if [ ! -e ../../bin/$(OBJ)$(OMP) -a -e ../bin/$(OBJ)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(OMP) ../../bin/$(OBJ)$(OMP); fi
+	if [ ! -e ../../bin/$(OBJ)$(INTEL) -a -e ../bin/$(OBJ)$(INTEL) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL) ../../bin/$(OBJ)$(INTEL); fi
+	if [ ! -e ../../bin/$(OBJ)$(INTEL)$(OMP) -a -e ../bin/$(OBJ)$(INTEL)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ../../bin/$(OBJ)$(INTEL)$(OMP); fi
 
 uninstall:
 	@
