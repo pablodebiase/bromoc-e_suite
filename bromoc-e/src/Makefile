@@ -42,16 +42,15 @@ OBJECTSMOD = 	ioxmod.o charfuncmod.o listmod.o constamod.o strtoolsmod.o errormo
 		stdiomod.o apfmod.o gsbpmod.o efpmod.o grandmod.o splinemod.o sevalmod.o charmmmod.o
 OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmphi2.o getopt.o\
 		ioinit.o lualloc.o lunalloc.o m3.o dm3.o rpowerl2.o cross_product.o factori.o find.o\
-		angles.o bbonds.o count.o proxdiff.o dihedral.o countions.o repwalls.o nucenergy.o\
-		fixcoor.o go_qq.o grand.o header.o mapsplot.o help.o insert.o membrane.o metropolis.o\
-		move.o native_structure.o rfpar.o feedseed.o chrden.o readphi.o rgauss.o\
-		staefield.o shell_simul.o simul1.o simul.o spline.o switch1.o switch2.o\
-		switch3.o wrttraj.o angbond.o angdih.o polynom.o readpsf.o\
-		readcharmm.o fatnam.o parinteract.o charmmenergy.o
+		angles.o bbonds.o count.o proxdiff.o dihedral.o countions.o repwalls.o fixcoor.o\
+		go_qq.o grand.o header.o mapsplot.o help.o insert.o membrane.o metropolis.o move.o\
+		native_structure.o rfpar.o feedseed.o chrden.o readphi.o rgauss.o staefield.o fatnam.o\
+		shell_simul.o simul1.o simul.o spline.o switch1.o switch2.o switch3.o wrttraj.o\
+		angbond.o angdih.o polynom.o readpsf.o readcharmm.o parinteract.o charmmenergy.o
 OBJSER = 	dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o dynamics3.o energy.o staticf1.o\
-		vdwgd1trln.o vdwgd1spln.f90 rfparion.f90
+		vdwgd1trln.o vdwgd1spln.f90 rfparion.f90 nucenergy.f90
 PARALLEL =	dynamics0nuc-omp.f90 dynamics0-omp.f90 dynamics1-omp.f90 dynamics2-omp.f90 dynamics3-omp.f90\
-		energy-omp.f90 staticf1-omp.f90 vdwgd1trln-omp.f90 vdwgd1spln-omp.f90 rfparion-omp.f90
+		energy-omp.f90 staticf1-omp.f90 vdwgd1trln-omp.f90 vdwgd1spln-omp.f90 rfparion-omp.f90 nucenergy-omp.f90
 ORANDOM =	random.o
 ORANDOMI =	random-i.o
 
