@@ -770,7 +770,7 @@ do while (.not. logfinal)
         if (diffu.eq.0.0) call error ('shell_simul', 'diffusion coefficient omitted or 0', faterr)
         if (diffu.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
         if (ptypl(itype)%ne.eq.1) then
-          etypl(ptypl(itype)%etyp(i))%dif=diffu
+          etypl(ptypl(itype)%etyp(1))%dif=diffu
         else
           if (Qhomodiffu) then
             do i=1,ptypl(itype)%ne
