@@ -769,19 +769,24 @@ do while (.not. logfinal)
         Qhomodiffu=check(com,'homodiffu') 
         if (diffu.eq.0.0) call error ('shell_simul', 'diffusion coefficient omitted or 0', faterr)
         if (diffu.lt.0.0) call error ('shell_simul', 'diffusion coefficient is negative', faterr)
-        if (Qhomodiffu) then
-          do i=1,ptypl(itype)%ne
-            etypl(ptypl(itype)%etyp(i))%dif=diffu*(1.0/ptypl(itype)%ne)
-          enddo
+        if (ptypl(itype)%ne.eq.1) then
+          etypl(ptypl(itype)%etyp(i))%dif=diffu
         else
-          totdiffu=0.0
-          do i=1,ptypl(itype)%ne
-            totdiffu=etypl(ptypl(itype)%etyp(i))%dif
-          enddo
-          do i=1,ptypl(itype)%ne
-            pardiffu=etypl(ptypl(itype)%etyp(i))%dif  
-            etypl(ptypl(itype)%etyp(i))%dif=diffu*pardiffu/totdiffu
-          enddo
+          if (Qhomodiffu) then
+            do i=1,ptypl(itype)%ne
+              etypl(ptypl(itype)%etyp(i))%dif=diffu*(1.0/ptypl(itype)%ne)
+            enddo
+          else
+            totdiffu=0.0
+            do i=1,ptypl(itype)%ne
+              totdiffu=etypl(ptypl(itype)%etyp(i))%dif
+            enddo
+            if (totdiffu.eq.0.0) call error('shell_simul', 'sum of total diffusion coefficients equals zero',faterr)
+            do i=1,ptypl(itype)%ne
+              pardiffu=etypl(ptypl(itype)%etyp(i))%dif  
+              etypl(ptypl(itype)%etyp(i))%dif=diffu*pardiffu/totdiffu
+            enddo
+          endif
         endif
         ! Add the particle temporarily to the particle list
         ! call addpar(itype,3)
