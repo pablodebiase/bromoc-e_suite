@@ -2,10 +2,13 @@
 #
 # Main program and default target
 
+default: all
+
 OBJ    = bromoc-e
 INTEL  = _intel
 OMP    = _omp
-all: $(OBJ)
+
+all:	$(OBJ)
 
 # System dependent compilation commands
 
@@ -13,27 +16,12 @@ FCOMPL = gfortran
 #FFLAGC = -C -fno-align-commons
 #Double Precision Real
 FFLAGC = -fno-align-commons -fdefault-real-8 
-OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
 
 # Implicit rules
+# Patterns
 
-.SUFFIXES: .vec .f .c .s .o .a .lib .f90
-
-.f90.o: 
+%.o : %.f90
 	$(FCOMPL) -c $(FFLAGC) $(OPT) -o $@ $<
-
-.f.o:
-	$(FCOMPL) -c $(FFLAGC) $(OPT) -o $@ $<
-
-.s.o:
-	as -o $@ $<
-
-.c.o:
-	$(CCOMPL) -c $(CFLAGC) $(OPT) -o $@ $<
-
-.lib.a:
-	make -f $(<:.lib=.Makefile) $@
-	make -f $(<:.lib=.Makefile) clean
 
 # Vectorization of selected files where available
 # Object files
@@ -48,9 +36,9 @@ OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmp
 		shell_simul.o simul1.o simul.o spline.o switch1.o switch2.o switch3.o wrttraj.o\
 		angbond.o angdih.o polynom.o readpsf.o readcharmm.o parinteract.o charmmenergy.o
 OBJSER = 	dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o dynamics3.o energy.o staticf1.o\
-		vdwgd1trln.o vdwgd1spln.f90 rfparion.f90 nucenergy.f90
-PARALLEL =	dynamics0nuc-omp.f90 dynamics0-omp.f90 dynamics1-omp.f90 dynamics2-omp.f90 dynamics3-omp.f90\
-		energy-omp.f90 staticf1-omp.f90 vdwgd1trln-omp.f90 vdwgd1spln-omp.f90 rfparion-omp.f90 nucenergy-omp.f90
+		vdwgd1trln.o vdwgd1spln.o rfparion.o nucenergy.o
+PARALLEL =	dynamics0nuc-omp.o dynamics0-omp.o dynamics1-omp.o dynamics2-omp.o dynamics3-omp.o\
+		energy-omp.o staticf1-omp.o vdwgd1trln-omp.o vdwgd1spln-omp.o rfparion-omp.o nucenergy-omp.o
 ORANDOM =	random.o
 ORANDOMI =	random-i.o
 
@@ -63,46 +51,59 @@ cleano:
 	@rm -f core *.o *.mod
 
 # GFORTRAN Single Precision
+single: OPT    += -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
 single: FFLAGC = -fno-align-commons
 single: $(OBJ)
 
 # GFORTRAN Debug
-debug: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
+debug: OPT += -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
 debug: $(OBJ)	
+
+pdebug: OPT += -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
+pdebug: $(OBJ)$(OMP)
 
 # INTEL Single Precision
 intelsp: FCOMPL = ifort
 intelsp: FFLAGC = -real-size 32 -integer-size 32 -heap-arrays 0
-intelsp: OPT = -ip -O3 -xHost
+intelsp: OPT += -ip -O3 -xHost
 intelsp: ORANDOM = random-i.o
 intelsp: $(OBJ)$(INTEL)
 
 # INTEL Debug
 inteldbg: FCOMPL = ifort
 inteldbg: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
-inteldbg: OPT = -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all
+inteldbg: OPT += -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all
 inteldbg: ORANDOM = random-i.o
 inteldbg: $(OBJ)$(INTEL)
 
 # INTEL Optimized double precision
 intel: FCOMPL = ifort
 intel: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
-intel: OPT = -ip -O3 -xHost
-intel: ORANDOM = random-i.o
+intel: OPT += -ip -O3 -xHost
 intel: $(OBJ)$(INTEL)
+
+ipara: FCOMPL = ifort
+ipara: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
+ipara: OPT += -ip -O3 -xHost
+intel: $(OBJ)$(INTEL)$(OMP)
 
 # Main program target
 
-$(OBJ):	$(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(OBJSER)
-	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(OBJSER)
-	$(FCOMPL) $(FFLAGC) $(OPT) -fopenmp -o $(OBJ)$(OMP) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(PARALLEL)
+$(OBJ):		$(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(OBJSER)
+		$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(OBJSER)
+
+$(OBJ)$(OMP):	OPT += -fopenmp
+$(OBJ)$(OMP):	$(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(PARALLEL)
+		$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ)$(OMP) $(OBJECTSMOD) $(OBJECTS) $(ORANDOM) $(PARALLEL)
 
 $(OBJ)$(INTEL): $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(OBJSER)
-	$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ)$(INTEL) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(OBJSER)
-	$(FCOMPL) $(FFLAGC) $(OPT) -openmp -o $(OBJ)$(INTEL)$(OMP) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(PARALLEL)
+		$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ)$(INTEL) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(OBJSER)
+
+$(OBJ)$(INTEL)$(OMP):	OPT += -openmp
+$(OBJ)$(INTEL)$(OMP):	$(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(PARALLEL)
+			$(FCOMPL) $(FFLAGC) $(OPT) -o $(OBJ)$(INTEL)$(OMP) $(OBJECTSMOD) $(OBJECTS) $(ORANDOMI) $(PARALLEL)
 
 install:
-	@
 	if [ ! -d ../bin ]; then mkdir ../bin; fi
 	if [ ! -d ../../bin ]; then mkdir ../../bin; fi
 	if [ -e $(OBJ) ]; then mv -f $(OBJ) ../bin/; fi
@@ -115,7 +116,6 @@ install:
 	if [ ! -e ../../bin/$(OBJ)$(INTEL)$(OMP) -a -e ../bin/$(OBJ)$(INTEL)$(OMP) ] ; then ln -s ../bromoc-e/bin/$(OBJ)$(INTEL)$(OMP) ../../bin/$(OBJ)$(INTEL)$(OMP); fi
 
 uninstall:
-	@
 	rm -f ../bin/$(OBJ)
 	rm -f ../bin/$(OBJ)$(OMP)
 	rm -f ../bin/$(OBJ)$(INTEL)
