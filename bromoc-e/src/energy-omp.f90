@@ -23,7 +23,7 @@ use constamod
 use efpmod
 use listmod
 implicit none
-integer i, j, k, l, itype, jtype, is
+integer i, j, k, l, itype, jtype, is 
 real dist, dist2, dist6, idist, idist2
 real de, dc
 real  esrpmf0,esrpmf1,esrpmf2,esrpmf3
@@ -36,6 +36,7 @@ real einternloc,eefpotloc,eelecloc,esrpmfloc,evdwloc
 logical*1 Qchr
 type(car) floc(nele)
 type(pair) la(nele*(nele-1)/2)
+integer multiat(npar),man
 
 ! Initializations
 ener     = 0.0
@@ -88,12 +89,20 @@ if (Qenergy) then
   ! bonded energy
   if (Qbond) then
     if (nparnuc .gt. 0) call nucenergy(eintern)
+    ! Make list to divide processes
+    man=0
+    do i=1+nparnuc,npar
+      if (parl(i)%ne.gt.1) then 
+         man=man+1
+         multiat(man)=i
+      endif
+    enddo
     !$omp parallel private (pener,i,einternloc)
     pener=0.0
     einternloc=0.0    
     !$omp do
-    do i=1+nparnuc,npar
-      if (parl(i)%ne.eq.1) cycle
+    do j=1,man
+      i=multiat(j)
       if (ptypl(parl(i)%ptyp)%Qpsf) call charmmenergy(i,pener)
       einternloc=einternloc+pener
     enddo
@@ -109,7 +118,7 @@ if (Qenergy) then
     if (Qproxdiff) dids(1:5,nelenuc+1:nele)=0.0
     ! Create List to divide jobs in threads
     l=0
-    do k=1,nele
+    do k=1,nele*(nele-1)/2
       if (pe(lu(k)%a).eq.pe(lu(k)%b)) cycle ! if elements belongs to the same particle skip
       if (pe(lu(k)%a).le.nparnuc.and.pe(lu(k)%b).le.nparnuc) cycle ! if elements belongs to DNA skip, double stranded DNA is handled by nucenergy
       l=l+1
@@ -229,7 +238,6 @@ if (Qenergy) then
  
   ! Add all energies
   ener = ememb + estaticf + evdwgd + erfpar + eintern + enonbond + ehcons
-!  write(*,*) ener, ememb, estaticf, evdwgd, erfpar, eintern, enonbond
 endif !Qenergy
 
 end subroutine

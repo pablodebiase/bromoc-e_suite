@@ -35,6 +35,7 @@ real  epsln,sgex2,f1(3),f2(3),f3(3),f4(3),v1(3),v2(3),v3(3),m1,m2,m3,modval
 real  n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
 real ebondloc,eangloc,ediheloc,estackloc,ebploc,eexloc,eqqloc,esolvloc
 type(car) floc(nelenuc)
+logical Qdebyloc
 
 ! Initializations
 energy   = 0.0
@@ -47,6 +48,7 @@ eex      = 0.0
 eqq      = 0.0
 esolv    = 0.0
 econ     = 0.0
+Qdebyloc = Qdeby
 
 ! interaction between interaction sites (nucleotides)         
 !  Bonded interactions  
@@ -55,7 +57,7 @@ econ     = 0.0
 !  Taylor expansion around natural bond lenght.
 !  This contribution contains harmonic and anharmonic 
 !  interactions.
-!$omp parallel private(i,isite1,isite2,isite3,isite4,dd,v1,v2,v3,dist,vard,vard2,ebondloc,de,f1,f2,f3,f4,floc,ang0,m1,m2,m3,modval,ang,eangloc,dihe0,v22,v2v,av,bv,dihe,vardihe,ediheloc,n1v,n2v,v12,v23,iv22,dist2,idist2,cte1,estackloc,epsln,ebploc,sgex2,eexloc,Qdeby,idistkd,eqqloc,esolvloc)
+!$omp parallel private(i,isite1,isite2,isite3,isite4,dd,v1,v2,v3,dist,vard,vard2,ebondloc,de,f1,f2,f3,f4,floc,ang0,m1,m2,m3,modval,ang,eangloc,dihe0,v22,v2v,av,bv,dihe,vardihe,ediheloc,n1v,n2v,v12,v23,iv22,dist2,idist2,cte1,estackloc,epsln,ebploc,sgex2,eexloc,Qdebyloc,idistkd,eqqloc,esolvloc,n1,n2,idist)
 ebondloc=0.0
 eangloc=0.0
 ediheloc=0.0
@@ -280,9 +282,13 @@ do i = 1, nqq
   dist=sqrt(dot_product(v1,v1)) 
   idist=1.0/dist
   if (Qdebyhyb) then
-    if(outbox(r(isite1)%x,r(isite1)%y,r(isite1)%z).and.outbox(r(isite2)%x,r(isite2)%y,r(isite2)%z)) Qdeby=.true.
+    if(outbox(r(isite1)%x,r(isite1)%y,r(isite1)%z).and.outbox(r(isite2)%x,r(isite2)%y,r(isite2)%z)) then
+      Qdebyloc=.true.
+    else
+      Qdebyloc=.false.
+    endif
   endif
-  if (Qdeby) then
+  if (Qdebyloc) then
     idistkd=exp(-dist*ikappa)
     eqqloc = eqqloc + fctn*idist*idistkd
     if (Qforces) then
@@ -308,7 +314,6 @@ do i = 1, nqq
       floc(isite2)%z = floc(isite2)%z + f1(3)
     endif
   endif
-  if (Qdebyhyb) Qdeby=.false.
 enddo 
 !$omp end do
 !     Solvent-induced contribution

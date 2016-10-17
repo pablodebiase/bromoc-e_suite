@@ -33,6 +33,7 @@ real  ang, ang0, varang, cte1
 real  dihe, dihe0, vardihe
 real  epsln,sgex2,f1(3),f2(3),f3(3),f4(3),v1(3),v2(3),v3(3),m1,m2,m3,modval
 real  n1(3),n2(3),n1v,n2v,v22,v2v,av,bv,iv22,v12,v23
+logical Qdebyloc
 ! Initializations
 energy   = 0.0
 ebond    = 0.0
@@ -44,6 +45,7 @@ eex      = 0.0
 eqq      = 0.0
 esolv    = 0.0
 econ     = 0.0
+Qdebyloc = Qdeby
 
 ! interaction between interaction sites (nucleotides)         
 !  Bonded interactions  
@@ -250,9 +252,13 @@ do i = 1, nqq
   dist=sqrt(dot_product(v1,v1)) 
   idist=1.0/dist
   if (Qdebyhyb) then
-    if(outbox(r(isite1)%x,r(isite1)%y,r(isite1)%z).and.outbox(r(isite2)%x,r(isite2)%y,r(isite2)%z)) Qdeby=.true.
+    if(outbox(r(isite1)%x,r(isite1)%y,r(isite1)%z).and.outbox(r(isite2)%x,r(isite2)%y,r(isite2)%z)) then
+      Qdebyloc=.true.
+    else
+      Qdebyloc=.false.
+    endif
   endif
-  if (Qdeby) then
+  if (Qdebyloc) then
     idistkd=exp(-dist*ikappa)
     eqq = eqq + fctn*idist*idistkd
     if (Qforces) then
@@ -278,7 +284,6 @@ do i = 1, nqq
       f(isite2)%z = f(isite2)%z + f1(3)
     endif
   endif
-  if (Qdebyhyb) Qdeby=.false.
 enddo 
 !     Solvent-induced contribution
 if (Qsolv) then
