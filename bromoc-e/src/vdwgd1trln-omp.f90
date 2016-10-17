@@ -58,7 +58,7 @@ do i = 1, nele
   xi = r(i)%x + tranx2-xbcen2
   yi = r(i)%y + trany2-ybcen2
   zi = r(i)%z + tranz2-zbcen2
-!  if (xi.ge.0.0.and.xi.le.2.0*tranx2 .and.yi.ge.0.0.and.yi.le.2.0*trany2 .and.zi.ge.0.0.and.zi.le.2.0*tranz2) then
+  ifir=0
   if (Qnmcden) then
     ifir = (et(i)-1)*ncel3
   else
