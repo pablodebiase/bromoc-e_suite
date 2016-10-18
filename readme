@@ -49,6 +49,11 @@ $ cd bromoc-e/src
 $ make clean 
 $ make 
 $ make install
+
+#OpenMP (Parallel version) for GNU Compilers
+$ make clean
+$ make para
+$ make install
    
    --or--
 
@@ -57,6 +62,11 @@ $ make install
 $ make clean 
 $ make intel 
 $ make install 
+
+#OpenMP (Parallel version) for INTEL Compilers
+$ make clean
+$ make ipara
+$ make install
 
 
 IMC-MACRO

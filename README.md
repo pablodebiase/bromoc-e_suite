@@ -1,7 +1,7 @@
 #BROMOC-E Suite
 ************
 
-*Gran Canonical Monte-Carlo/Brownian Dynamics Suite with Effective Potentials for Coarse Grained DNA, ions and other molecules modeled with CHARMM Force Field*
+*Simulation Program for Electrodiffusion, Gran Canonical Monte Carlo, Brownian Dynamics, Coarse Grain Model DNA and CHARMM force field reader for Solute and Solvent*
 
 ---------------------------------------------------------------
 ######Author: Pablo M. De Biase

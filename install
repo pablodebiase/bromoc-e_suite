@@ -1,7 +1,9 @@
 #/bin/bash
 echo
 echo 'BROMOC-E Suite' 
-echo '************'
+echo '**************'
+echo 'Simulation Program for Electrodiffusion, Gran Canonical Monte Carlo, Brownian Dynamics, Coarse Grain Model DNA and CHARMM force field reader for Solute and Solvent'
+echo '**************'
 echo 'Created: 2011-2016'
 echo 'author: Pablo M. De Biase'
 echo 'e-mail: pablodebiase@gmail.com'
@@ -22,7 +24,9 @@ if [ "$1" == "intel" ]; then
   fi
   cd src
   make clean 
-  make intel 
+  make intel
+  make cleano
+  make ipara 
   make install
   make clean 
   cd ../..
@@ -80,6 +84,8 @@ else
   cd src
   make clean
   make
+  make cleano
+  make para
   make install 
   make clean
   cd ../..

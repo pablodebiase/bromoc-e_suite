@@ -3,8 +3,9 @@
                      ----------------------------------------------
 
 
-  Coarse Grain, Grand Canonical Monte Carlo and Brownian Dynamics Simulation Program
-  -----------------------------------------------------------------------------------
+  Simulation Program for Electrodiffusion, Gran Canonical Monte Carlo, Brownian Dynamics, 
+  Coarse Grain Model DNA and CHARMM force field reader for Solute and Solvent
+  ---------------------------------------------------------------------------------------
 
   BROMOC-E (Coarse Grain, Grand Canonical Monte Carlo and Brownian Dynamics) program is an Extended version of BROMOC designed to simulate a Brownian dynamics trajectory of atomistic or coarse grain particles such as mono/poli-atomic ions, prebuilt Coarse Grained DNA, or any other particle from CHARMM Force Field format in a channel/membrane system. In particular, the Grand Canonical Monte Carlo method is used to maintain the desired electrochemical conditions in the boundaries (buffer regions) of the simulation system which are in (equilibrium) contact with the bulk. BROMOC can be used to do Brownian dynamics simulations and Monte Carlo moves of mobile particles (ions or solvent). BROMOC package include a variety of tools to perform a variety of analysis and set-up parameters for BROMOC runs and to compute effective potentials. BROMOC can be used by setting up an input file with the corresponding keywords and command to do the desired simulation.
 

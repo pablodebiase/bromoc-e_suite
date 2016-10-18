@@ -8,8 +8,8 @@ COARSE GRAIN MODEL DNA AND EXPLICIT SOLUTE AND SOLVENT SIMULATION PROGRAM
 
 What's new in version 5.00 (2016.08.24) ?
 -Force Field reader for any kind of solute and solvent
-
-
+-New parallel implementation
+-Reads and Writes pdb and CHARMM/NAMD X-Plor crd files
 
 *********** Forked from:
 
