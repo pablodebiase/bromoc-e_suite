@@ -53,15 +53,15 @@ cleano:
 	@rm -f core *.o *.mod
 
 # GFORTRAN Single Precision
-single: OPT    += -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
+single: OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
 single: FFLAGC = -fno-align-commons
 single: $(OBJ)
 
 # GFORTRAN Debug
-debug: OPT += -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
+debug: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
 debug: $(OBJ)	
 
-pdebug: OPT += -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
+pdebug: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all
 pdebug: $(OBJ)$(OMP)
 
 # INTEL Single Precision
@@ -74,20 +74,20 @@ intelsp: $(OBJ)$(INTEL)
 # INTEL Debug
 inteldbg: FCOMPL = ifort
 inteldbg: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
-inteldbg: OPT += -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all
+inteldbg: OPT = -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all
 inteldbg: ORANDOM = random-i.o
 inteldbg: $(OBJ)$(INTEL)
 
 # INTEL Optimized double precision
 intel: FCOMPL = ifort
 intel: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
-intel: OPT += -ip -O3 -xHost
+intel: OPT = -ip -O3 -xHost
 intel: $(OBJ)$(INTEL)
 
 ipara: FCOMPL = ifort
 ipara: FFLAGC = -real-size 64 -integer-size 32 -heap-arrays 0
-ipara: OPT += -ip -O3 -xHost
-intel: $(OBJ)$(INTEL)$(OMP)
+ipara: OPT = -ip -O3 -xHost
+ipara: $(OBJ)$(INTEL)$(OMP)
 
 # Main program target
 
