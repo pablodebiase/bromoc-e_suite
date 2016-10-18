@@ -9,6 +9,7 @@ INTEL  = _intel
 OMP    = _omp
 
 all:	$(OBJ)
+para:   $(OBJ)$(OMP)
 
 # System dependent compilation commands
 
@@ -16,6 +17,7 @@ FCOMPL = gfortran
 #FFLAGC = -C -fno-align-commons
 #Double Precision Real
 FFLAGC = -fno-align-commons -fdefault-real-8 
+OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
 
 # Implicit rules
 # Patterns
