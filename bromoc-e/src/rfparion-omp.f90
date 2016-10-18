@@ -73,11 +73,12 @@ ok=.false.
 erfpar=0.0
 srfe=0.0
 reff=0.0
-if (Qforces) then
-  do i=1,nele
-    call setcarzero(floc(i))
-  enddo
-endif
+srfedx=0.0
+srfedy=0.0
+srfedz=0.0
+reffdx=0.0
+reffdy=0.0
+reffdz=0.0
 
 !     Main loop by atoms
 !$omp parallel private(i,j,k,ifir,aux,aux0,aux1,aux2,aux3,aux1dx,aux1dy,aux1dz,aux2dx,aux2dy,aux2dz,xi,yi,zi,ix,iy,iz,n1,ai,aisign,n2,bi,bisign,n3,ci,cisign,fi,in3,gaux1,gaux2,prefa1,prefa2,erfparloc,dist2,srfeij,reffij,rfdn,rfcf,de,floc)
@@ -94,14 +95,14 @@ do i=1,nele
   else
     ifir=(et(i)-netnuc-1)*ncel3
   endif
-  aux1=0.0e0
-  aux1dx=0.0e0
-  aux1dy=0.0e0
-  aux1dz=0.0e0
-  aux2=0.0e0
-  aux2dx=0.0e0
-  aux2dy=0.0e0
-  aux2dz=0.0e0
+  aux1=0.0
+  aux1dx=0.0
+  aux1dy=0.0
+  aux1dz=0.0
+  aux2=0.0
+  aux2dx=0.0
+  aux2dy=0.0
+  aux2dz=0.0
   xi=r(i)%x+tranx3-xbcen3
   yi=r(i)%y+trany3-ybcen3
   zi=r(i)%z+tranz3-zbcen3
@@ -183,6 +184,11 @@ erfpar = erfpar + erfparloc
 !$omp end critical
 
 erfparloc=0.0
+if (Qforces) then
+  do i=1,nele
+    call setcarzero(floc(i))
+  enddo
+endif
   
 !$omp do
 do k=1,l
