@@ -33,14 +33,15 @@ OBJECTSMOD = 	ioxmod.o charfuncmod.o listmod.o constamod.o strtoolsmod.o errormo
 OBJECTS = 	charman.o cputime.o error.o discretize.o splinepot.o cosmphi2.o sinmphi2.o getopt.o\
 		ioinit.o lualloc.o lunalloc.o m3.o dm3.o rpowerl2.o cross_product.o factori.o find.o\
 		angles.o bbonds.o count.o proxdiff.o dihedral.o countions.o repwalls.o fixcoor.o\
-		go_qq.o grand.o header.o mapsplot.o help.o insert.o membrane.o metropolis.o move.o\
-		native_structure.o rfpar.o feedseed.o chrden.o readphi.o rgauss.o staefield.o fatnam.o\
+		go_qq.o grand.o header.o mapsplot.o help.o insert.o metropolis.o move.o fatnam.o\
+		native_structure.o readrfpar.o feedseed.o chrden.o readphi.o rgauss.o staefield.o\
 		shell_simul.o simul1.o simul.o spline.o switch1.o switch2.o switch3.o wrttraj.o\
-		angbond.o angdih.o polynom.o readpsf.o readcharmm.o parinteract.o charmmenergy.o
+		angbond.o angdih.o polynom.o readpsf.o readcharmm.o charmmenergy.o
 OBJSER = 	dynamics0nuc.o dynamics0.o dynamics1.o dynamics2.o dynamics3.o energy.o staticf1.o\
-		vdwgd1trln.o vdwgd1spln.o rfparion.o nucenergy.o
+		vdwgd1trln.o vdwgd1spln.o rfparion.o nucenergy.o parinteract.o membrane.o
 PARALLEL =	dynamics0nuc-omp.o dynamics0-omp.o dynamics1-omp.o dynamics2-omp.o dynamics3-omp.o\
-		energy-omp.o staticf1-omp.o vdwgd1trln-omp.o vdwgd1spln-omp.o rfparion-omp.o nucenergy-omp.o
+		energy-omp.o staticf1-omp.o vdwgd1trln-omp.o vdwgd1spln-omp.o rfparion-omp.o\
+		nucenergy-omp.o parinteract-omp.o membrane-omp.o
 ORANDOM =	random.o
 ORANDOMI =	random-i.o
 

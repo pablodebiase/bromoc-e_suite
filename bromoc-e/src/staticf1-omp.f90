@@ -29,28 +29,32 @@ use listmod
 use gsbpmod
 !local variables
 implicit none
-integer ncyz,i,ix,iy,iz,n1,n2,n3,in3,itype
+integer ncyz,ii,i,ix,iy,iz,n1,n2,n3,in3
 real  rxnfx,rxnfy,rxnfz,estaticfloc
 real  chi,xi,yi,zi,ai,bi,ci,fi
 real  aisign,bisign,cisign,prefac
-logical*1 ok
+integer li(nele),pnele
 
 ncyz = ncly1*nclz1
 estaticf = 0.0
 
 !Main loop by atoms
-
-!$omp parallel private(i,itype,ok,chi,rxnfx,rxnfy,rxnfz,xi,yi,zi,ix,iy,iz,n1,n2,n3,ai,bi,ci,in3,aisign,bisign,cisign,fi,estaticfloc,prefac)
-estaticfloc=0.0
-!$omp do
+pnele=0
 do i = 1, nele
-  ok = .true.
-  itype=et(i)
-  chi=q(i)
-  if (chi.eq.0.0) cycle
+  if (q(i).eq.0.0) cycle
   if (.not.(r(i)%x.le.xbcen1+tranx1.and.r(i)%x.ge.xbcen1-tranx1.and. &
             r(i)%y.le.ybcen1+trany1.and.r(i)%y.ge.ybcen1-trany1.and. &
             r(i)%z.le.zbcen1+tranz1.and.r(i)%z.ge.zbcen1-tranz1)) cycle
+  pnele=pnele+1
+  li(pnele)=i
+enddo
+
+!$omp parallel private(ii,i,chi,rxnfx,rxnfy,rxnfz,xi,yi,zi,ix,iy,iz,n1,n2,n3,ai,bi,ci,in3,aisign,bisign,cisign,fi,estaticfloc,prefac)
+estaticfloc=0.0
+!$omp do
+do ii = 1, pnele
+  i=li(ii)
+  chi=q(i)
 !      initializations forces       
   rxnfx = 0.0
   rxnfy = 0.0

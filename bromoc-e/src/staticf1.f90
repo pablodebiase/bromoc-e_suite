@@ -29,11 +29,10 @@ use listmod
 use gsbpmod
 !local variables
 implicit none
-integer ncyz,i,ix,iy,iz,n1,n2,n3,in3,itype
+integer ncyz,i,ix,iy,iz,n1,n2,n3,in3
 real  rxnfx,rxnfy,rxnfz,one
 real  chi,xi,yi,zi,ai,bi,ci,fi
 real  aisign,bisign,cisign,prefac
-logical*1 ok
 
 one=1.0
 ncyz = ncly1*nclz1
@@ -43,8 +42,6 @@ estaticf = 0.0
 
 
 do i = 1, nele
-  ok = .true.
-  itype=et(i)
   chi=q(i)
   if (chi.eq.0.0) cycle
   if (.not.(r(i)%x.le.xbcen1+tranx1.and.r(i)%x.ge.xbcen1-tranx1.and. &

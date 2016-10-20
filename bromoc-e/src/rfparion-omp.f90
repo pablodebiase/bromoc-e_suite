@@ -17,6 +17,154 @@
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 !==============================================================================
+subroutine rfparionj(parn,energy)
+!==============================================================================
+!
+!     2006
+!
+!     This subroutine calculates the self reaction field energy parameter
+!     srfej and the effective radius parameter reffj for ion j from the 
+!     grids gsrfen and greff.
+!
+!     Input:   xj, yj, zj (coordinates of ion j)
+!              jtype (ion type of ion j)
+!              nclx, ncly, nclz (number of grid points in x, y, and z 
+!                 direction)
+!              dcel (grid spacing)
+!              tranx, trany, tranz (half of the length covered by the
+!                 grid in x, y, and z direction, e.g. 
+!                 tranx=0.5*(nclx-1)*dcel)
+!              xbcen, ybcen, zbcen (position of grid center)
+!              gsrfen (grids with self reaction field energy parameters)
+!              greff (grids with effective radius parameters)
+!              reffac (factor for the effective radius parameters)
+!     Outpout: srfej (self reaction field energy parameter of ion j)
+!              reffj (effective radius parameter of ion j)
+!     Calls:   rfparion              
+!
+use constamod
+use listmod
+use grandmod
+use gsbpmod
+implicit none
+real srfe(nele)
+real reff(nele)
+integer ncyz,ncel3,i,j,k,ix,iy,iz,n1,n2,n3,in3,ifir,parn
+real gaux1,gaux2,xj,yj,zj
+real tau,dist2,aux1,aux2,reffij
+real energy,energyloc
+real xi,yi,zi,ai,bi,ci,fi
+real aisign,bisign,cisign
+integer li(nele),llu(nele),pnele,ll
+ncyz=ncly3*nclz3
+ncel3=nclx3*ncyz
+energy=0.0
+j=parl(parn)%sr+1
+if (q(j).eq.0.0) return
+xj=r(j)%x
+yj=r(j)%y
+zj=r(j)%z
+!     Main loop by atoms
+if (.not.(xj.le.xbcen3+tranx3.and.xj.ge.xbcen3-tranx3.and. &
+          yj.le.ybcen3+trany3.and.yj.ge.ybcen3-trany3.and. &
+          zj.le.zbcen3+tranz3.and.zj.ge.zbcen3-tranz3)) return
+srfe=0.0
+reff=0.0
+nele=0
+do i=1,nele
+  if (q(i).eq.0.0) cycle
+  if (.not.(r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
+            r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
+            r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3)) cycle
+  pnele=pnele+1
+  li(pnele)=i
+enddo
+
+!$omp parallel private(i,k,ifir,aux1,aux2,xi,yi,zi,ix,iy,iz,n1,ai,aisign,n2,bi,bisign,n3,ci,cisign,fi,in3,gaux1,gaux2)
+energyloc=0.0
+!$omp do
+do k=1,pnele
+  i=li(k)
+  xi=r(i)%x+tranx3-xbcen3
+  yi=r(i)%y+trany3-ybcen3
+  zi=r(i)%z+tranz3-zbcen3
+  if (Qrfpsin) then
+    ifir=0
+  else
+    ifir=(et(i)-netnuc-1)*ncel3
+  endif
+  aux1=0.0
+  aux2=0.0
+  ix=int(xi*idcel3)
+  iy=int(yi*idcel3)
+  iz=int(zi*idcel3)
+  if (ix.eq.nclx3-1) ix=nclx3-2
+  if (iy.eq.ncly3-1) iy=ncly3-2
+  if (iz.eq.nclz3-1) iz=nclz3-2
+  ! Calculate GB radius from 8 next neighbor grid point values    
+  do n1=ix,ix+1
+    ai=xi-n1*dcel3
+    aisign=sign(1.0,ai)
+    ai=1.0-abs(ai)*idcel3
+    do n2=iy,iy+1
+      bi=yi-n2*dcel3
+      bisign=sign(1.0,bi)
+      bi=1.0-abs(bi)*idcel3
+      do n3=iz,iz+1
+        ci=zi-n3*dcel3
+        cisign=sign(1.0,ci)
+        ci=1.0-abs(ci)*idcel3
+        fi=ai*bi*ci
+        in3=n1*ncyz+n2*nclz3+n3+1
+        gaux1=gsrfen(in3+ifir)
+        gaux2=sqrfac*greff(in3+ifir)
+        ! Local reaction field parameters     
+        aux1=aux1+fi*gaux1
+        aux2=aux2+fi*gaux2
+      enddo
+    enddo
+  enddo
+  srfe(i)=aux1
+  reff(i)=aux2
+enddo
+!$omp end do nowait
+
+!$omp single
+ll=0
+do k=1,pnele
+  i=li(k)
+  if (i.eq.j) cycle
+  if (srfe(i).eq.0.0) cycle
+  if (reff(i).eq.0.0) cycle
+  ll=ll+1
+  llu(ll)=i
+enddo
+!$omp end single
+!$omp end parallel
+
+if (srfe(j).eq.0.0) return
+! self reaction field energy minus Born energy
+tau=celec*q(j)
+energy = energy+0.5*tau*q(j)*srfe(j)**2
+if (reff(j).eq.0.0) return
+
+!$omp parallel private(i,k,reffij,energyloc)
+!$omp do
+do k=1,ll
+  i=llu(k)
+  dist2 = dist2car(r(i),r(j))
+  reffij = reff(j)*reff(i)
+  ! reaction field energy 
+  energyloc=energyloc+tau*q(i)*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)
+enddo
+!$omp end do 
+!$omp critical
+energy=energy+energyloc
+!$omp end critical
+!$omp end parallel
+end subroutine
+      
+!==============================================================================
 subroutine rfparion
 !(nele,x,y,z,type,nclx,ncly,nclz,dcel,tranx,trany,tranz,xbcen,ybcen,zbcen,gsrfen,greff,reffac,srfedx,srfedy,srfedz,srfe,reffdx,reffdy,reffdz,reff,qforces)
 !==============================================================================
@@ -56,7 +204,7 @@ use gsbpmod
 implicit none
 real srfedx(nele),srfedy(nele),srfedz(nele),srfe(nele)
 real reffdx(nele),reffdy(nele),reffdz(nele),reff(nele)
-integer ncyz,ncel3,i,j,k,l,ix,iy,iz,n1,n2,n3,in3,ifir
+integer ncyz,ncel3,ii,i,j,k,l,ix,iy,iz,n1,n2,n3,in3,ifir
 real aux1dx,aux1dy,aux1dz,gaux1
 real aux2dx,aux2dy,aux2dz,gaux2
 real aux,de,dist2,rfdn,rfcf,aux0,aux1,aux2,aux3,srfeij,reffij
@@ -65,6 +213,8 @@ real xi,yi,zi,ai,bi,ci,fi
 real aisign,bisign,cisign
 logical ok(nele)
 type(car) floc(nele)
+integer li(nele),pnele,ll
+type(pair) llu(nele*(nele-1)/2)
 
 ncyz=ncly3*nclz3
 ncel3=nclx3*ncyz
@@ -80,16 +230,33 @@ reffdx=0.0
 reffdy=0.0
 reffdz=0.0
 
-!     Main loop by atoms
-!$omp parallel private(i,j,k,ifir,aux,aux0,aux1,aux2,aux3,aux1dx,aux1dy,aux1dz,aux2dx,aux2dy,aux2dz,xi,yi,zi,ix,iy,iz,n1,ai,aisign,n2,bi,bisign,n3,ci,cisign,fi,in3,gaux1,gaux2,prefa1,prefa2,erfparloc,dist2,srfeij,reffij,rfdn,rfcf,de,floc)
-erfparloc=0.0
-!$omp do
+pnele=0
 do i=1,nele
   if (q(i).eq.0.0) cycle
   if (.not.(r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
       r(i)%y.le.ybcen3+trany3.and.r(i)%y.ge.ybcen3-trany3.and. &
       r(i)%z.le.zbcen3+tranz3.and.r(i)%z.ge.zbcen3-tranz3)) cycle
   ok(i)=.true.
+  pnele=pnele+1
+  li(pnele)=i
+enddo
+
+ll=0
+do k=1,l
+  i=lu(k)%a
+  if (.not.ok(i)) cycle
+  j=lu(k)%b
+  if (.not.ok(j)) cycle
+  ll=ll+1
+  llu(ll)=lu(k)
+enddo
+
+!     Main loop by atoms
+!$omp parallel private(ii,i,j,k,ifir,aux,aux0,aux1,aux2,aux3,aux1dx,aux1dy,aux1dz,aux2dx,aux2dy,aux2dz,xi,yi,zi,ix,iy,iz,n1,ai,aisign,n2,bi,bisign,n3,ci,cisign,fi,in3,gaux1,gaux2,prefa1,prefa2,erfparloc,dist2,srfeij,reffij,rfdn,rfcf,de,floc)
+erfparloc=0.0
+!$omp do
+do ii=1,pnele
+  i=li(ii)
   if (Qrfpsin) then
     ifir=0
   else
@@ -178,12 +345,8 @@ do i=1,nele
     f(i)%z = f(i)%z + de*srfedz(i)
   endif
 enddo
-!$omp end do
-!$omp critical
-erfpar = erfpar + erfparloc
-!$omp end critical
+!$omp end do nowait
 
-erfparloc=0.0
 if (Qforces) then
   do i=1,nele
     call setcarzero(floc(i))
@@ -191,11 +354,9 @@ if (Qforces) then
 endif
   
 !$omp do
-do k=1,l
-  i=lu(k)%a
-  if (.not.ok(i)) cycle
-  j=lu(k)%b
-  if (.not.ok(j)) cycle
+do k=1,ll
+  i=llu(k)%a
+  j=llu(k)%b
   dist2 = (r(j)%x-r(i)%x)**2+(r(j)%y-r(i)%y)**2+(r(j)%z-r(i)%z)**2
   srfeij = srfe(j)*srfe(i)
   reffij = reff(j)*reff(i)

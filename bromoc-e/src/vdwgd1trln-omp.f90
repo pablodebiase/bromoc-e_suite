@@ -31,12 +31,12 @@ use listmod
 use gsbpmod     
 !local variables
 implicit none
-integer ncyz,ncel3,i,ix,iy,iz,n1,n2,n3,in3,ifir
+integer ncyz,ncel3,ii,i,ix,iy,iz,n1,n2,n3,in3,ifir
 real  vdwfx,vdwfy,vdwfz,evdwgdloc
 real  xi,yi,zi,ai,bi,ci,fi
 real  aisign,bisign,cisign,prefac
 real  phisum,phis,esvdw
-logical*1 ok
+integer li(nele),pnele
 
 ncyz = ncly2*nclz2
 ncel3 = nclx2*ncyz
@@ -45,15 +45,20 @@ ifir = 0
 esvdw = svdw
 
 !Main loop by atoms
+pnele=0
+do i = 1, nele
+  if(.not.(r(i)%x.le.xbcen2+tranx2.and.r(i)%x.ge.xbcen2-tranx2.and. &
+           r(i)%y.le.ybcen2+trany2.and.r(i)%y.ge.ybcen2-trany2.and. &
+           r(i)%z.le.vzmax        .and.r(i)%z.ge.vzmin)) cycle
+  pnele=pnele+1
+  li(pnele)=i
+enddo
 
-!$omp parallel private(i,ok,xi,yi,zi,ifir,esvdw,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,n1,n2,n3,ai,bi,ci,aisign,bisign,cisign,fi,in3,phis,prefac,evdwgdloc)
+!$omp parallel private(ii,i,xi,yi,zi,ifir,esvdw,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,n1,n2,n3,ai,bi,ci,aisign,bisign,cisign,fi,in3,phis,prefac,evdwgdloc)
 evdwgdloc=0.0
 !$omp do
-do i = 1, nele
-  ok=r(i)%x.le.xbcen2+tranx2.and.r(i)%x.ge.xbcen2-tranx2.and. &
-     r(i)%y.le.ybcen2+trany2.and.r(i)%y.ge.ybcen2-trany2.and. &
-     r(i)%z.le.vzmax        .and.r(i)%z.ge.vzmin
-  if (.not.ok) cycle
+do ii = 1, pnele
+  i=li(ii)
   !ion cartesian coordinates in the local grid system                 
   xi = r(i)%x + tranx2-xbcen2
   yi = r(i)%y + trany2-ybcen2
@@ -77,7 +82,6 @@ do i = 1, nele
   if (iz.eq.nclz2-1) iz=nclz2-2
 
   !Atom charge distribution by 8 adjacent grid points
-
   phisum = 0.0
   do n1 = ix, ix+1
     ai = xi - n1*dcel2

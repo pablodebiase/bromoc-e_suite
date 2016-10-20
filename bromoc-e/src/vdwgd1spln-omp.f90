@@ -31,13 +31,13 @@ use listmod
 use gsbpmod
 !local variables
 implicit none
-integer ncyz,ncel3,i,ix,iy,iz,ifir
+integer ncyz,ncel3,i,ii,ix,iy,iz,ifir
 integer k,l,m,ipx,ipy,ipz
 real  vdwfx,vdwfy,vdwfz,esvdw
 real  xi,yi,zi,ai,bi,ci,fi,dai,dbi,dci,prefac
 real  xc,yc,zc,m3,dm3,evdwgdloc
 real  phisum,phivi,phivsv
-logical*1 ok
+integer li(nele),pnele
 
 ncyz = ncly2*nclz2
 ncel3 = nclx2*ncyz
@@ -45,15 +45,21 @@ evdwgd = 0.0
 ifir = 0
 esvdw = svdw
 
+pnele=0
+do i = 1, nele
+  if(.not.(r(i)%x.le.xbcen2+tranx2-dcel2.and.r(i)%x.ge.xbcen2-tranx2+dcel2.and. &
+     r(i)%y.le.ybcen2+trany2-dcel2.and.r(i)%y.ge.ybcen2-trany2+dcel2.and. &
+     r(i)%z.le.vzmax              .and.r(i)%z.ge.vzmin)) cycle
+  pnele=pnele+1
+  li(pnele)=i
+enddo
+
 !Main loop by atoms
-!$omp parallel private(i,ok,xi,yi,zi,ifir,esvdw,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,k,ipx,xc,ai,dai,l,ipy,yc,bi,dbi,m,ipz,zc,ci,dci,fi,phivi,phivsv,prefac,evdwgdloc)
+!$omp parallel private(ii,i,xi,yi,zi,ifir,esvdw,vdwfx,vdwfy,vdwfz,ix,iy,iz,phisum,k,ipx,xc,ai,dai,l,ipy,yc,bi,dbi,m,ipz,zc,ci,dci,fi,phivi,phivsv,prefac,evdwgdloc)
 evdwgdloc=0.0
 !$omp do
-do i = 1, nele
-  ok=r(i)%x.le.xbcen2+tranx2-dcel2.and.r(i)%x.ge.xbcen2-tranx2+dcel2.and. &
-     r(i)%y.le.ybcen2+trany2-dcel2.and.r(i)%y.ge.ybcen2-trany2+dcel2.and. &
-     r(i)%z.le.vzmax              .and.r(i)%z.ge.vzmin
-  if (.not.ok) cycle
+do ii = 1, pnele
+  i=li(ii)
 ! ion cartesian coordinates in the local grid system
   xi = r(i)%x + tranx2-xbcen2
   yi = r(i)%y + trany2-ybcen2

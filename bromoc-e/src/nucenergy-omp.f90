@@ -92,7 +92,7 @@ do i = 1, nbond
     floc(isite2)%z = floc(isite2)%z - f1(3)
   endif
 enddo   
-!$omp enddo
+!$omp end do nowait
 !  The bending energy is calculated 
 !  by means of a Taylor expansion around natural bond
 !  angle. This contribution contains harmonic interactions. 
@@ -130,7 +130,7 @@ do i = 1, nangle
     floc(isite3)%z = floc(isite3)%z + f2(3)
   endif
 enddo
-!$omp end do 
+!$omp end do nowait 
  ! The torsional energy is calculated 
  ! using Fourier series for natural torsional angle. 
 !$omp do 
@@ -185,7 +185,7 @@ do i = 1, ndihe
     floc(isite4)%z = floc(isite4)%z + f4(3)
   endif
 enddo  
-!$omp end do
+!$omp end do nowait
 
 !Non-bonded interactions
 !-----------------------
@@ -213,7 +213,7 @@ do i = 1, nstack
     floc(isite2)%z = floc(isite2)%z + f1(3)
   endif  
 enddo
-!$omp end do
+!$omp end do nowait
 
 ! Hydrogen bonding
 !$omp do
@@ -243,7 +243,7 @@ do i = 1, nbp
     floc(isite2)%z = floc(isite2)%z + f1(3)   
   endif                
 enddo
-!$omp end do
+!$omp end do nowait
 ! Excluded volume
 !$omp do
 do i = 1, nex
@@ -270,7 +270,7 @@ do i = 1, nex
     endif
   endif
 enddo 
-!$omp end do
+!$omp end do nowait
 ! Coulomb interaction
 !$omp do
 do i = 1, nqq
@@ -315,7 +315,7 @@ do i = 1, nqq
     endif
   endif
 enddo 
-!$omp end do
+!$omp end do nowait
 !     Solvent-induced contribution
 if (Qsolv) then
   !$omp do
