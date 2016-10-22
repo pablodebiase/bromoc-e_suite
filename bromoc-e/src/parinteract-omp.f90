@@ -444,10 +444,12 @@ integer parn
 real energy
 integer parm,itype,jtype
 integer nen,srn,nem,srm
-integer i,j,is
+integer i,j,k,l,is
 real dist, dist2, dist6, idist, idist2
-real pener,qiqj
+real pener,qiqj,enonbondiloc
 logical*1 Qchr
+type(pair) la((nele-parl(parn)%ne)*parl(parn)%ne)
+
 !real emembi,erfpari,estaticfi,evdwgdi,enonbondi
 energy = 0.0
 
@@ -486,49 +488,66 @@ endif ! Qphiv
 ! Ignore all internal energies of every particle
 ! Compute energy between all particles and the test particle (parn)
 if (Qnonbond) then
+  ! Create List to divide jobs in threads
+  l=0
   srn = parl(parn)%sr
   nen = parl(parn)%ne
-  enonbondi=0.0
   do parm=1,npar
     if (parm.ne.parn) then
       nem = parl(parm)%ne
       srm = parl(parm)%sr
       do i = srm+1,srm+nem
-        itype = et(i)
         do j=srn+1,srn+nen
-          jtype=et(j) 
-          is=etpidx(itype,jtype)
-          dist2 = dist2car(r(i),r(j))
-          if (Qefpot(is)) then
-            call gety(is,dist2,pener,dist)
-            enonbondi=enonbondi+pener
-          else
-            idist2 = 1.0/dist2
-            qiqj=q(i)*q(j)
-            Qchr=qiqj.ne.0.0
-            if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
-            !electrostatic interaction    
-            if (Qchr) enonbondi=enonbondi+cecd*qiqj*idist
-            !Lennard-Jones 6-12 potential 
-            if (Qlj(is)) then
-              dist6 = (sgp2(is)*idist2)**3
-              enonbondi=enonbondi+epp4(is)*dist6*(dist6-1.0)
-            endif
-            !water-mediated short-range ion-ion interaction  
-            if (Qsrpmfi(is)) then
-              if (dist2.le.rth) then
-                dist=1.0/idist
-                pener = c0(is)*exp((c1(is)-dist)*c2(is))*cos(c3(is)*pi*(c1(is)-dist))+c4(is)*(c1(is)*idist)**6
-                if (dist.ge.srpx) pener=pener*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
-                ! Eq. 9 W. Im,and B. Roux J. Mol. Biol. 322:851-869 (2002)
-                enonbondi=enonbondi+pener
-              endif
-            endif
-          endif
-        enddo 
+          l=l+1
+          la(l)%a=i
+          la(l)%b=j
+        enddo
       enddo
     endif
   enddo
+  enonbondi=0.0
+  !$omp parallel private (k,i,j,itype,jtype,is,dist2,pener,enonbondiloc,idist2,qiqj,Qchr,idist,dist6,dist)
+  enonbondiloc=0.0
+  !$omp do
+  do k=1,l
+    i=la(k)%a
+    j=la(k)%b
+    itype=et(i)
+    jtype=et(j)
+    is=etpidx(itype,jtype)
+    dist2 = dist2car(r(i),r(j))
+    if (Qefpot(is)) then
+      call gety(is,dist2,pener,dist)
+      enonbondiloc=enonbondiloc+pener
+    else
+      idist2 = 1.0/dist2
+      qiqj=q(i)*q(j)
+      Qchr=qiqj.ne.0.0
+      if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
+      !electrostatic interaction    
+      if (Qchr) enonbondiloc=enonbondiloc+cecd*qiqj*idist
+      !Lennard-Jones 6-12 potential 
+      if (Qlj(is)) then
+        dist6 = (sgp2(is)*idist2)**3
+        enonbondiloc=enonbondiloc+epp4(is)*dist6*(dist6-1.0)
+      endif
+      !water-mediated short-range ion-ion interaction  
+      if (Qsrpmfi(is)) then
+        if (dist2.le.rth) then
+          dist=1.0/idist
+          pener = c0(is)*exp((c1(is)-dist)*c2(is))*cos(c3(is)*pi*(c1(is)-dist))+c4(is)*(c1(is)*idist)**6
+          if (dist.ge.srpx) pener=pener*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
+          ! Eq. 9 W. Im,and B. Roux J. Mol. Biol. 322:851-869 (2002)
+          enonbondiloc=enonbondiloc+pener
+        endif
+      endif
+    endif
+  enddo
+  !$omp end do
+  !$omp critical
+  enonbondi=enonbondi+enonbondiloc
+  !$omp end critical
+  !$omp end parallel 
   energy=energy+enonbondi
 endif !Qnonbond
 end subroutine
