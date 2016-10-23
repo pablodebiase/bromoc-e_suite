@@ -81,7 +81,6 @@ do i=1,nele
 enddo
 
 !$omp parallel private(i,k,ifir,aux1,aux2,xi,yi,zi,ix,iy,iz,n1,ai,aisign,n2,bi,bisign,n3,ci,cisign,fi,in3,gaux1,gaux2)
-energyloc=0.0
 !$omp do
 do k=1,pnele
   i=li(k)
@@ -148,13 +147,14 @@ tau=celec*q(j)
 energy = energy+0.5*tau*q(j)*srfe(j)**2
 if (reff(j).eq.0.0) return
 
-!$omp parallel private(i,k,reffij,energyloc)
+!$omp parallel private(i,k,dist2,reffij,energyloc)
+energyloc=0.0
 !$omp do
 do k=1,ll
   i=llu(k)
   dist2 = dist2car(r(i),r(j))
   reffij = reff(j)*reff(i)
-  ! reaction field energy 
+  ! reaction field energy
   energyloc=energyloc+tau*q(i)*reffij*srfe(j)*srfe(i)/sqrt(reffij**2+dist2)
 enddo
 !$omp end do 
