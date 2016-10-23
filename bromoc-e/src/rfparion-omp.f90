@@ -70,7 +70,7 @@ if (.not.(xj.le.xbcen3+tranx3.and.xj.ge.xbcen3-tranx3.and. &
           zj.le.zbcen3+tranz3.and.zj.ge.zbcen3-tranz3)) return
 srfe=0.0
 reff=0.0
-nele=0
+pnele=0
 do i=1,nele
   if (q(i).eq.0.0) cycle
   if (.not.(r(i)%x.le.xbcen3+tranx3.and.r(i)%x.ge.xbcen3-tranx3.and. &
