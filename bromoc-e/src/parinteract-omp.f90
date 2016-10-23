@@ -164,7 +164,7 @@ do k=1,pnele
   ! self reaction field energy minus Born energy
   if (i.gt.sr.and.i.le.ne+sr) energyloc=energyloc+0.5*celec*(q(i)*srfe(i))**2
 enddo
-!$omp end do nowait
+!$omp end do
 !$omp single
 ll=0
 do k=1,l
