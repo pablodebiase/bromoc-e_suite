@@ -345,7 +345,7 @@ do ii=1,pnele
     f(i)%z = f(i)%z + de*srfedz(i)
   endif
 enddo
-!$omp end do nowait
+!$omp end do
 
 if (Qforces) then
   do i=1,nele
