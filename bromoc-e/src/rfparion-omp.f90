@@ -126,7 +126,7 @@ do k=1,pnele
   srfe(i)=aux1
   reff(i)=aux2
 enddo
-!$omp end do nowait
+!$omp end do
 
 !$omp single
 ll=0
