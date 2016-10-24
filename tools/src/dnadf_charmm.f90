@@ -16,7 +16,7 @@
 
 module comun
 implicit none
-integer nn,nion,tion,ionpairs
+integer nn,nion,tion,ionpairs,nion2,tion2
 integer,allocatable :: resls(:),atlsf(:),atlsi(:)
 real*8,allocatable :: rc(:,:),w(:),g(:,:,:),gt(:),gtt(:),gr(:,:,:),gtr(:),gttr(:),gions(:,:),gdna(:,:)
 integer,allocatable ::  iatom(:),ires(:),ions(:),csoli(:),csolf(:)
@@ -36,7 +36,13 @@ integer agfpn,snd,afrn,frgn
 integer, allocatable :: agfpl(:),grf(:,:),frg(:),frgg(:),pmd(:),pmdi(:,:),pmdf(:,:),sndi(:),sndf(:),afr(:),afri(:,:),afrf(:,:)
 character*4,allocatable :: rtc(:)
 logical dcdopen,depablo
-logical termon,charmm,nosolvh
+logical termon,charmm,nosolvh,ssinpar
+type :: rttyp
+  integer :: elem,incl
+  character*4,allocatable,dimension(:) :: label
+end type rttyp
+type(rttyp),allocatable,dimension(:) :: rrr
+
 contains
   function inintv(vec)
   implicit none
@@ -197,6 +203,17 @@ else
   read(line,*) delr
 endif
 
+call readarg('Solvent as a single particle (y/n) [y]?',narg,arg,line)
+if (line(1:1).eq.'n'.or.line(1:1).eq.'N') then
+  ssinpar=.false.
+else
+  ssinpar=.true.
+endif
+
+call readarg('Ignore H in Solvent for computation of centroid or in multiatomic solvent (y/n) [y] ? ',narg,arg,line)
+nosolvh=.true.
+if (line(1:1).eq.'n'.or.line(1:1).eq.'N') nosolvh=.false.
+
 ! Build residue list
 call reslist()
 
@@ -236,17 +253,24 @@ enddo
 call readarg('Residue Type Number sequence for ions/solvent: ',narg,arg,line)
 call findparm(line,256,num,ll,ul)
 nion=num
-tion=0
 allocate (ions(nion))
 do i=1,nion
   read(line(ll(i):ul(i)),*) ions(i)
   tion=tion+rtf(ions(i))-rti(ions(i))+1
 enddo
-allocate (csol(1:3,tion),csoli(nion),csolf(nion))
-
-call readarg('Ignore H in Solvent for computation of centroid (y/n) [y] ? ',narg,arg,line)
-nosolvh=.true.
-if (line(1:1).eq.'n'.or.line(1:1).eq.'N') nosolvh=.false.
+if (.not.ssinpar) then 
+  tion2=tion
+  nion2=nion
+else
+  nion2=0
+  tion2=0
+  do i=1,num
+    read(line(ll(i):ul(i)),*) j
+    nion2=nion2+rrr(j)%elem
+    tion2=tion2+rrr(j)%incl*(rtf(j)-rti(j)+1)
+  enddo
+endif
+allocate (csol(1:3,tion2),csoli(nion2),csolf(nion2))
 
 if (dordf.or.docdf) then 
   write(*,'(//A)') 'Relevant for normalization: '
@@ -688,16 +712,16 @@ implicit none
 integer i,j,a,b,c,d,h
 
 h=0
-do i=1,nion
+do i=1,nion2
   a=csoli(i)
   b=csolf(i)
   h=h+1
   call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,a:b),b-a+1,.true.,h)
 enddo
-do i=1,nion
+do i=1,nion2
   a=csoli(i)
   b=csolf(i)
-  do j=i+1,nion
+  do j=i+1,nion2
     c=csoli(j) ! first atom of the selected ion type
     d=csolf(j) ! last atom of the selected ion type
     h=h+1
@@ -771,7 +795,7 @@ do i=1,9,2
   ionc(j)=ionst(i:i+1)
 enddo
 nnn=gfn*agfpn
-do i=1,nion
+do i=1,nion2
   nnn=nnn+atlsf(rtf(ions(i)))-atlsi(rti(ions(i)))+1
 enddo
 write(unitn,*) nnn
@@ -781,7 +805,7 @@ do i=1,gfn
     write(unitn,*) nam(grf(i,j)),cent(1:3,i,j)
   enddo
 enddo
-do i=1,nion
+do i=1,nion2
   do j=atlsi(rti(ions(i))),atlsf(rtf(ions(i)))
     write(unitn,*) ionc(i),rt(1:3,j)
   enddo
@@ -797,7 +821,7 @@ real*8,allocatable :: rwo(:,:)
 character,allocatable :: rtwo(:)*5,atwo(:)*5
 integer,allocatable :: conwo(:,:)
 
-nawo=gfn*agfpn+csolf(nion)
+nawo=gfn*agfpn+csolf(nion2)
 allocate (rnwo(nawo),rwo(3,nawo),rtwo(nawo),atwo(nawo),conwo(nawo,2))
 
 k=0
@@ -811,7 +835,7 @@ do i=1,gfn
   enddo
 enddo
 b=gfn
-do j=1,nion
+do j=1,nion2
   b=b+1
   c=csoli(j) ! first atom of the selected ion type
   d=csolf(j) ! last atom of the selected ion type
@@ -1348,13 +1372,13 @@ end subroutine
 subroutine restyplist()
 use comun
 implicit none 
-integer i,j,k
+integer i,j,k,l
 integer :: din(nn)
 character*4 :: rtct(nn)
-integer,allocatable :: mat(:)
+character*4,allocatable :: typtmp(:)
+integer :: mat(nn*2)
 logical sta
 
-allocate (mat(nn**2))
 rtn=1
 din(rtn)=1
 rtct(rtn)=res(1)
@@ -1379,7 +1403,7 @@ do i=2,nn
    endif
 enddo
 
-allocate (rtf(rtn),rtc(rtn),rti(rtn)) 
+allocate (rtf(rtn),rtc(rtn),rti(rtn),rrr(rtn)) 
 rtc(1:rtn)=rtct(1:rtn)
 k=0
 do i=1,rtn
@@ -1390,7 +1414,32 @@ do i=1,rtn
   enddo
   rtf(i)=k   
 enddo
-deallocate (mat)
+! Count elements in each residue type
+do i=1,rtn
+  rrr(i)%elem=0
+  rrr(i)%incl=0
+  l=rti(i)
+  allocate(typtmp(atlsf(l)-atlsi(l)+1))
+  do j=atlsi(l),atlsf(l)
+    if (.not.(nosolvh.and.typ(j)(1:1).eq.'H')) then
+      rrr(i)%incl=rrr(i)%incl+1
+      sta=.true.
+      do k=1,rrr(i)%elem
+        if (typ(j).eq.typtmp(k)) then
+          sta=.false.
+          exit
+        endif
+      enddo
+      if (sta) then
+        rrr(i)%elem=rrr(i)%elem+1
+        typtmp(rrr(i)%elem)=typ(j)
+      endif
+    endif
+  enddo
+  allocate(rrr(i)%label(rrr(i)%elem))
+  rrr(i)%label(1:rrr(i)%elem)=typtmp(1:rrr(i)%elem)
+  deallocate(typtmp)
+enddo 
 end subroutine
 
 subroutine fraglist()
@@ -1625,35 +1674,61 @@ end subroutine
 subroutine centsolvent()
 use comun
 implicit none
-integer i,j,k,c,d,nx,l
+integer i,j,k,c,d,nx,l,m,n,o
 real*8,allocatable :: xxx(:,:)
 
-k=0
-do i=1,nion ! each solvent/ion type
-  csoli(i)=k+1
-  do j=rti(ions(i)),rtf(ions(i)) ! all ions/solvent for each ion/solvent type
-    k=k+1
-    c=atlsi(j)
-    d=atlsf(j)
-    if (nosolvh) then
-      nx=d-c+1
-      allocate (xxx(1:3,1:nx))
-      nx=0
-      do l=c,d
-        if (typ(l)(1:1).ne.'H') then
-          nx=nx+1
-          xxx(1:3,nx:nx)=rt(1:3,l:l)
-        endif
-      enddo
-      call centroid(xxx(1:3,1:nx),nx,csol(1:3,k))
-      if (allocated(xxx)) deallocate (xxx)
-    else
-      call centroid(rt(1:3,c:d),d-c+1,csol(1:3,k))
-    endif
+if (ssinpar) then
+  k=0
+  do i=1,nion ! each solvent/ion type
+    csoli(i)=k+1
+    do j=rti(ions(i)),rtf(ions(i)) ! all ions/solvent for each ion/solvent type
+      k=k+1
+      c=atlsi(j)
+      d=atlsf(j)
+      if (nosolvh) then
+        nx=d-c+1
+        allocate (xxx(1:3,1:nx))
+        nx=0
+        do l=c,d
+          if (typ(l)(1:1).ne.'H') then
+            nx=nx+1
+            xxx(1:3,nx:nx)=rt(1:3,l:l)
+          endif
+        enddo
+        call centroid(xxx(1:3,1:nx),nx,csol(1:3,k))
+        if (allocated(xxx)) deallocate (xxx)
+      else
+        call centroid(rt(1:3,c:d),d-c+1,csol(1:3,k))
+      endif
+    enddo
+    csolf(i)=k
   enddo
-  csolf(i)=k
-enddo
-
+else
+  k=0
+  m=0
+  do i=1,nion ! each solvent/ion type
+    do l=1,rrr(i)%elem
+      m=m+1
+      csoli(m)=k+1
+      do j=rti(ions(i)),rtf(ions(i)) ! all ions/solvent for each ion/solvent type
+        c=atlsi(j)
+        d=atlsf(j)
+        do n=c,d
+          do o=1,rrr(i)%elem
+            if(typ(n).eq.rrr(i)%label(o)) then
+              k=k+1
+              csol(1:3,k)=rt(1:3,n)
+              exit
+            endif
+          enddo
+        enddo
+      enddo
+      csolf(m)=k
+    enddo
+  enddo
+  ! tion2=k
+  ! nion2=m
+endif
 end subroutine
 
 ! Uses ARVO Algorithm
