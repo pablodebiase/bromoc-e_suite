@@ -20,7 +20,7 @@ integer nn,nion,tion,ionpairs,nion2,tion2
 integer,allocatable :: resls(:),atlsf(:),atlsi(:)
 real*8,allocatable :: rc(:,:),w(:),g(:,:,:),gt(:),gtt(:),gr(:,:,:),gtr(:),gttr(:),gions(:,:),gdna(:,:)
 integer,allocatable ::  iatom(:),ires(:),ions(:),csoli(:),csolf(:),csoln(:)
-character*4,allocatable :: typ(:),res(:),segid(:),resid(:)
+character*4,allocatable :: typ(:),res(:),segid(:),resid(:),csollabel(:)
 real*8,allocatable :: rt(:,:)
 real*8,allocatable :: cent(:,:,:),csol(:,:),boxvol(:),bvall(:,:,:)
 real*8 :: bv(3,3),invbv(3,3)
@@ -203,12 +203,14 @@ else
   read(line,*) delr
 endif
 
-call readarg('Solvent as a single particle (y/n) [y]?',narg,arg,line)
+call readarg('Solvent as a single particle (y/n) [y] ? ',narg,arg,line)
 if (line(1:1).eq.'n'.or.line(1:1).eq.'N') then
   ssinpar=.false.
 else
   ssinpar=.true.
 endif
+
+if (.not.ssinpar.and.(dordf.or.docdf)) stop 'Not implemented yet for DNA-IONS'
 
 call readarg('Ignore H in Solvent for computation of centroid or in multiatomic solvent (y/n) [y] ? ',narg,arg,line)
 nosolvh=.true.
@@ -258,19 +260,19 @@ do i=1,nion
   read(line(ll(i):ul(i)),*) ions(i)
   tion=tion+rtf(ions(i))-rti(ions(i))+1
 enddo
-if (.not.ssinpar) then 
+if (ssinpar) then 
   tion2=tion
   nion2=nion
 else
   nion2=0
   tion2=0
-  do i=1,num
-    read(line(ll(i):ul(i)),*) j
+  do i=1,nion
+    j=ions(i)
     nion2=nion2+rrr(j)%elem
     tion2=tion2+rrr(j)%incl*(rtf(j)-rti(j)+1)
   enddo
 endif
-allocate (csol(1:3,tion2),csoln(tion2),csoli(nion2),csolf(nion2))
+allocate (csol(1:3,tion2),csoln(tion2),csoli(nion2),csolf(nion2),csollabel(nion2))
 
 if (dordf.or.docdf) then 
   write(*,'(//A)') 'Relevant for normalization: '
@@ -361,10 +363,10 @@ else
   maxbin = int(aa/delr)
 endif
 
-if (docdf) allocate (g(maxbin,nion,gfn+frgn),gt(maxbin),gtt(maxbin))
-if (dordf) allocate (gr(maxbin,nion,gfn+frgn),gtr(maxbin),gttr(maxbin)) ! allocate g of r 
+if (docdf) allocate (g(maxbin,nion2,gfn+frgn),gt(maxbin),gtt(maxbin))
+if (dordf) allocate (gr(maxbin,nion2,gfn+frgn),gtr(maxbin),gttr(maxbin)) ! allocate g of r 
 if (dordfion) then
-  ionpairs=nion*(nion+1)/2
+  ionpairs=nion2*(nion2+1)/2
   allocate (gions(maxbin,ionpairs))
 endif
 
@@ -467,9 +469,9 @@ integer i,j,k
 character filename*256
 
 ! Print out result cdf between dna and ions
-do j=1,nion ! for each ion type
+do j=1,nion2 ! for each ion type
   do k=1,gfn ! for each fragment
-    write(filename,'(5A)') 'cdf-',trim(gfl(k)),'-',trim(rtc(ions(j))),'.dat'
+    write(filename,'(5A)') 'cdf-',trim(gfl(k)),'-',trim(csollabel(j)),'.dat'
     open(unit=1,file=filename)
     do i=1,maxbin
       write(1,*) dble(i)*delr,'   ',g(i,j,k)
@@ -477,7 +479,7 @@ do j=1,nion ! for each ion type
     close(1)
   enddo
   do k=1,frgn ! for each fragment
-    write(filename,'(5A)') 'cdf-',trim(fl(frg(k))),'-',trim(rtc(ions(j))),'.dat'
+    write(filename,'(5A)') 'cdf-',trim(fl(frg(k))),'-',trim(csollabel(j)),'.dat'
     open(unit=1,file=filename)
     do i=1,maxbin
       write(1,*) dble(i)*delr,'   ',g(i,j,k+gfn)
@@ -494,9 +496,9 @@ integer i,j,k
 character filename*256
 
 ! Print out result rdf between dna and ions
-do j=1,nion ! for each ion type
+do j=1,nion2 ! for each ion type
   do k=1,gfn ! for each fragment
-    write(filename,'(5A)') 'rdf-',trim(gfl(k)),'-',trim(rtc(ions(j))),'.dat'
+    write(filename,'(5A)') 'rdf-',trim(gfl(k)),'-',trim(csollabel(j)),'.dat'
     open(unit=2,file=filename)
     do i=1,maxbin
       write(2,*) dble(i)*delr,'   ',gr(i,j,k)
@@ -504,7 +506,7 @@ do j=1,nion ! for each ion type
     close(2)
   enddo
   do k=1,frgn ! for each fragment
-    write(filename,'(5A)') 'rdf-',trim(fl(frg(k))),'-',trim(rtc(ions(j))),'.dat'
+    write(filename,'(5A)') 'rdf-',trim(fl(frg(k))),'-',trim(csollabel(j)),'.dat'
     open(unit=2,file=filename)
     do i=1,maxbin
       write(2,*) dble(i)*delr,'   ',gr(i,j,k+gfn)
@@ -522,19 +524,19 @@ character filename*256
 
 !print rdf for ions
 h=0
-do i=1,nion
+do i=1,nion2
   h=h+1
-  write(filename,'(5A)') 'rdf-',trim(rtc(ions(i))),'-',trim(rtc(ions(i))),'.dat'
+  write(filename,'(5A)') 'rdf-',trim(csollabel(i)),'-',trim(csollabel(i)),'.dat'
   open(unit=1,file=filename)
   do j=1,maxbin
     write(1,*) dble(j)*delr,'   ',gions(j,h)
   enddo
   close(1)
 enddo
-do i=1,nion
-  do j=i+1,nion
+do i=1,nion2
+  do j=i+1,nion2
     h=h+1
-    write(filename,'(5A)') 'rdf-',trim(rtc(ions(i))),'-',trim(rtc(ions(j))),'.dat'
+    write(filename,'(5A)') 'rdf-',trim(csollabel(i)),'-',trim(csollabel(j)),'.dat'
     open(unit=1,file=filename)
     do k=1,maxbin
       write(1,*) dble(k)*delr,'   ',gions(k,h)
@@ -581,7 +583,7 @@ real*8,parameter :: pi = 3.14159265358979323846264d0
 rp=0d0
 do i=1,maxbin
   rg=dble(i)*delr
-  g(i,1:nion,1:gfn+frgn) = g(i,1:nion,1:gfn+frgn)/(rg**2 - rp**2)/dble(nsc)/pi
+  g(i,1:nion2,1:gfn+frgn) = g(i,1:nion2,1:gfn+frgn)/(rg**2 - rp**2)/dble(nsc)/pi
   rp=rg
 enddo
 end subroutine
@@ -597,7 +599,7 @@ real*8,parameter :: pi133 = 4d0/3d0*3.14159265358979323846264d0
 rp=0d0
 do i=1,maxbin
   rg=dble(i)*delr
-  gr(i,1:nion,1:gfn+frgn) = gr(i,1:nion,1:gfn+frgn)/(rg**3 - rp**3)/dble(nsc)/pi133
+  gr(i,1:nion2,1:gfn+frgn) = gr(i,1:nion2,1:gfn+frgn)/(rg**3 - rp**3)/dble(nsc)/pi133
   rp=rg
 enddo
 end subroutine
@@ -623,7 +625,7 @@ use comun
 implicit none
 integer h,j,k,l,fra,a,b,c,d,nobp,nob
 
-do j=1,nion ! for each ion type
+do j=1,nion2 ! for each ion type
   h=0
   do k=1,gfn
     h=h+1
@@ -671,7 +673,7 @@ use comun
 implicit none
 integer h,j,k,l,a,b,c,d,nobp,nob
 
-do j=1,nion ! for each ion type
+do j=1,nion2 ! for each ion type
   h=0
   do k=1,gfn
     h=h+1
@@ -1381,7 +1383,7 @@ integer i,j,k,l
 integer :: din(nn)
 character*4 :: rtct(nn)
 character*4,allocatable :: typtmp(:)
-integer :: mat(nn*2)
+integer :: mat(nn**2)
 logical sta
 
 rtn=1
@@ -1679,13 +1681,14 @@ end subroutine
 subroutine centsolvent()
 use comun
 implicit none
-integer i,j,k,c,d,nx,l,m,n,o
+integer ii,i,j,k,c,d,nx,l,m,n
 real*8,allocatable :: xxx(:,:)
 
 if (ssinpar) then
   k=0
   do i=1,nion ! each solvent/ion type
     csoli(i)=k+1
+    csollabel(i)=rtc(ions(j))
     do j=rti(ions(i)),rtf(ions(i)) ! all ions/solvent for each ion/solvent type
       k=k+1
       c=atlsi(j)
@@ -1712,22 +1715,21 @@ if (ssinpar) then
 else
   k=0
   m=0
-  do i=1,nion ! each solvent/ion type
+  do ii=1,nion ! each solvent/ion type
+    i=ions(ii)
     do l=1,rrr(i)%elem
       m=m+1
       csoli(m)=k+1
-      do j=rti(ions(i)),rtf(ions(i)) ! all ions/solvent for each ion/solvent type
+      csollabel(m)=rrr(i)%label(l)
+      do j=rti(i),rtf(i) ! all ions/solvent for each ion/solvent type
         c=atlsi(j)
         d=atlsf(j)
         do n=c,d
-          do o=1,rrr(i)%elem
-            if(typ(n).eq.rrr(i)%label(o)) then
-              k=k+1
-              csol(1:3,k)=rt(1:3,n)
-              csoln(k)=n
-              exit
-            endif
-          enddo
+          if(typ(n).eq.rrr(i)%label(l)) then
+            k=k+1
+            csol(1:3,k)=rt(1:3,n)
+            csoln(k)=n
+          endif
         enddo
       enddo
       csolf(m)=k

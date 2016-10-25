@@ -5,7 +5,7 @@ if [ "$2" == "intel" ]; then
 elif [ "$2" == "debug" ]; then
   gfortran -O0 -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all -o $pname $3 $pname.f90
 else
-  gfortran -O3 -march=native -ffree-line-length-none -o $pname $3 $pname.f90
+  gfortran -Ofast -march=native -ffree-line-length-none -o $pname $3 $pname.f90
 fi
 rm -f *.mod
 mv  $pname ../bin
