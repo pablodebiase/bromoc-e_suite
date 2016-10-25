@@ -19,7 +19,7 @@ implicit none
 integer nn,nion,tion,ionpairs,nion2,tion2
 integer,allocatable :: resls(:),atlsf(:),atlsi(:)
 real*8,allocatable :: rc(:,:),w(:),g(:,:,:),gt(:),gtt(:),gr(:,:,:),gtr(:),gttr(:),gions(:,:),gdna(:,:)
-integer,allocatable ::  iatom(:),ires(:),ions(:),csoli(:),csolf(:)
+integer,allocatable ::  iatom(:),ires(:),ions(:),csoli(:),csolf(:),csoln(:)
 character*4,allocatable :: typ(:),res(:),segid(:),resid(:)
 real*8,allocatable :: rt(:,:)
 real*8,allocatable :: cent(:,:,:),csol(:,:),boxvol(:),bvall(:,:,:)
@@ -270,7 +270,7 @@ else
     tion2=tion2+rrr(j)%incl*(rtf(j)-rti(j)+1)
   enddo
 endif
-allocate (csol(1:3,tion2),csoli(nion2),csolf(nion2))
+allocate (csol(1:3,tion2),csoln(tion2),csoli(nion2),csolf(nion2))
 
 if (dordf.or.docdf) then 
   write(*,'(//A)') 'Relevant for normalization: '
@@ -716,7 +716,7 @@ do i=1,nion2
   a=csoli(i)
   b=csolf(i)
   h=h+1
-  call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,a:b),b-a+1,.true.,h)
+  call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,a:b),b-a+1,.true.,h,a,b,a,b)
 enddo
 do i=1,nion2
   a=csoli(i)
@@ -725,22 +725,24 @@ do i=1,nion2
     c=csoli(j) ! first atom of the selected ion type
     d=csolf(j) ! last atom of the selected ion type
     h=h+1
-    call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,c:d),d-c+1,.false.,h)
+    call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,c:d),d-c+1,.false.,h,a,b,c,d)
   enddo
 enddo
 end subroutine
 
-subroutine rdfions(x1,n1,x2,n2,same,h)
+subroutine rdfions(x1,n1,x2,n2,same,h,a,b,c,d)
 use comun
 implicit none
 logical same
 integer n1,n2,i,j,bin,n,h
+integer a,b,c,d
 real*8 x1(3,n1),x2(3,n2)
 real*8 cons
 real*8 dv(3),rcd,vvv,ggion(maxbin)
 
 ggion=0d0
 
+! skip cases when ires(csoln(a:b).ne.ires(csoln(c:d)) is the same for both particles
 if (same) then
   do i=1,n1-1
     do j=i+1,n1
@@ -1685,6 +1687,7 @@ if (ssinpar) then
       k=k+1
       c=atlsi(j)
       d=atlsf(j)
+      csoln(k)=c
       if (nosolvh) then
         nx=d-c+1
         allocate (xxx(1:3,1:nx))
@@ -1718,6 +1721,7 @@ else
             if(typ(n).eq.rrr(i)%label(o)) then
               k=k+1
               csol(1:3,k)=rt(1:3,n)
+              csoln(k)=n
               exit
             endif
           enddo
