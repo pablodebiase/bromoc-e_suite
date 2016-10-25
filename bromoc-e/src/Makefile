@@ -17,7 +17,8 @@ FCOMPL = gfortran
 #FFLAGC = -C -fno-align-commons
 #Double Precision Real
 FFLAGC = -fno-align-commons -fdefault-real-8 
-OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
+#OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
+OPT    = -Ofast -march=native -ffree-line-length-none
 
 # Implicit rules
 # Patterns
@@ -54,7 +55,8 @@ cleano:
 	@rm -f core *.o *.mod
 
 # GFORTRAN Single Precision
-single: OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
+#single: OPT    = -O3 -march=native -ffast-math -fno-protect-parens -ffree-line-length-none
+single: OPT    = -Ofast -march=native -ffree-line-length-none
 single: FFLAGC = -fno-align-commons
 single: $(OBJ)
 
