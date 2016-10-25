@@ -716,7 +716,7 @@ do i=1,nion2
   a=csoli(i)
   b=csolf(i)
   h=h+1
-  call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,a:b),b-a+1,.true.,h,a,b,a,b)
+  call rdfions(.true.,h,a,b,a,b)
 enddo
 do i=1,nion2
   a=csoli(i)
@@ -725,51 +725,54 @@ do i=1,nion2
     c=csoli(j) ! first atom of the selected ion type
     d=csolf(j) ! last atom of the selected ion type
     h=h+1
-    call rdfions(csol(1:3,a:b),b-a+1,csol(1:3,c:d),d-c+1,.false.,h,a,b,c,d)
+    call rdfions(.false.,h,a,b,c,d)
   enddo
 enddo
 end subroutine
 
-subroutine rdfions(x1,n1,x2,n2,same,h,a,b,c,d)
+subroutine rdfions(same,h,a,b,c,d)
 use comun
 implicit none
 logical same
-integer n1,n2,i,j,bin,n,h
+integer i,j,bin,n,h
 integer a,b,c,d
-real*8 x1(3,n1),x2(3,n2)
 real*8 cons
 real*8 dv(3),rcd,vvv,ggion(maxbin)
 
 ggion=0d0
-
+n=0
 ! skip cases when ires(csoln(a:b).ne.ires(csoln(c:d)) is the same for both particles
 if (same) then
-  do i=1,n1-1
-    do j=i+1,n1
-      dv=x1(1:3,j)-x1(1:3,i)
-      call pbc(dv)
-      rcd =dsqrt(dot_product(dv,dv)) ! Computing the distance between the ion and center of the fragment
-      bin = int(rcd/delr) + 1 ! Define the position vector based on the distance
-      if(bin.le.maxbin) ggion(bin)=ggion(bin)+2d0 ! add odh in the position bin of the g(r)
+  do i=a,b-1
+    do j=i+1,b
+      if (ires(csoln(i)).ne.ires(csoln(j))) then
+        n=n+1
+        dv=csol(1:3,j)-csol(1:3,i)
+        call pbc(dv)
+        rcd =dsqrt(dot_product(dv,dv)) ! Computing the distance between the ion and center of the fragment
+        bin = int(rcd/delr) + 1 ! Define the position vector based on the distance
+        if(bin.le.maxbin) ggion(bin)=ggion(bin)+1d0 ! add odh in the position bin of the g(r)
+      endif
     enddo
   enddo
-  n=n1-1
 else
-  do i=1,n1
-    do j=1,n2
-      dv=x2(1:3,j)-x1(1:3,i)
-      call pbc(dv)
-      rcd =dsqrt(dot_product(dv,dv)) ! Computing the distance between the ion and center of the fragment
-      bin = int(rcd/delr) + 1 ! Define the position vector based on the distance
-      if(bin.le.maxbin) ggion(bin)=ggion(bin)+1d0 ! add odh in the position bin of the g(r)
+  do i=a,b
+    do j=c,d
+      if (ires(csoln(i)).ne.ires(csoln(j))) then
+        n=n+1
+        dv=csol(1:3,j)-csol(1:3,i)
+        call pbc(dv)
+        rcd =dsqrt(dot_product(dv,dv)) ! Computing the distance between the ion and center of the fragment
+        bin = int(rcd/delr) + 1 ! Define the position vector based on the distance
+        if(bin.le.maxbin) ggion(bin)=ggion(bin)+1d0 ! add odh in the position bin of the g(r)
+      endif
     enddo
   enddo
-  n=n2
 endif
 
 !cons depends on the box volume so it depends on each frame
 call volume(bv(1:3,1),bv(1:3,2),bv(1:3,3),vvv)
-cons=(vvv-dnavol)/(dble(n1)*dble(n))
+cons=(vvv-dnavol)/dble(n)
 gions(1:maxbin,h)=gions(1:maxbin,h)+ggion(1:maxbin)*cons
 end subroutine
 
