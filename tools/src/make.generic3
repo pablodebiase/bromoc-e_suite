@@ -5,7 +5,7 @@ if [ "$2" == "intel" ]; then
   ifort -openmp -ip -O3 -xHost -o $pname $3 libxdrf.o $pname.f90
 else
   gcc -c libxdrf.c 
-  gfortran -fopenmp -Ofast -march=native -ffree-line-length-none -o $pname $3 libxdrf.o $pname.f90
+  gfortran -fopenmp -O3 -ffast-math -fno-protect-parens -march=native -ffree-line-length-none -o $pname $3 libxdrf.o $pname.f90
 fi
 rm -f *.mod libxdrf.o
 mv  $pname ../bin
