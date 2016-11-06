@@ -2,7 +2,7 @@
 pname=$(basename $(echo $1 | sed 's/\(.*\)\..*/\1/' ))
 if [ "$2" == "intel" ]; then
   icc -lrbc -c libxdrf.c  
-  ifort -openmp -ip -O3 -xHost -o $pname $3 libxdrf.o $pname.f90
+  ifort -qopenmp -ip -O3 -xHost -o $pname $3 libxdrf.o $pname.f90
 else
   gcc -c libxdrf.c 
   gfortran -fopenmp -O3 -ffast-math -fno-protect-parens -march=native -ffree-line-length-none -o $pname $3 libxdrf.o $pname.f90
