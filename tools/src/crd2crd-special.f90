@@ -30,13 +30,13 @@ program crd2crd
 use dcd
 implicit none
 ! crd and crd
-real*8 :: w,e
+real*8 :: w
 integer*4 ::  nop,ires
-character*4 :: typ,res,segid,resid,iatom
+character*4 :: typ,res,segid,resid
 real*8 :: rt(3),rs(3)
 
 integer*4 i,j,k,narg,arg,kode,ll(256),ul(256),num,cr,ca,pr
-character inpfile*256,outfile*256,ln*256,a6*6,dcdfile*256
+character inpfile*256,outfile*256,ln*256,dcdfile*256
 logical once,readexton,writeexton
 
 call header()
@@ -160,14 +160,14 @@ subroutine header()
 implicit none
 character prname*64,prver*32,prdesc*256,startdate*32,lastdate*32,author*64
 
-prname='PDB2CRD'
+prname='CRD2CRD-special'
 prver='version 1.0'
 prdesc='Converts CRD CHARMM/NAMD to NAMD/CHARMM CRD'
 author='Pablo M. De Biase (pablodebiase@gmail.com)'
 startdate='24 Oct 2012'
 lastdate='24 Oct 2012'
 
-write(*,'(/A)') trim(prname)//trim(prver)
+write(*,'(/A)') trim(prname)//' '//trim(prver)
 write(*,'(A)') trim(prdesc)
 write(*,'(A)') '      created by '//trim(author)//' since '//trim(startdate)//' and last modified '//trim(lastdate)
 write(*,'(/A/)') 'NOTE: Press ENTER to accept the default option in between []'
@@ -197,7 +197,6 @@ integer*4 kode,un
 integer*4 nfile,npriv,nsavc,nstep,nfree
 character dcdfile*256
 
-title=''
 open(unit=un,file=dcdfile,form='unformatted')
 dcdopen=.true.
 read(un) hdr,icntrl
@@ -233,7 +232,6 @@ subroutine readdcdbody(un)
 use dcd
 implicit none
 integer*4 kode,i,un
-logical*1 dcde
 if (charmm) then
   xtlabc6=0d0
 else
