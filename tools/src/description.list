@@ -16,6 +16,7 @@ COMPESSCOOR        Computes Essential Coordinates for DNA to use in BROMOC input
 CONC-BROMOC        Reads BROMOC trajectory and computes concentration for each particle type (useful to get efpot)
 CONC-CALC          Re-calculates concentration from CONC-BROMOC output files (useful to get efpot)
 CONVRECHEAD        Converts 8-bytes record header of unformatted fortran files to 4-bytes (useful to correct maps obtained in a different arquitecture machine) 
+CRD2CRD            Converts CRD CHARMM/NAMD Atomistic DNA to NAMD/CHARMM CRD Coarse DNA
 CRD2CRD-SPECIAL    Converts CRD CHARMM/NAMD Atomistic DNA to NAMD/CHARMM CRD Coarse DNA (useful for COMPESSCOOR)
 CRD2PDB            Converts CRD (CHARMM Coordinates) to PDB
 DCDEXTRACT         Manipulates DCD and DCDE
