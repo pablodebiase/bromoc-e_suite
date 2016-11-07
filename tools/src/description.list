@@ -17,6 +17,7 @@ CONC-BROMOC        Reads BROMOC trajectory and computes concentration for each p
 CONC-CALC          Re-calculates concentration from CONC-BROMOC output files (useful to get efpot)
 CONVRECHEAD        Converts 8-bytes record header of unformatted fortran files to 4-bytes (useful to correct maps obtained in a different arquitecture machine) 
 CRD2CRD-SPECIAL    Converts CRD CHARMM/NAMD Atomistic DNA to NAMD/CHARMM CRD Coarse DNA (useful for COMPESSCOOR)
+CRD2PDB            Converts CRD (CHARMM Coordinates) to PDB
 DCDEXTRACT         Manipulates DCD and DCDE
 DENSITY-BROMOC     Computes the ions density along z-axis using BROMOC trajectory
 DIGIT              Given two numbers, if the first number is divisible by the second prints 1 otherwise 0. Works for real numbers. 
