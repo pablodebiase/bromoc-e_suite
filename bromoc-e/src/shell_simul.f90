@@ -50,7 +50,7 @@ real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol,pkind,diffu,totdiffu,pardiffu
+real resol,pkind,diffu,totdiffu,pardiffu,inflim
 integer ikind
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
@@ -2105,7 +2105,9 @@ do while (.not. logfinal)
           is=etpidx(i,j)
           if (Qefpot(is)) then
             write(wunit,*) etypl(i)%nam,' - ',etypl(j)%nam
-            do k=int((efp(is)%xl-1.0)*ires*10.0),int((sqrt(efp(is)%xu2)+10.0)*ires*10.0)
+            inflim=efp(is)%xl-1.0
+            if (inflim < 0.0) inflim=res*0.1
+            do k=int(inflim*ires*10.0),int((sqrt(efp(is)%xu2)+10.0)*ires*10.0)
               x1=k*res*0.1
               call getyd(is,x1**2,x2,x3,r1)
               write(wunit,*) x1,x2,x3
