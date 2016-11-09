@@ -164,7 +164,7 @@ A sample input file is included (imc-macro.in)
 The potential is given in the reduce units (i.e., potential/kT )
 
 4) xyz (optional)
-This is an .xyz file that constains fixed particles. Uses the standard xyz format
+This is an .xyz file that contains fixed particles. Uses the standard xyz format
 Example:
 3 (Number of fixed + free particles)
 2 (Number of Fixed Particles) 
