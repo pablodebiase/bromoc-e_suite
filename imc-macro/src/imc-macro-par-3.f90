@@ -893,8 +893,8 @@ felc=sqrt(felc/npot)
 felr=sqrt(felr/npot)
 write(*,'(2(A,F16.10))') 'Standard Deviation from reference: RDF => ',felr,'  S => ',felc
 
-!   Analysis
-!   Zeros elimination
+! Analysis
+! Zeros elimination
 ic=0
 do i=1,npot
   nr=ina(i)
@@ -1917,16 +1917,37 @@ rot(2,3)=y*z*ocosp-x*sinp
 rot(3,1)=x*z*ocosp-y*sinp
 rot(3,2)=y*z*ocosp+x*sinp
 rot(3,3)=cosp+z*z*ocosp
-if (center) then
-  ! Get Centroid
-  call getcentroid(parn,cent)
-  ! Remove Centroid
-  call subcar2par(parn,cent)
-endif
+! Get Centroid
+x=0.0
+y=0.0
+z=0.0
+do i=1,ne
+  x=x+r(i)%x
+  y=y+r(i)%y
+  z=z+r(i)%z
+enddo
+x=x/ne
+y=y/ne
+z=z/ne
+! Remove Centroid
+do i=1,ne
+  r(i)%x=r(i)%x-x
+  r(i)%y=r(i)%y-y
+  r(i)%z=r(i)%z-z
+enddo
 ! Rotate Particle
-call rotatepar(parn,rot)
-if (center) then
-  ! Restore Centroid
-  call addcar2par(parn,cent)
-endif
+do i=1,ne
+   x=rot(1,1)*r(i)%x+rot(1,2)*r(i)%y+rot(1,3)*r(i)%z
+   y=rot(2,1)*r(i)%x+rot(2,2)*r(i)%y+rot(2,3)*r(i)%z
+   z=rot(3,1)*r(i)%x+rot(3,2)*r(i)%y+rot(3,3)*r(i)%z
+   rc%x=x
+   rc%y=y
+   rc%z=z
+enddo
+! Restore Centroid
+do i=1,ne
+  r(i)%x=r(i)%x+x
+  r(i)%y=r(i)%y+y
+  r(i)%z=r(i)%z+z
+enddo
 end subroutine
