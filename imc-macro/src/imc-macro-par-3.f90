@@ -124,7 +124,7 @@ real*8 de,fce,fcee,ener,eners,efur,esf
 integer nop,npot,na,istep,nmks0,nkv,nav,npair,iprint
 integer,allocatable :: cors(:),corp(:,:)
 integer,allocatable :: kx(:),ky(:),kz(:)
-integer,allocatable :: sr(:), ne(:)
+integer,allocatable :: sr(:), ne(:), pe(:)
 integer             :: npar
 real,allocatable :: rkv(:),ssin(:),scos(:),ddsin(:),ddcos(:)
 character label*22,datestamp*10
@@ -153,16 +153,16 @@ real,allocatable :: cross(:,:),diff(:)
 real,allocatable :: cor(:),shelv(:)
 real,allocatable :: ssinl(:),scosl(:),ddsinl(:),ddcosl(:)
 integer,allocatable :: iucmp(:),ipvt(:)
-character,allocatable :: nms(:)*4,fpn(:)*4
-character :: nmst1*4,nmst2*4,keyword*5,wrd4
+character,allocatable :: nms(:)*4,fpn(:)*4,gpn(:)*4
+character :: nmst1*4,nmst2*4,keyword*5
 integer*8 timer,wall
-integer kode,iseed,wxyzfq
+integer kode,iseed,wxyzfq,wpdbfq
 integer rstfq,ityp,jtyp
 character*256 fdmp
 logical*1 ldmp,lrst
-character*256 filrdf,filpot,fout,wxyznm,rxyznm,respotnm,rpdbnm
+character*256 filrdf,filpot,fout,wxyznm,rxyznm,respotnm,rpdbnm,wpdbnm
 character*1024 line
-logical*1 loopon,wxyz,rpdb,rxyz,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec
+logical*1 loopon,wxyz,rpdb,rxyz,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb
 real,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer ntyp,nmks,iout,iav,i,ic,info,ip,ipt,it,it1,it2,ityp,j,jc,jt,jtyp,nmksf,nr,nur,nap,ntpp
 real regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
@@ -177,10 +177,10 @@ real,allocatable :: xl(:),yl(:),zl(:)
 integer*1 restyp
 !  input
 !namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,wxyz,rxyz,wxyznm,rxyznm,wxyzfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,wxyz,rpdb,rxyz,wxyznm,rpdbnm,rxyznm,wxyzfq,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,wxyz,rpdb,rxyz,wxyznm,rpdbnm,rxyznm,wxyzfq,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq
 
-label    = 'IMC-MACRO-PAR-2 v3.91'
-datestamp = '15-02-2016'
+label    = 'IMC-MACRO-PAR-3 v4.00'
+datestamp = '13-11-2016'
 dr       = 5e0                  ! max particle displacement at each step
 iav      = 0                    ! how often < SaSb > evaluated (if iav=0 => iav=1.5*number of particles)
 regp     = 1e0                  ! regularization parameter - between 0 and 1
@@ -208,6 +208,9 @@ b3x      = 0e0                  ! lattice vector 3 z
 b3y      = 0e0                  ! lattice vector 3 y
 b3z      = 0e0                  ! lattice vector 3 z
 iout     = 1000                 ! frequency parameter for writing output
+wpdb     = .false.              ! If .true. writes an pdb file
+wpdbnm   = 'imc-macro-out.pdb'  ! .pdb output filename 
+wpdbfq   = 1000                 ! frequency of saving for xyz 
 wxyz     = .false.              ! If .true. writes an xyz file
 wxyznm   = 'imc-macro-out.xyz'  ! .xyz output filename 
 wxyzfq   = 1000                 ! frequency of saving for xyz 
@@ -290,7 +293,7 @@ inop=1e0/nop
 
 !allocate nop dependent arrays
 allocate (itype(nop)) ! INT
-allocate (x(nop),y(nop),z(nop),q(nop),fpn(nop)) ! COORD
+allocate (x(nop),y(nop),z(nop),q(nop),fpn(nop),pe(nop)) ! COORD
 allocate (xl(nop),yl(nop),zl(nop)) ! COORD
 
 npot=na*ntyp*(ntyp+1)/2
@@ -310,20 +313,22 @@ nfree=0
 cent=0e0
 nfxfr=0
 if (rpdb) then
-  open(unit=77,file=rxyznm,status='old')
-  nop=0
+  open(unit=77,file=rpdbnm,status='old')
+  nfxfr=0
   ilast=0
   read(77,'(A)') line
   do while (trim(adjustl(line)).ne.'END')
     if (line(1:4).eq.'ATOM') then 
-      nop=nop+1
-      read (line,'(6x,5x,x,A5,5x,I4,4x,3F8.3)') wrd4,ityp
+      nfxfr=nfxfr+1
+      read (line,'(6x,5x,x,5x,5x,I4)') ityp
       if (ilast.ne.ityp) npar=npar+1
       ilast=ityp 
     endif
     read(77,'(A)') line
   enddo
-  allocate(x(nop),y(nop),z(nop),sr(npar),ne(npar))
+  ! Assert
+  if (nfxfr.ne.nop) stop 'PDB is incomplete and number of particles do not match between pdb and rdf file.'
+  allocate(sr(npar),ne(npar))
   rewind(77)
   i=0
   j=0
@@ -334,13 +339,14 @@ if (rpdb) then
     if (line(1:4).eq.'ATOM') then
       i=i+1
       k=k+1
-      read (line,'(6x,5x,x,A5,5x,I4,4x,3F8.3)') wrd4,ityp,x(i),y(i),z(i)
+      read (line,'(6x,5x,x,A5,A5,I4,4x,3F8.3)') fpn(i),gpn(i),ityp,x(i),y(i),z(i)
       if (ilast.ne.ityp) then
         if (j.gt.0) ne(j)=k
         j=j+1
         sr(j)=i-1
         k=1
       endif
+      pe(i)=j
       ilast=ityp
     endif
     read(77,'(A)') line
@@ -651,6 +657,19 @@ if (wxyz) then
   endif
 endif
 
+if (wpdb) then
+  open(unit=99,file=wxyznm,status='unknown')
+  if (mod(istep,wpdbfq).eq.0) then
+    write(line,*) 'REMARK ',nop,' Elem ',npar,' Par ','  Step #',nmksf,' LatVec: ',bv
+    write(99,'(A)') trim(line)
+    do i=1,nop
+      write (99,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
+    enddo
+    write(99, '(A)') 'END'
+  endif
+endif
+
+
 !$omp parallel private(tid) 
 tid = omp_get_thread_num()
 if (tid .eq. 0) then
@@ -838,7 +857,7 @@ cors=cors+corsl
 corp=corp+corpl
 virs=virs+virsl
 vire=vire+virel
-! writes xyzq
+! writes xyz
 if (wxyz) then
 !  if (mod(istep,wxyzfq).eq.0) then
   write(88,*) nop
@@ -853,9 +872,21 @@ if (wxyz) then
   enddo
 !  endif
 endif
+! writes pdb
+if (wpdb) then
+!  if (mod(istep,wxyzfq).eq.0) then
+  write(line,*) 'REMARK ',nop,' Elem ',npar,' Par ','  Step #',isetp,' LatVec: ',bv,' Proc# ',tid
+  write(99,'(A)') trim(line)
+  do i=1,nop
+    write (99,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
+  enddo
+  write(99, '(A)') 'END'
+!  endif
+endif
 !$omp end critical
 !$omp end parallel
 if (wxyz) close(88) 
+if (wpdb) close(99) 
 
 fnr=1e0/float(nav)
 
@@ -1921,14 +1952,15 @@ end subroutine
 
 ! Randomly rotates a particle
 ! only use nocenter true when particle is at the origin
-subroutine uranrot(parn,nocenter)
+subroutine uranrot(parn)
 use math
+use invmc
 implicit none
 real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real, parameter :: twopi=2.0*pi
 integer parn
 real phi, theta, psi, cosp, sinp, ocosp
-real x,y,z,rot(3,3)
+real rx,ry,rz,rot(3,3)
 type(car) :: cent
 logical,optional,intent(in) :: nocenter
 logical center
@@ -1940,29 +1972,29 @@ phi=twopi*argauss()           ! from 0 to 2*pi
 psi=twopi*argauss()           ! from 0 to 2*pi
 ! Make Random Vector
 sinp=sin(theta)
-x=sinp*cos(phi)
-y=sinp*sin(phi)
-z=cos(theta)
+rx=sinp*cos(phi)
+ry=sinp*sin(phi)
+rz=cos(theta)
 ! Build Rotation Matrix
 cosp=cos(psi)
 ocosp=1.0-cosp
 sinp=sin(psi)
 ! First Row
-rot(1,1)=cosp+x*x*ocosp
-rot(1,2)=x*y*ocosp-z*sinp
-rot(1,3)=x*z*ocosp+y*sinp
+rot(1,1)=cosp+rx*rx*ocosp
+rot(1,2)=rx*ry*ocosp-rz*sinp
+rot(1,3)=rx*rz*ocosp+ry*sinp
 ! Second Row
-rot(2,1)=x*y*ocosp+z*sinp
-rot(2,2)=cosp+y*y*ocosp
-rot(2,3)=y*z*ocosp-x*sinp
+rot(2,1)=rx*ry*ocosp+rz*sinp
+rot(2,2)=cosp+ry*ry*ocosp
+rot(2,3)=ry*rz*ocosp-rx*sinp
 ! Third Row
-rot(3,1)=x*z*ocosp-y*sinp
-rot(3,2)=y*z*ocosp+x*sinp
-rot(3,3)=cosp+z*z*ocosp
+rot(3,1)=rx*rz*ocosp-ry*sinp
+rot(3,2)=ry*rz*ocosp+rx*sinp
+rot(3,3)=cosp+rz*rz*ocosp
 ! Get Centroid
-x=0.0
-y=0.0
-z=0.0
+rx=0.0
+ry=0.0
+rz=0.0
 do i=1,ne
   x=x+r(i)%x
   y=y+r(i)%y
@@ -1973,15 +2005,15 @@ y=y/ne
 z=z/ne
 ! Remove Centroid
 do i=1,ne
-  r(i)%x=r(i)%x-x
-  r(i)%y=r(i)%y-y
-  r(i)%z=r(i)%z-z
+  x(i)=x(i)-x
+  y(i)=y(i)-y
+  z(i)=z(i)-z
 enddo
 ! Rotate Particle
 do i=1,ne
-   x=rot(1,1)*r(i)%x+rot(1,2)*r(i)%y+rot(1,3)*r(i)%z
-   y=rot(2,1)*r(i)%x+rot(2,2)*r(i)%y+rot(2,3)*r(i)%z
-   z=rot(3,1)*r(i)%x+rot(3,2)*r(i)%y+rot(3,3)*r(i)%z
+   rx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
+   ry=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
+   rz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
    rc%x=x
    rc%y=y
    rc%z=z
