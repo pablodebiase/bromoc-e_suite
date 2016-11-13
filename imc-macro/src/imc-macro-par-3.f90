@@ -124,6 +124,8 @@ real*8 de,fce,fcee,ener,eners,efur,esf
 integer nop,npot,na,istep,nmks0,nkv,nav,npair,iprint
 integer,allocatable :: cors(:),corp(:,:)
 integer,allocatable :: kx(:),ky(:),kz(:)
+integer,allocatable :: sr(:), ne(:)
+integer             :: npar
 real,allocatable :: rkv(:),ssin(:),scos(:),ddsin(:),ddcos(:)
 character label*22,datestamp*10
 logical*1 lelec,lpot,box
@@ -152,15 +154,15 @@ real,allocatable :: cor(:),shelv(:)
 real,allocatable :: ssinl(:),scosl(:),ddsinl(:),ddcosl(:)
 integer,allocatable :: iucmp(:),ipvt(:)
 character,allocatable :: nms(:)*4,fpn(:)*4
-character :: nmst1*4,nmst2*4,keyword*5
+character :: nmst1*4,nmst2*4,keyword*5,wrd4
 integer*8 timer,wall
 integer kode,iseed,wxyzfq
-integer rstfq
+integer rstfq,ityp,jtyp
 character*256 fdmp
 logical*1 ldmp,lrst
-character*256 filrdf,filpot,fout,wxyznm,rxyznm,respotnm
+character*256 filrdf,filpot,fout,wxyznm,rxyznm,respotnm,rpdbnm
 character*1024 line
-logical*1 loopon,wxyz,rxyz,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec
+logical*1 loopon,wxyz,rpdb,rxyz,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec
 real,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer ntyp,nmks,iout,iav,i,ic,info,ip,ipt,it,it1,it2,ityp,j,jc,jt,jtyp,nmksf,nr,nur,nap,ntpp
 real regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
@@ -175,7 +177,7 @@ real,allocatable :: xl(:),yl(:),zl(:)
 integer*1 restyp
 !  input
 !namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,wxyz,rxyz,wxyznm,rxyznm,wxyzfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,wxyz,rxyz,wxyznm,rxyznm,wxyzfq,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,wxyz,rpdb,rxyz,wxyznm,rpdbnm,rxyznm,wxyzfq,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf
 
 label    = 'IMC-MACRO-PAR-2 v3.91'
 datestamp = '15-02-2016'
@@ -209,6 +211,8 @@ iout     = 1000                 ! frequency parameter for writing output
 wxyz     = .false.              ! If .true. writes an xyz file
 wxyznm   = 'imc-macro-out.xyz'  ! .xyz output filename 
 wxyzfq   = 1000                 ! frequency of saving for xyz 
+rpdb     = .false.              ! If .true. reads from an pdb file fixed and free atomic and molecular particles coordinates and names
+rpdbnm   = 'imc-macro-in.pdb'   ! .pdb output filename
 rxyz     = .false.              ! If .true. reads from an xyz file fixed and free particle coordinates and names
 rxyznm   = 'imc-macro-in.xyz'   ! .xyz output filename
 ldmppot  = .false.              ! dump first guess of potential or the readed potential and stop
@@ -305,7 +309,45 @@ nspecfr=0
 nfree=0
 cent=0e0
 nfxfr=0
-if (rxyz) then ! if fixed particle system activated
+if (rpdb) then
+  open(unit=77,file=rxyznm,status='old')
+  nop=0
+  ilast=0
+  read(77,'(A)') line
+  do while (trim(adjustl(line)).ne.'END')
+    if (line(1:4).eq.'ATOM') then 
+      nop=nop+1
+      read (line,'(6x,5x,x,A5,5x,I4,4x,3F8.3)') wrd4,ityp
+      if (ilast.ne.ityp) npar=npar+1
+      ilast=ityp 
+    endif
+    read(77,'(A)') line
+  enddo
+  allocate(x(nop),y(nop),z(nop),sr(npar),ne(npar))
+  rewind(77)
+  i=0
+  j=0
+  k=0
+  ilast=0
+  read(77,'(A)') line
+  do while (trim(adjustl(line)).ne.'END')
+    if (line(1:4).eq.'ATOM') then
+      i=i+1
+      k=k+1
+      read (line,'(6x,5x,x,A5,5x,I4,4x,3F8.3)') wrd4,ityp,x(i),y(i),z(i)
+      if (ilast.ne.ityp) then
+        if (j.gt.0) ne(j)=k
+        j=j+1
+        sr(j)=i-1
+        k=1
+      endif
+      ilast=ityp
+    endif
+    read(77,'(A)') line
+  enddo
+  if (j.gt.0) ne(j)=k
+  close(77)
+else if (rxyz) then ! if fixed particle system activated
 ! Reads xyz
   open(unit=77,file=rxyznm,status='old')
   read(77,*) nfxfr
