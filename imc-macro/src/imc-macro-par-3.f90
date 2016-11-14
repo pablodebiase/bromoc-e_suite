@@ -353,8 +353,29 @@ if (rpdb) then
   enddo
   if (j.gt.0) ne(j)=k
   close(77)
+  ! compute number of fixed and free species
+  do i=1,nfxfr
+    do j=1,ntyp
+      if (nms(j).eq.fpn(i)) then
+        itype(i)=j
+        q(i)=ch(j)
+        if (i.le.nfix) then
+          nspecf(j)=nspecf(j)+1
+        else
+          nspecfr(j)=nspecfr(j)+1
+        endif
+        exit
+      endif
+    enddo
+  enddo
+  ! Check for species inconsistencies
+  do i=1,ntyp
+    if (nspecf(i).gt.nspec(i)) stop 'There are more fixed than total particles of one kind'
+    if (nspecf(i)+nspecfr(i).gt.nspec(i)) stop 'There are more fixed+free than total particles of one kind'
+  enddo
+
 else if (rxyz) then ! if fixed particle system activated
-! Reads xyz
+  ! Reads xyz
   open(unit=77,file=rxyznm,status='old')
   read(77,*) nfxfr
   read(77,*) nfix
@@ -1958,15 +1979,12 @@ use invmc
 implicit none
 real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real, parameter :: twopi=2.0*pi
-integer parn
-real phi, theta, psi, cosp, sinp, ocosp
-real rx,ry,rz,rot(3,3)
-type(car) :: cent
-logical,optional,intent(in) :: nocenter
-logical center
-center = .true.
-if (present(nocenter)) center = .not.nocenter
-if (parl(parn)%ne .lt. 2) return
+integer parn,sri,nei
+real phi, theta, psi, cosp, sinp, ocosp, ine
+real rx,ry,rz,tx,ty,tz,ine,rot(3,3)
+nei=ne(parn)
+if (nei.lt.2) return
+sri=sr(parn)
 theta=acos(2.0*argauss()-1.0) ! from 0 to pi
 phi=twopi*argauss()           ! from 0 to 2*pi
 psi=twopi*argauss()           ! from 0 to 2*pi
@@ -1995,33 +2013,34 @@ rot(3,3)=cosp+rz*rz*ocosp
 rx=0.0
 ry=0.0
 rz=0.0
-do i=1,ne
-  x=x+r(i)%x
-  y=y+r(i)%y
-  z=z+r(i)%z
+do i=sri+1,nei
+  rx=rx+x(i)
+  ry=ry+y(i)
+  rz=rz+z(i)
 enddo
-x=x/ne
-y=y/ne
-z=z/ne
+ine=1.0/nei
+rx=rx*ine
+ry=ry*ine
+rz=rz*ine
 ! Remove Centroid
-do i=1,ne
-  x(i)=x(i)-x
-  y(i)=y(i)-y
-  z(i)=z(i)-z
+do i=1+sri,nei
+  x(i)=x(i)-rx
+  y(i)=y(i)-ry
+  z(i)=z(i)-rz
 enddo
 ! Rotate Particle
-do i=1,ne
-   rx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
-   ry=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
-   rz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
-   rc%x=x
-   rc%y=y
-   rc%z=z
+do i=1+sri,nei
+   tx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
+   ty=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
+   tz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
+   x(i)=tx
+   y(i)=ty
+   z(i)=tz
 enddo
 ! Restore Centroid
-do i=1,ne
-  r(i)%x=r(i)%x+x
-  r(i)%y=r(i)%y+y
-  r(i)%z=r(i)%z+z
+do i=1+sri,nei
+  x(i)=x(i)+rx
+  y(i)=y(i)+ry
+  z(i)=z(i)+rz
 enddo
 end subroutine
