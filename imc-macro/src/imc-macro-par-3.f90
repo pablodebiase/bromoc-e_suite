@@ -112,7 +112,7 @@ implicit none
 real,parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real,parameter :: pi2=2.0*pi 
 real,parameter :: i3=1e0/3e0 
-integer nkvm,nfix,nfree,nfxfr
+integer nkvm,nfix,nfree,nfxfr,nparfix
 real,allocatable :: x(:),y(:),z(:),q(:)
 real,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
 integer,allocatable :: itype(:),ipot(:,:,:),ina(:),ityp1(:),ityp2(:),nspec(:),nspecf(:),nspecfr(:)
@@ -156,13 +156,13 @@ integer,allocatable :: iucmp(:),ipvt(:)
 character,allocatable :: nms(:)*4,fpn(:)*4,gpn(:)*4
 character :: nmst1*4,nmst2*4,keyword*5
 integer*8 timer,wall
-integer kode,iseed,wxyzfq,wpdbfq
+integer kode,iseed,wpdbfq
 integer rstfq,ityp,jtyp
 character*256 fdmp
 logical*1 ldmp,lrst
-character*256 filrdf,filpot,fout,wxyznm,rxyznm,respotnm,rpdbnm,wpdbnm
+character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
-logical*1 loopon,wxyz,rpdb,rxyz,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb
+logical*1 loopon,rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb
 real,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer ntyp,nmks,iout,iav,i,ic,info,ip,ipt,it,it1,it2,ityp,j,jc,jt,jtyp,nmksf,nr,nur,nap,ntpp
 real regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
@@ -170,14 +170,13 @@ real rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
 real vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,pos(3)
 real*8 deloc,efurl,del,enerl,enersl
 integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl
-real virel,virsl,virl
+real virel,virsl,virl,rfx
 integer,allocatable :: corsl(:),corpl(:,:)
 real,allocatable :: xl(:),yl(:),zl(:)
 
 integer*1 restyp
 !  input
-!namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,wxyz,rxyz,wxyznm,rxyznm,wxyzfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,wxyz,rpdb,rxyz,wxyznm,rpdbnm,rxyznm,wxyzfq,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq
 
 label    = 'IMC-MACRO-PAR-3 v4.00'
 datestamp = '13-11-2016'
@@ -211,13 +210,8 @@ iout     = 1000                 ! frequency parameter for writing output
 wpdb     = .false.              ! If .true. writes an pdb file
 wpdbnm   = 'imc-macro-out.pdb'  ! .pdb output filename 
 wpdbfq   = 1000                 ! frequency of saving for xyz 
-wxyz     = .false.              ! If .true. writes an xyz file
-wxyznm   = 'imc-macro-out.xyz'  ! .xyz output filename 
-wxyzfq   = 1000                 ! frequency of saving for xyz 
 rpdb     = .false.              ! If .true. reads from an pdb file fixed and free atomic and molecular particles coordinates and names
 rpdbnm   = 'imc-macro-in.pdb'   ! .pdb output filename
-rxyz     = .false.              ! If .true. reads from an xyz file fixed and free particle coordinates and names
-rxyznm   = 'imc-macro-in.xyz'   ! .xyz output filename
 ldmppot  = .false.              ! dump first guess of potential or the readed potential and stop
 lzm      = .true.               ! if .true., if S is zero move potential to limit
 zeromove = 1.0                  ! if S is zero move potential up to this limit
@@ -334,15 +328,18 @@ if (rpdb) then
   j=0
   k=0
   ilast=0
+  nfix=0
   read(77,'(A)') line
   do while (trim(adjustl(line)).ne.'END')
     if (line(1:4).eq.'ATOM') then
       i=i+1
       k=k+1
-      read (line,'(6x,5x,x,A5,A5,I4,4x,3F8.3)') fpn(i),gpn(i),ityp,x(i),y(i),z(i)
+      read (line,'(6x,5x,x,A5,A5,I4,4x,3F8.3,F6.2)') fpn(i),gpn(i),ityp,x(i),y(i),z(i),rfx
+      if (rfx.eq.1.0) nfix=nfix+1
       if (ilast.ne.ityp) then
         if (j.gt.0) ne(j)=k
         j=j+1
+        if (rfx.eq.1.0) nparfix=j
         sr(j)=i-1
         k=1
       endif
@@ -352,45 +349,6 @@ if (rpdb) then
     read(77,'(A)') line
   enddo
   if (j.gt.0) ne(j)=k
-  close(77)
-  ! compute number of fixed and free species
-  do i=1,nfxfr
-    do j=1,ntyp
-      if (nms(j).eq.fpn(i)) then
-        itype(i)=j
-        q(i)=ch(j)
-        if (i.le.nfix) then
-          nspecf(j)=nspecf(j)+1
-        else
-          nspecfr(j)=nspecfr(j)+1
-        endif
-        exit
-      endif
-    enddo
-  enddo
-  ! Check for species inconsistencies
-  do i=1,ntyp
-    if (nspecf(i).gt.nspec(i)) stop 'There are more fixed than total particles of one kind'
-    if (nspecf(i)+nspecfr(i).gt.nspec(i)) stop 'There are more fixed+free than total particles of one kind'
-  enddo
-
-else if (rxyz) then ! if fixed particle system activated
-  ! Reads xyz
-  open(unit=77,file=rxyznm,status='old')
-  read(77,*) nfxfr
-  read(77,*) nfix
-  if (nfxfr.lt.nfix) stop 'Number of fixed particles is bigger than number of total particles in xyz'
-  nfree=nfxfr-nfix
-  if (nfxfr.gt.nop) then
-    close(77)
-    write(*,*) 'nfree+nfix',nfxfr
-    write(*,*) 'Number of Particles in rdf file: ',nop
-    stop ' nfree + nfix is bigger than number of particles declared in rdf file'
-  endif
-  write(*,*) 
-  do i=1,nfxfr
-    read(77,*) fpn(i),x(i),y(i),z(i)
-  enddo
   close(77)
   ! Compute Center
   if (nfix.gt.0) then
@@ -404,7 +362,7 @@ else if (rxyz) then ! if fixed particle system activated
     cent(3)=cent(3)/nfix
   endif
   ! Translate system to the center
-  do i=1,nfxfr
+  do i=1,nop
     x(i)=x(i)-cent(1)
     y(i)=y(i)-cent(2)
     z(i)=z(i)-cent(3)
@@ -412,16 +370,13 @@ else if (rxyz) then ! if fixed particle system activated
   ! Compare size of box and size of fixed particle system
   if (nfix.gt.1) call checkboxsize()
   ! Put everything in the box
-  do i=1+nfix,nfxfr
-    call pbc(x(i),y(i),z(i))
-  enddo 
+  do i=1+nparfix,npar
+    call pbcpar(i)
+  enddo
   ! compute number of fixed and free species
-  do i=1,nfxfr
-    j=0
-    loopon=.true.
-    do while (j.lt.ntyp.and.loopon)
-      j=j+1
-      if (nms(j).eq.fpn(i)) then 
+  do i=1,nop
+    do j=1,ntyp
+      if (nms(j).eq.fpn(i)) then
         itype(i)=j
         q(i)=ch(j)
         if (i.le.nfix) then
@@ -429,7 +384,7 @@ else if (rxyz) then ! if fixed particle system activated
         else
           nspecfr(j)=nspecfr(j)+1
         endif
-        loopon=.false.
+        exit
       endif
     enddo
   enddo
@@ -666,30 +621,17 @@ write(*,*) 'Fixed Particles Energy = ',fce
 write(*,*) 'Fixed Particles Coulombic Energy = ',fcee
 write(*,*) 'Init. energy = ',ener
 
-if (wxyz) then 
-  open(unit=88,file=wxyznm,status='unknown') 
-  if (mod(istep,wxyzfq).eq.0) then
-    write(88,*) nop
-    write(line,*) nfix,'  Step #',nmksf,' LatVec: ',bv
-    write(88,'(A)') trim(line)
-    do i=1,nop
-      write(88,*) fpn(i),x(i),y(i),z(i)
-    enddo
-  endif
-endif
-
 if (wpdb) then
-  open(unit=99,file=wxyznm,status='unknown')
+  open(unit=88,file=wpdbnm,status='unknown')
   if (mod(istep,wpdbfq).eq.0) then
     write(line,*) 'REMARK ',nop,' Elem ',npar,' Par ','  Step #',nmksf,' LatVec: ',bv
-    write(99,'(A)') trim(line)
+    write(88,'(A)') trim(line)
     do i=1,nop
-      write (99,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
+      write (88,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
     enddo
-    write(99, '(A)') 'END'
+    write(88, '(A)') 'END'
   endif
 endif
-
 
 !$omp parallel private(tid) 
 tid = omp_get_thread_num()
@@ -878,36 +820,20 @@ cors=cors+corsl
 corp=corp+corpl
 virs=virs+virsl
 vire=vire+virel
-! writes xyz
-if (wxyz) then
-!  if (mod(istep,wxyzfq).eq.0) then
-  write(88,*) nop
-  write(line,*) nfix,'  Step #',istep,' LatVec: ',bv,' Proc# ',tid
-  write(88,'(A)') trim(line)
-  do i=1,nop
-    x1=xl(i)
-    y1=yl(i)
-    z1=zl(i)
-    if (i.gt.nfix) call pbc(x1,y1,z1)
-    write(88,*) fpn(i),x1,y1,z1
-  enddo
-!  endif
-endif
 ! writes pdb
 if (wpdb) then
 !  if (mod(istep,wxyzfq).eq.0) then
   write(line,*) 'REMARK ',nop,' Elem ',npar,' Par ','  Step #',isetp,' LatVec: ',bv,' Proc# ',tid
-  write(99,'(A)') trim(line)
+  write(88,'(A)') trim(line)
   do i=1,nop
-    write (99,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
+    write (88,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
   enddo
-  write(99, '(A)') 'END'
+  write(88, '(A)') 'END'
 !  endif
 endif
 !$omp end critical
 !$omp end parallel
-if (wxyz) close(88) 
-if (wpdb) close(99) 
+if (wpdb) close(88) 
 
 fnr=1e0/float(nav)
 
@@ -1696,6 +1622,16 @@ end subroutine
 
 !======================= pbc ========================================
 !
+subroutine pbcpar(parn)
+use invmc
+implicit none
+integer parn
+real rx, ry, rz
+call centroid(parn, rx, ry, rz)
+call rmcoor(parn, rx, ry, rz)
+call pbc(rx,ry,rz)
+call addcoor(parn, rx, ry, rz)
+end subroutine
 
 subroutine pbc(xx,yy,zz)
 use invmc
@@ -1750,32 +1686,32 @@ end subroutine
 !  Parameters:
 !    None
 subroutine timestamp ( )
-  implicit none
-  integer ( kind = 4 ) d
-  integer ( kind = 4 ) h
-  integer ( kind = 4 ) m
-  integer ( kind = 4 ) mm
-  character ( len = 9 ), parameter, dimension(12) :: month = (/ &
-    'January  ', 'February ', 'March    ', 'April    ', &
-    'May      ', 'June     ', 'July     ', 'August   ', &
-    'September', 'October  ', 'November ', 'December ' /)
-  integer ( kind = 4 ) n
-  integer ( kind = 4 ) s
-  integer ( kind = 4 ) values(8)
-  integer ( kind = 4 ) y
+implicit none
+integer ( kind = 4 ) d
+integer ( kind = 4 ) h
+integer ( kind = 4 ) m
+integer ( kind = 4 ) mm
+character ( len = 9 ), parameter, dimension(12) :: month = (/ &
+  'January  ', 'February ', 'March    ', 'April    ', &
+  'May      ', 'June     ', 'July     ', 'August   ', &
+  'September', 'October  ', 'November ', 'December ' /)
+integer ( kind = 4 ) n
+integer ( kind = 4 ) s
+integer ( kind = 4 ) values(8)
+integer ( kind = 4 ) y
 
-  call date_and_time ( values = values )
+call date_and_time ( values = values )
 
-  y = values(1)
-  m = values(2)
-  d = values(3)
-  h = values(5)
-  n = values(6)
-  s = values(7)
-  mm = values(8)
+y = values(1)
+m = values(2)
+d = values(3)
+h = values(5)
+n = values(6)
+s = values(7)
+mm = values(8)
 
-  write ( *, '(i2,1x,a,1x,i4,2x,i2,a1,i2.2,a1,i2.2,a1,i3.3)' ) &
-    d, trim ( month(m) ), y, h, ':', n, ':', s, '.', mm
+write ( *, '(i2,1x,a,1x,i4,2x,i2,a1,i2.2,a1,i2.2,a1,i3.3)' ) &
+  d, trim ( month(m) ), y, h, ':', n, ':', s, '.', mm
 end subroutine
 
 function timer()
@@ -1950,7 +1886,6 @@ implicit none
 integer i
 character s*1
 character*(*) inchar,outchar
-
 do i=1,len_trim(inchar)
   s=inchar(i:i)
   if (iachar(s).ge.65.and.iachar(s).le.90) then
@@ -1966,9 +1901,7 @@ subroutine volume(boxv1,boxv2,boxv3,vvv)
 use math
 implicit none
 real boxv1(3),boxv2(3),boxv3(3),vvv
-
 vvv=dot_product(cross_product(boxv1,boxv2),boxv3)
-
 end subroutine
 
 ! Randomly rotates a particle
@@ -1979,12 +1912,10 @@ use invmc
 implicit none
 real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real, parameter :: twopi=2.0*pi
-integer parn,sri,nei
-real phi, theta, psi, cosp, sinp, ocosp, ine
-real rx,ry,rz,tx,ty,tz,ine,rot(3,3)
-nei=ne(parn)
-if (nei.lt.2) return
-sri=sr(parn)
+integer parn
+real phi, theta, psi, cosp, sinp, ocosp
+real rx,ry,rz,rot(3,3)
+if (ne(parn).lt.2) return
 theta=acos(2.0*argauss()-1.0) ! from 0 to pi
 phi=twopi*argauss()           ! from 0 to 2*pi
 psi=twopi*argauss()           ! from 0 to 2*pi
@@ -2010,6 +1941,23 @@ rot(3,1)=rx*rz*ocosp-ry*sinp
 rot(3,2)=ry*rz*ocosp+rx*sinp
 rot(3,3)=cosp+rz*rz*ocosp
 ! Get Centroid
+call centroid(parn, rx, ry, rz)
+! Remove Centroid
+call rmcoor(parn, rx, ry, rz)
+! Rotate Particle
+call rotatepar(parn, rot)
+! Restore Centroid
+call addcoor(parn, rx, ry, rz)
+enddo
+end subroutine
+
+subroutine centroid(parn, rx, ry, rz)
+use invmc
+implicit none
+integer parn, sri, nei, i 
+real rx, ry, rz, ine
+nei=ne(parn)
+sri=sr(parn)
 rx=0.0
 ry=0.0
 rz=0.0
@@ -2018,29 +1966,54 @@ do i=sri+1,nei
   ry=ry+y(i)
   rz=rz+z(i)
 enddo
+if (nei.lt.2) return
 ine=1.0/nei
 rx=rx*ine
 ry=ry*ine
 rz=rz*ine
-! Remove Centroid
+end subroutine
+
+subroutine rmcoor(parn, rx, ry, rz)
+use invmc
+implicit none
+integer parn, sri, nei, i
+real rx, ry, rz
+nei=ne(parn)
+sri=sr(parn)
 do i=1+sri,nei
   x(i)=x(i)-rx
   y(i)=y(i)-ry
   z(i)=z(i)-rz
 enddo
-! Rotate Particle
-do i=1+sri,nei
-   tx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
-   ty=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
-   tz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
-   x(i)=tx
-   y(i)=ty
-   z(i)=tz
-enddo
-! Restore Centroid
+end subroutine
+
+subroutine addcoor(parn, rx, ry, rz)
+use invmc
+implicit none
+integer parn, sri, nei, i
+real rx, ry, rz
+nei=ne(parn)
+sri=sr(parn)
 do i=1+sri,nei
   x(i)=x(i)+rx
   y(i)=y(i)+ry
   z(i)=z(i)+rz
+enddo
+end subroutine
+
+subroutine rotatepar(parn, rot)
+use invmc
+implicit none
+integer parn, sri, nei, i
+real rx, ry, rz, rot(3,3)
+nei=ne(parn)
+sri=sr(parn)
+do i=1+sri,nei
+   rx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
+   ry=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
+   rz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
+   x(i)=rx
+   y(i)=ry
+   z(i)=rz
 enddo
 end subroutine
