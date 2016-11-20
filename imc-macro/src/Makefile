@@ -4,8 +4,9 @@
 
 OBJ    = imc-macro
 PAR    = $(OBJ)-par
-PAR2    = $(OBJ)-par-2
-all : $(OBJ) $(PAR) $(PAR2)
+PAR2   = $(OBJ)-par-2
+PAR3   = $(OBJ)-par-3 
+all : $(OBJ) $(PAR) $(PAR2) $(PAR3)
 
 # System dependent compilation commands
 
@@ -47,6 +48,8 @@ OBJECTS1 = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o i
 
 OBJECTS1P = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o isamax.o sgemm.o slamch.o sscal.o strsm.o sgetf2.o sgetrs.o sgetrf.o sgesv.o imc-macro-par-2.o
 
+OBJECTS2P = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o isamax.o sgemm.o slamch.o sscal.o strsm.o sgetf2.o sgetrs.o sgetrf.o sgesv.o mathmod.o imc-macro-par-3.o
+
 #IFILES = 
 
 #IMC2XYZ
@@ -60,9 +63,12 @@ OBJECTS3 = convertrst.o
 # Clean OBJects
 
 clean:
-	@rm -f $(OBJECTS) $(OBJECTS1) $(OBJECTS1P) $(OBJECTS2) $(OBJECTS3) $(OBJ) $(PAR) invmc.mod math.mod imc2xyz convertrst calc calcf
+	@rm -f $(OBJECTS) $(OBJECTS1) $(OBJECTS1P) $(OBJECTS2P) $(OBJECTS2) $(OBJECTS3) $(OBJ) $(PAR) $(PAR2) $(PAR3) invmc.mod math.mod imc2xyz convertrst calc calcf
 
 # Main program target
+
+debug3: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all -fopenmp
+debug3: $(PAR3)
 
 $(OBJ): $(SYSDEP) $(VECTOR) $(OBJECTS) $(FFILES) $(UTILS)
 	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(OBJ) $(OBJECTS) $(SYSDEP) $(UTILS)
@@ -72,9 +78,13 @@ $(PAR): $(SYSDEP) $(VECTOR) $(OBJECTS1) $(FFILES) $(UTILS)
 	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(PAR) $(OBJECTS1) $(SYSDEP) $(UTILS)
 	@rm -f invmc.mod math.mod
 
-$(PAR2):	$(SYSDEP) $(VECTOR) $(OBJECTS1P) $(FFILES) $(UTILS)
-		$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(PAR2) $(OBJECTS1P) $(SYSDEP) $(UTILS)
-		@rm -f invmc.mod math.mod
+$(PAR2):$(SYSDEP) $(VECTOR) $(OBJECTS1P) $(FFILES) $(UTILS)
+	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(PAR2) $(OBJECTS1P) $(SYSDEP) $(UTILS)
+	@rm -f invmc.mod math.mod
+
+$(PAR3):$(SYSDEP) $(VECTOR) $(OBJECTS2P) $(FFILES) $(UTILS)
+	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(PAR3) $(OBJECTS2P) $(SYSDEP) $(UTILS)
+	@rm -f invmc.mod math.mod mathmod.mod
 
 imc2xyz: $(SYSDEP) $(VECTOR) $(OBJECTS2) $(FFILES) $(UTILS)
 	 $(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o imc2xyz $(OBJECTS2) $(SYSDEP) $(UTILS)

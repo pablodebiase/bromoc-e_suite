@@ -17,16 +17,19 @@
 module math
 !use ifport ! for intel
 implicit none
+real*8, parameter :: pi=3.14159265358979323846264338327950288419716939937510
+real*8, parameter :: pi2=2.0*pi 
+real*8, parameter :: twopi=2.0*pi
 contains
   function inintv(vec)
-  real vec(3),inintv(3)
+  real*8 vec(3),inintv(3)
   inintv(1)=inint(vec(1))
   inintv(2)=inint(vec(2))
   inintv(3)=inint(vec(3))
   end function
 
   function invmat(mat)
-  real invmat(3,3),mat(3,3)
+  real*8 invmat(3,3),mat(3,3)
   invmat(1,1)=mat(2,2)*mat(3,3)-mat(2,3)*mat(3,2)
   invmat(2,1)=mat(2,3)*mat(3,1)-mat(2,1)*mat(3,3)
   invmat(3,1)=mat(2,1)*mat(3,2)-mat(2,2)*mat(3,1)
@@ -41,7 +44,7 @@ contains
 
   function cross_product(u,v)
   implicit none
-  real u(3),v(3),w(3),cross_product(3)
+  real*8 u(3),v(3),w(3),cross_product(3)
   w(1)=u(2)*v(3)-u(3)*v(2)
   w(2)=u(3)*v(1)-u(1)*v(3)
   w(3)=u(1)*v(2)-u(2)*v(1)
@@ -50,14 +53,14 @@ contains
 
   function inint(num)
   implicit none
-  real inint,num
+  real*8 inint,num
   inint=iint(num+0.5)
   end function
 
   function iint(num)
   implicit none
   integer iint
-  real num
+  real*8 num
   if (num.ge.0.0) then
     iint=int(num)
   else
@@ -69,36 +72,31 @@ contains
   endif
   end function
 
-  function rndm()
+  real*8 function rndm()
   ! fast real*4 random number generator from [0,1)  (zero included, one excluded)
   implicit none
-  real rndm
   rndm=rand()
   end function
   
-  function rndm1()
+  real*8 function rndm1()
   ! fast real*4 random number generator from (0,1] (zero excluded, one included)
   implicit none
-  real rndm1
   rndm1=1.0-rand()
   end function
   
   !random gaussian numbers
-  function rgauss()
+  real*8 function rgauss()
   implicit none
-  real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
-  real, parameter :: twopi=2.0*pi
-  real rgauss, rndm, rndm1
   rgauss=cos(rndm()*twopi)*sqrt(-2.0*log(rndm1()))
   return
   end function
 
-  function argauss()
+  real*8 function argauss()
   implicit none
-  real rgauss, argauss
   argauss = abs(rgauss())
   return
   end function
+end module
 
 module invmc
 !  Declarations
@@ -107,24 +105,22 @@ module invmc
 !   namax - max number of grid points
 !   nkvm - max number of k-vectors in reciprocal Ewald
 implicit none
-real,parameter :: pi=3.14159265358979323846264338327950288419716939937510
-real,parameter :: pi2=2.0*pi 
-real,parameter :: i3=1e0/3e0 
+real*8,parameter :: i3=1e0/3e0 
 integer nkvm,nfix,nfxfr,nparfix
-real,allocatable :: x(:),y(:),z(:),q(:)
-real,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
+real*8,allocatable :: x(:),y(:),z(:),q(:)
+real*8,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
 integer,allocatable :: itype(:),ipot(:,:,:),ina(:),ityp1(:),ityp2(:),nspec(:),nspecf(:),nspecfr(:)
 logical*1,allocatable :: ind(:,:,:)
 integer*1,allocatable :: potres(:,:)
-real vol,dr,coulf,af,fq,alpha,rcut,rcut2,rmin,rmax,avexp,ave2,vir,virs,vire,iri
-real boxlx,boxly,boxlz,iboxlx,iboxly,iboxlz,bv(3,3),invbv(3,3),inop
+real*8 vol,dr,coulf,af,fq,alpha,rcut,rcut2,rmin,rmax,avexp,ave2,vir,virs,vire,iri
+real*8 boxlx,boxly,boxlz,iboxlx,iboxly,iboxlz,bv(3,3),invbv(3,3),inop
 real*8 de,fce,fcee,ener,eners,efur,esf
 integer nop,npot,na,istep,nmks0,nkv,nav,npair,iprint
 integer,allocatable :: cors(:),corp(:,:)
 integer,allocatable :: kx(:),ky(:),kz(:)
 integer,allocatable :: sr(:), ne(:), pe(:)
 integer             :: npar
-real,allocatable :: rkv(:),ssin(:),scos(:),ddsin(:),ddcos(:)
+real*8,allocatable :: rkv(:),ssin(:),scos(:),ddsin(:),ddcos(:)
 character label*22,datestamp*10
 logical*1 lelec,lpot,box
 end module
@@ -147,30 +143,31 @@ program imcmacro
 use invmc
 use math
 implicit none
-real,allocatable :: cross(:,:),diff(:)
-real,allocatable :: cor(:),shelv(:)
-real,allocatable :: ssinl(:),scosl(:),ddsinl(:),ddcosl(:)
+real*8,allocatable :: cross(:,:),diff(:)
+real*8,allocatable :: cor(:),shelv(:)
+real*8,allocatable :: ssinl(:),scosl(:),ddsinl(:),ddcosl(:)
 integer,allocatable :: iucmp(:),ipvt(:)
 character,allocatable :: nms(:)*4,fpn(:)*4,gpn(:)*4,partypnam(:)*4
 character :: nmst1*4,nmst2*4,keyword*5
-integer*8 timer,wall,npartyp
-integer kode,iseed,wpdbfq
-integer rstfq,ityp,jtyp
+integer*8 timer,wall
+integer kode,iseed,wpdbfq,npartyp
+integer rstfq,ityp,jtyp,ilast
 character*256 fdmp
 logical*1 ldmp,lrst,lrefcrd
 character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
-logical*1 loopon,rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
-real,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
-integer ntyp,nmks,iout,iav,i,ic,info,ip,ipt,it,it1,it2,ityp,j,jc,jt,jtyp,nmksf,nr,nur,nap,ntpp
-real regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
-real rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
-real vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,pos(3)
+logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
+real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
+integer i,j,k
+integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
+real*8 regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
+real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
+real*8 vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z
 real*8 deloc,efurl,del,enerl,enersl
 integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
-real virel,virsl,virl,rfx
+real*8 virel,virsl,virl,rfx
 integer,allocatable :: corsl(:),corpl(:,:)
-real,allocatable :: xl(:),yl(:),zl(:)
+real*8,allocatable :: xl(:),yl(:),zl(:)
 
 integer*1 restyp
 !  input
@@ -395,7 +392,7 @@ if (rpdb) then
   allocate(partypnam(npar))
   npartyp=1
   partypnam(npartyp)=gpn(sr(nparfix+1)+1)
-  do j=2+nparfix,,npar
+  do j=2+nparfix,npar
     lnotfound=.true.
     do i=1,npartyp
       if (gpn(sr(j)+1).eq.partypnam(i)) then
@@ -419,6 +416,7 @@ if (rpdb) then
           else
             call rotate(first,j)
           endif
+        endif
       enddo
     enddo
   endif
@@ -852,7 +850,7 @@ vire=vire+virel
 ! writes pdb
 if (wpdb) then
 !  if (mod(istep,wxyzfq).eq.0) then
-  write(line,*) 'REMARK ',nop,' Elem ',npar,' Par ','  Step #',isetp,' LatVec: ',bv,' Proc# ',tid
+  write(line,*) 'REMARK ',nop,' Elem ',npar,' Par   Step #',istep,' LatVec: ',bv,' Proc# ',tid
   write(88,'(A)') trim(line)
   do i=1,nop
     write (88,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
@@ -1128,9 +1126,10 @@ end program
 
 subroutine calcnkvm()
 use invmc
+use math
 implicit none
 integer ikx,iky,ikz,ikv,ky1,ky2,kmaxx,kmaxy,kmaxz
-real    cutk2,rk2,pial
+real*8    cutk2,rk2,pial
 
 if(alpha.gt.0.001)then
   pial=(pi/alpha)**2
@@ -1171,10 +1170,11 @@ end subroutine
 !
 subroutine ewald(qpe)
 use invmc
+use math
 implicit none
 logical,save   :: init
 integer      :: ikx,iky,ikz,ikv,ky1,ky2,kmaxx,kmaxy,kmaxz,i,kxv,kyv,kzv
-real         :: pial,rk2,cutk2,cfur,aff,scs,ssn,sc,ss1,cc1
+real*8         :: pial,rk2,cutk2,cfur,aff,scs,ssn,sc,ss1,cc1
 real*8       :: qpe
 data init/.true./
 ! save 
@@ -1257,10 +1257,11 @@ end subroutine
 !
 subroutine ewaldpar(qpe,ssinl,scosl)
 use invmc
+use math
 implicit none
 logical,save :: init
 integer      :: ikx,iky,ikz,ikv,ky1,ky2,kmaxx,kmaxy,kmaxz,i,kxv,kyv,kzv
-real         :: pial,rk2,cutk2,cfur,aff,scs,ssn,sc,ss1,cc1,ssinl(*),scosl(*)
+real*8         :: pial,rk2,cutk2,cfur,aff,scs,ssn,sc,ss1,cc1,ssinl(*),scosl(*)
 real*8       :: qpe
 data init/.true./
 ! save 
@@ -1343,9 +1344,10 @@ end subroutine
 !       
 subroutine difew(x1,y1,z1,i,chi,dee)
 use invmc
+use math
 implicit none
 integer ikv,ikx,iky,ikz,i
-real dee,chi,x1,y1,z1,ddd,dcs,scn,sco,scp,sinr,dsn
+real*8 dee,chi,x1,y1,z1,ddd,dcs,scn,sco,scp,sinr,dsn
 !   reciprocal space Evald
 dee=0e0
 chi=2e0*chi 
@@ -1371,10 +1373,11 @@ end subroutine
 !       
 subroutine difewpar(x1,y1,z1,i,chi,dee,ssinl,scosl,ddsinl,ddcosl)
 use invmc
+use math
 implicit none
 integer ikv,ikx,iky,ikz,i
-real dee,chi,x1,y1,z1,ddd,dcs,scn,sco,scp,sinr,dsn
-real ssinl(*),scosl(*),ddsinl(*),ddcosl(*)
+real*8 dee,chi,x1,y1,z1,ddd,dcs,scn,sco,scp,sinr,dsn
+real*8 ssinl(*),scosl(*),ddsinl(*),ddcosl(*)
 
 !   reciprocal space Evald
 dee=0e0
@@ -1417,7 +1420,7 @@ subroutine recsinpar(ssinl,scosl,ddsinl,ddcosl)
 use invmc
 implicit none
 integer ikv
-real ssinl(*),scosl(*),ddsinl(*),ddcosl(*)
+real*8 ssinl(*),scosl(*),ddsinl(*),ddcosl(*)
 
 do ikv=1,nkv
   ssinl(ikv)=ssinl(ikv)+ddsinl(ikv)
@@ -1432,7 +1435,7 @@ subroutine fixedenergy
 use invmc
 implicit none
 integer i,j,it,jt,nr
-real dde,dee,dx,dy,dz,rr,rr2
+real*8 dde,dee,dx,dy,dz,rr,rr2
 
 ! compute fixed coulombic energy
 fce=0d0
@@ -1467,7 +1470,7 @@ subroutine energy
 use invmc
 implicit none
 integer i,j,it,jt,nr
-real dee,dde,dx,dy,dz,rr
+real*8 dee,dde,dx,dy,dz,rr
 real*8 enew
 
 if (lelec) then 
@@ -1508,7 +1511,7 @@ end subroutine
 subroutine correl                                                                
 use invmc
 implicit none
-real dde,dee,dx,dy,dz,rr,rr2 !,eit(nop),ett
+real*8 dde,dee,dx,dy,dz,rr,rr2 !,eit(nop),ett
 real*8 enew
 integer i,j,it,jt,nr,nr1,nr2,ipt,ccor(npot),ccc
 
@@ -1580,10 +1583,10 @@ end subroutine
 subroutine correlpar(ssinl,scosl,efurl,del,virl,enerl,enersl,corsl,corpl,navl,xl,yl,zl)
 use invmc
 implicit none
-real dde,dee,dx,dy,dz,rr,rr2,virl !,eit(nop),ett
+real*8 dde,dee,dx,dy,dz,rr,rr2,virl !,eit(nop),ett
 real*8 enew,efurl,del,enerl,enersl
 integer i,j,it,jt,nr,nr1,nr2,ipt,ccor(npot),ccc,navl
-real ssinl(*),scosl(*),xl(*),yl(*),zl(*)
+real*8 ssinl(*),scosl(*),xl(*),yl(*),zl(*)
 integer corsl(npot),corpl(npot,npot)
 
 if (lelec) then
@@ -1655,7 +1658,7 @@ subroutine pbcpar(parn)
 use invmc
 implicit none
 integer parn
-real rx, ry, rz
+real*8 rx, ry, rz
 call centroid(parn, rx, ry, rz)
 call rmcoor(parn, rx, ry, rz)
 call pbc(rx,ry,rz)
@@ -1665,7 +1668,7 @@ end subroutine
 subroutine pbc(xx,yy,zz)
 use invmc
 implicit none
-real xx,yy,zz
+real*8 xx,yy,zz
 if (box) then
   call pbcbox(xx,yy,zz)
 else
@@ -1677,7 +1680,7 @@ subroutine pbcgener(xx,yy,zz)
 use invmc
 use math
 implicit none
-real pos(3),xx,yy,zz,vec(3)
+real*8 pos(3),xx,yy,zz,vec(3)
 pos=(/xx,yy,zz/)
 vec=matmul(invbv,matmul(pos,bv))
 pos=pos-matmul(bv,inintv(vec))
@@ -1690,7 +1693,7 @@ subroutine pbcbox(xx,yy,zz)
 use invmc
 use math
 implicit none
-real xx,yy,zz
+real*8 xx,yy,zz
 xx = xx - boxlx * inint(xx*iboxlx)
 yy = yy - boxly * inint(yy*iboxly)
 zz = zz - boxlz * inint(zz*iboxlz)
@@ -1769,7 +1772,7 @@ subroutine checkboxsize()
 use invmc
 implicit none
 integer i
-real minr(3),maxr(3),diff(3)
+real*8 minr(3),maxr(3),diff(3)
 minr(1)=x(1)
 maxr(1)=x(1)
 minr(2)=y(1)
@@ -1831,7 +1834,7 @@ subroutine completepotential(ntyp)
 use invmc
 implicit none
 integer i,it,jt,ntyp,ppi,ppf,nr,ip
-real kc,bc,shift
+real*8 kc,bc,shift
 
 do it=1,ntyp
   do jt=1,it
@@ -1929,7 +1932,7 @@ end subroutine
 subroutine volume(boxv1,boxv2,boxv3,vvv)
 use math
 implicit none
-real boxv1(3),boxv2(3),boxv3(3),vvv
+real*8 boxv1(3),boxv2(3),boxv3(3),vvv
 vvv=dot_product(cross_product(boxv1,boxv2),boxv3)
 end subroutine
 
@@ -1939,11 +1942,9 @@ subroutine uranrot(parn)
 use math
 use invmc
 implicit none
-real, parameter :: pi=3.14159265358979323846264338327950288419716939937510
-real, parameter :: twopi=2.0*pi
 integer parn
-real phi, theta, psi, cosp, sinp, ocosp
-real rx,ry,rz,rot(3,3)
+real*8 phi, theta, psi, cosp, sinp, ocosp
+real*8 rx,ry,rz,rot(3,3)
 if (ne(parn).lt.2) return
 theta=acos(2.0*argauss()-1.0) ! from 0 to pi
 phi=twopi*argauss()           ! from 0 to 2*pi
@@ -1977,14 +1978,13 @@ call rmcoor(parn, rx, ry, rz)
 call rotatepar(parn, rot)
 ! Restore Centroid
 call addcoor(parn, rx, ry, rz)
-enddo
 end subroutine
 
 subroutine centroid(parn, rx, ry, rz)
 use invmc
 implicit none
 integer parn, sri, nei, i 
-real rx, ry, rz, ine
+real*8 rx, ry, rz, ine
 nei=ne(parn)
 sri=sr(parn)
 rx=0.0
@@ -2006,7 +2006,7 @@ subroutine rmcoor(parn, rx, ry, rz)
 use invmc
 implicit none
 integer parn, sri, nei, i
-real rx, ry, rz
+real*8 rx, ry, rz
 nei=ne(parn)
 sri=sr(parn)
 do i=1+sri,nei+sri
@@ -2020,7 +2020,7 @@ subroutine addcoor(parn, rx, ry, rz)
 use invmc
 implicit none
 integer parn, sri, nei, i
-real rx, ry, rz
+real*8 rx, ry, rz
 nei=ne(parn)
 sri=sr(parn)
 do i=1+sri,nei+sri
@@ -2034,7 +2034,7 @@ subroutine rotatepar(parn, rot)
 use invmc
 implicit none
 integer parn, sri, nei, i
-real rx, ry, rz, rot(3,3)
+real*8 rx, ry, rz, rot(3,3)
 nei=ne(parn)
 sri=sr(parn)
 do i=1+sri,nei+sri
@@ -2053,7 +2053,7 @@ use invmc
 use mathmod
 implicit none
 integer parn, parr,nen,srn,ner,srr,i,j
-real rot(3,3),xxn(3,ne(parn)), xxr(3,ne(parn))
+real*8 rot(3,3),xxn(3,ne(parn)), xxr(3,ne(parn))
 if (ne(parn).lt.3) return
 if (ne(parn).ne.ne(parr)) stop 'not the same kind of particle'
 nen=ne(parn)
