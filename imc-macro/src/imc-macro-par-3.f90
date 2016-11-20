@@ -96,11 +96,9 @@ contains
   function argauss()
   implicit none
   real rgauss, argauss
-  argauss = abs(rgauss)
+  argauss = abs(rgauss())
   return
   end function
-
-end module
 
 module invmc
 !  Declarations
@@ -112,7 +110,7 @@ implicit none
 real,parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real,parameter :: pi2=2.0*pi 
 real,parameter :: i3=1e0/3e0 
-integer nkvm,nfix,nfree,nfxfr,nparfix
+integer nkvm,nfix,nfxfr,nparfix
 real,allocatable :: x(:),y(:),z(:),q(:)
 real,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
 integer,allocatable :: itype(:),ipot(:,:,:),ina(:),ityp1(:),ityp2(:),nspec(:),nspecf(:),nspecfr(:)
@@ -153,30 +151,30 @@ real,allocatable :: cross(:,:),diff(:)
 real,allocatable :: cor(:),shelv(:)
 real,allocatable :: ssinl(:),scosl(:),ddsinl(:),ddcosl(:)
 integer,allocatable :: iucmp(:),ipvt(:)
-character,allocatable :: nms(:)*4,fpn(:)*4,gpn(:)*4
+character,allocatable :: nms(:)*4,fpn(:)*4,gpn(:)*4,partypnam(:)*4
 character :: nmst1*4,nmst2*4,keyword*5
-integer*8 timer,wall
+integer*8 timer,wall,npartyp
 integer kode,iseed,wpdbfq
 integer rstfq,ityp,jtyp
 character*256 fdmp
-logical*1 ldmp,lrst
+logical*1 ldmp,lrst,lrefcrd
 character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
-logical*1 loopon,rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb
+logical*1 loopon,rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
 real,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer ntyp,nmks,iout,iav,i,ic,info,ip,ipt,it,it1,it2,ityp,j,jc,jt,jtyp,nmksf,nr,nur,nap,ntpp
 real regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
 real rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
 real vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,pos(3)
 real*8 deloc,efurl,del,enerl,enersl
-integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl
+integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
 real virel,virsl,virl,rfx
 integer,allocatable :: corsl(:),corpl(:,:)
 real,allocatable :: xl(:),yl(:),zl(:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
 
 label    = 'IMC-MACRO-PAR-3 v4.00'
 datestamp = '13-11-2016'
@@ -221,6 +219,7 @@ respotnm = 'imc-macro-fix.pot'  ! Format: particle type 1 particle type 2 free,f
 lseppot  = .false.              ! Dump separated potential files for each pair (can be used combined with ldmppot)
 lseprdf  = .false.              ! Dump separated RDF and S files for each pair 
 ldmp     = .false.              ! ignored, not used
+lrefcrd  = .false.              ! Use first particle in pdb as internal coordinates reference for the rest of the particles
 
 ! Time Stamp
 call timestamp()
@@ -303,7 +302,6 @@ allocate (cross(npot,npot),diff(npot),cor(npot),iucmp(npot))
 nfix=0
 nspecf=0
 nspecfr=0
-nfree=0
 cent=0e0
 nfxfr=0
 if (rpdb) then
@@ -393,6 +391,39 @@ if (rpdb) then
     if (nspecf(i).gt.nspec(i)) stop 'There are more fixed than total particles of one kind'
     if (nspecf(i)+nspecfr(i).gt.nspec(i)) stop 'There are more fixed+free than total particles of one kind'
   enddo
+  ! Build partypnam list
+  allocate(partypnam(npar))
+  npartyp=1
+  partypnam(npartyp)=gpn(sr(nparfix+1)+1)
+  do j=2+nparfix,,npar
+    lnotfound=.true.
+    do i=1,npartyp
+      if (gpn(sr(j)+1).eq.partypnam(i)) then
+        lnotfound=.false.
+        exit
+      endif
+    enddo
+    if (lnotfound) then
+      npartyp=npartyp+1
+      partypnam(npartyp)=gpn(sr(j)+1)
+    endif
+  enddo
+  ! Fix internal coordinates of all free particles based on the first as reference
+  if (lrefcrd) then
+    do i=1,npartyp
+      first=0
+      do j=1+nparfix,npar
+        if (gpn(sr(j)+1).eq.partypnam(i)) then
+          if (first.eq.0) then
+            first=j
+          else
+            call rotate(first,j)
+          endif
+      enddo
+    enddo
+  endif
+else
+  stop 'Cannot work without pdb'  
 endif
 
 ! iav 
@@ -402,35 +433,33 @@ if (iav.le.0) then
   write(*,*)
 endif
 
-write(*,*) 'Number of Particles: ',nop
-write(*,*) 'Number of Fixed Part.: ',nfix
-write(*,*) 'Number of Free Located Part.: ',nfree
-write(*,*) 'Number of Free Unlocated Part.: ',nop-nfxfr
+write(*,*) 'Number of Elements: ',nop
+write(*,*) 'Number of Fixed Elements: ',nfix
+write(*,*) 'Number of Particles: ',npar
+write(*,*) 'Number of Fixed Particles: ',nparfix
 
 !  addresses remaining particles if any
-i=nfxfr
-do ityp=1,ntyp
-  do j=1,nspec(ityp)-nspecf(ityp)-nspecfr(ityp),1
-    i=i+1
-    itype(i)=ityp
-    fpn(i)=nms(ityp)
-    q(i)=ch(ityp)
-  enddo
-enddo
-
+!i=nfxfr
+!do ityp=1,ntyp
+!  do j=1,nspec(ityp)-nspecf(ityp)-nspecfr(ityp),1
+!    i=i+1
+!    itype(i)=ityp
+!    fpn(i)=nms(ityp)
+!    q(i)=ch(ityp)
+!  enddo
+!enddo
 ! locate remaining free particles
 ! be aware that it is not avoiding overlaps
-do i=nfxfr+1,nop,1
-  pos=bv(:,1)*(rndm()-0.5e0)+bv(:,2)*(rndm()-0.5e0)+bv(:,3)*(rndm()-0.5e0)
-  x(i)=pos(1)
-  y(i)=pos(2)
-  z(i)=pos(3)
-enddo
-
+!do i=nfxfr+1,nop,1
+!  pos=bv(:,1)*(rndm()-0.5e0)+bv(:,2)*(rndm()-0.5e0)+bv(:,3)*(rndm()-0.5e0)
+!  x(i)=pos(1)
+!  y(i)=pos(2)
+!  z(i)=pos(3)
+!enddo
 ! put all free particles inside box
-do i=nfix+1,nop
-  call pbc(x(i),y(i),z(i))
-enddo
+!do i=nfix+1,nop
+!  call pbc(x(i),y(i),z(i))
+!enddo
 
 ! seed randomizer using given seed or using clock if seed lower-equal zero
 call init_rand_seed(iseed) 
@@ -1961,7 +1990,7 @@ sri=sr(parn)
 rx=0.0
 ry=0.0
 rz=0.0
-do i=sri+1,nei
+do i=sri+1,nei+sri
   rx=rx+x(i)
   ry=ry+y(i)
   rz=rz+z(i)
@@ -1980,7 +2009,7 @@ integer parn, sri, nei, i
 real rx, ry, rz
 nei=ne(parn)
 sri=sr(parn)
-do i=1+sri,nei
+do i=1+sri,nei+sri
   x(i)=x(i)-rx
   y(i)=y(i)-ry
   z(i)=z(i)-rz
@@ -1994,7 +2023,7 @@ integer parn, sri, nei, i
 real rx, ry, rz
 nei=ne(parn)
 sri=sr(parn)
-do i=1+sri,nei
+do i=1+sri,nei+sri
   x(i)=x(i)+rx
   y(i)=y(i)+ry
   z(i)=z(i)+rz
@@ -2008,12 +2037,50 @@ integer parn, sri, nei, i
 real rx, ry, rz, rot(3,3)
 nei=ne(parn)
 sri=sr(parn)
-do i=1+sri,nei
+do i=1+sri,nei+sri
    rx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
    ry=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
    rz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
    x(i)=rx
    y(i)=ry
    z(i)=rz
+enddo
+end subroutine
+
+! Rotates particle n to the orientation of the reference and replaces the reference with this result
+subroutine rotate(parn, parr)
+use invmc 
+use mathmod
+implicit none
+integer parn, parr,nen,srn,ner,srr,i,j
+real rot(3,3),xxn(3,ne(parn)), xxr(3,ne(parn))
+if (ne(parn).lt.3) return
+if (ne(parn).ne.ne(parr)) stop 'not the same kind of particle'
+nen=ne(parn)
+srn=sr(parn)
+ner=ne(parr)
+srr=sr(parr)
+j=0
+do i=1+srn,nen+srn
+  j=j+1
+  xxn(1,j)=x(i)
+  xxn(2,j)=y(i)
+  xxn(3,j)=z(i)
+enddo
+j=0
+do i=1+srr,ner+srr
+  j=j+1
+  xxr(1,j)=x(i)
+  xxr(2,j)=y(i)
+  xxr(3,j)=z(i)
+enddo
+call rotationmatrix(nen,xxr,xxn,rot)
+xxr=matmul(transpose(rot),xxn)
+j=0
+do i=1+srr,ner+srr
+  j=j+1
+  x(i)=xxr(1,j)
+  y(i)=xxr(2,j)
+  z(i)=xxr(3,j)
 enddo
 end subroutine
