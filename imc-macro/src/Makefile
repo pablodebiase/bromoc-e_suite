@@ -5,8 +5,8 @@
 OBJ    = imc-macro
 PAR    = $(OBJ)-par
 PAR2   = $(OBJ)-par-2
-PAR3   = $(OBJ)-par-3 
-all : $(OBJ) $(PAR) $(PAR2) $(PAR3)
+OBJ2   = imc-e
+all : $(OBJ) $(PAR) $(PAR2) $(OBJ2)
 
 # System dependent compilation commands
 
@@ -48,7 +48,7 @@ OBJECTS1 = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o i
 
 OBJECTS1P = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o isamax.o sgemm.o slamch.o sscal.o strsm.o sgetf2.o sgetrs.o sgetrf.o sgesv.o imc-macro-par-2.o
 
-OBJECTS2P = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o isamax.o sgemm.o slamch.o sscal.o strsm.o sgetf2.o sgetrs.o sgetrf.o sgesv.o mathmod.o imc-macro-par-3.o
+OBJECTS2P = xerbla.o lsame.o ieeeck.o iparmq.o sger.o slaswp.o sswap.o ilaenv.o isamax.o sgemm.o slamch.o sscal.o strsm.o sgetf2.o sgetrs.o sgetrf.o sgesv.o mathmod.o imc-e.o
 
 #IFILES = 
 
@@ -63,12 +63,12 @@ OBJECTS3 = convertrst.o
 # Clean OBJects
 
 clean:
-	@rm -f $(OBJECTS) $(OBJECTS1) $(OBJECTS1P) $(OBJECTS2P) $(OBJECTS2) $(OBJECTS3) $(OBJ) $(PAR) $(PAR2) $(PAR3) invmc.mod math.mod imc2xyz convertrst calc calcf
+	@rm -f $(OBJECTS) $(OBJECTS1) $(OBJECTS1P) $(OBJECTS2P) $(OBJECTS2) $(OBJECTS3) $(OBJ) $(PAR) $(PAR2) $(OBJ2) *.mod imc2xyz convertrst
 
 # Main program target
 
-debug3: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all -fopenmp
-debug3: $(PAR3)
+debuge: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all -fopenmp
+debuge: $(OBJ2)
 
 $(OBJ): $(SYSDEP) $(VECTOR) $(OBJECTS) $(FFILES) $(UTILS)
 	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(OBJ) $(OBJECTS) $(SYSDEP) $(UTILS)
@@ -82,8 +82,8 @@ $(PAR2):$(SYSDEP) $(VECTOR) $(OBJECTS1P) $(FFILES) $(UTILS)
 	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(PAR2) $(OBJECTS1P) $(SYSDEP) $(UTILS)
 	@rm -f invmc.mod math.mod
 
-$(PAR3):$(SYSDEP) $(VECTOR) $(OBJECTS2P) $(FFILES) $(UTILS)
-	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(PAR3) $(OBJECTS2P) $(SYSDEP) $(UTILS)
+$(OBJ2):$(SYSDEP) $(VECTOR) $(OBJECTS2P) $(FFILES) $(UTILS)
+	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(OBJ2) $(OBJECTS2P) $(SYSDEP) $(UTILS)
 	@rm -f invmc.mod math.mod mathmod.mod
 
 imc2xyz: $(SYSDEP) $(VECTOR) $(OBJECTS2) $(FFILES) $(UTILS)
@@ -93,7 +93,11 @@ convertrst: $(SYSDEP) $(VECTOR) $(OBJECTS3) $(FFILES) $(UTILS)
 	    $(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o convertrst $(OBJECTS3) $(SYSDEP) $(UTILS)
  
 install:
-	@mv  $(OBJ) $(PAR) $(PAR2) ../bin/
+	@ if [ -f $(OBJ) ]; then mv $(OBJ) ../bin/ ; fi
+	@ if [ -f $(PAR) ]; then mv $(PAR) ../bin/ ; fi
+	@ if [ -f $(PAR2) ]; then mv $(PAR2) ../bin/ ; fi
+	@ if [ -f $(OBJ2) ]; then mv $(OBJ2) ../bin/ ; fi
 	@ if [ ! -e ../../bin/$(OBJ) ]; then ln -s ../imc-macro/bin/$(OBJ) ../../bin/$(OBJ) ; fi
 	@ if [ ! -e ../../bin/$(PAR) ]; then ln -s ../imc-macro/bin/$(PAR) ../../bin/$(PAR) ; fi
 	@ if [ ! -e ../../bin/$(PAR2) ]; then ln -s ../imc-macro/bin/$(PAR2) ../../bin/$(PAR2) ; fi
+	@ if [ ! -e ../../bin/$(OBJ2) ]; then ln -s ../imc-macro/bin/$(OBJ2) ../../bin/$(OBJ2) ; fi

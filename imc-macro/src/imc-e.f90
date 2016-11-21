@@ -1,4 +1,4 @@
-!    IMC-MACRO - Inverse Monte Carlo for Macromolecules
+!    IMC-E - Inverse Monte Carlo for Macromolecules & molecular solvents
 !    Copyright (C) 2014 Pablo M. De Biase (pablodebiase@gmail.com)
 !
 !    This program is free software: you can redistribute it and/or modify
@@ -106,7 +106,6 @@ module invmc
 !   nkvm - max number of k-vectors in reciprocal Ewald
 implicit none
 real*8,parameter :: i3=1e0/3e0 
-integer nkvm,nfix,nfxfr,nparfix
 real*8,allocatable :: x(:),y(:),z(:),q(:)
 real*8,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
 integer,allocatable :: itype(:),ipot(:,:,:),ina(:),ityp1(:),ityp2(:),nspec(:),nspecf(:),nspecfr(:)
@@ -115,14 +114,15 @@ integer*1,allocatable :: potres(:,:)
 real*8 vol,dr,coulf,af,fq,alpha,rcut,rcut2,rmin,rmax,avexp,ave2,vir,virs,vire,iri
 real*8 boxlx,boxly,boxlz,iboxlx,iboxly,iboxlz,bv(3,3),invbv(3,3),inop
 real*8 de,fce,fcee,ener,eners,efur,esf
+integer nkvm,nfix,nfxfr,nparfix,npar
 integer nop,npot,na,istep,nmks0,nkv,nav,npair,iprint
 integer,allocatable :: cors(:),corp(:,:)
 integer,allocatable :: kx(:),ky(:),kz(:)
 integer,allocatable :: sr(:), ne(:), pe(:)
-integer             :: npar
 real*8,allocatable :: rkv(:),ssin(:),scos(:),ddsin(:),ddcos(:)
 character label*22,datestamp*10
 logical*1 lelec,lpot,box
+character,allocatable :: fpn(:)*4,gpn(:)*4
 end module
 
 program imcmacro
@@ -147,7 +147,7 @@ real*8,allocatable :: cross(:,:),diff(:)
 real*8,allocatable :: cor(:),shelv(:)
 real*8,allocatable :: ssinl(:),scosl(:),ddsinl(:),ddcosl(:)
 integer,allocatable :: iucmp(:),ipvt(:)
-character,allocatable :: nms(:)*4,fpn(:)*4,gpn(:)*4,partypnam(:)*4
+character,allocatable :: nms(:)*4,partypnam(:)*4
 character :: nmst1*4,nmst2*4,keyword*5
 integer*8 timer,wall
 integer kode,iseed,wpdbfq,npartyp
@@ -173,7 +173,7 @@ integer*1 restyp
 !  input
 namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
 
-label    = 'IMC-MACRO-PAR-3 v4.00'
+label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
 dr       = 5e0                  ! max particle displacement at each step
 iav      = 0                    ! how often < SaSb > evaluated (if iav=0 => iav=1.5*number of particles)
@@ -283,7 +283,7 @@ inop=1e0/nop
 
 !allocate nop dependent arrays
 allocate (itype(nop)) ! INT
-allocate (x(nop),y(nop),z(nop),q(nop),fpn(nop),pe(nop)) ! COORD
+allocate (x(nop),y(nop),z(nop),q(nop),fpn(nop),gpn(nop),pe(nop)) ! COORD
 allocate (xl(nop),yl(nop),zl(nop)) ! COORD
 
 npot=na*ntyp*(ntyp+1)/2
@@ -329,21 +329,21 @@ if (rpdb) then
     if (line(1:4).eq.'ATOM') then
       i=i+1
       k=k+1
-      read (line,'(6x,5x,x,A5,A5,I4,4x,3F8.3,F6.2)') fpn(i),gpn(i),ityp,x(i),y(i),z(i),rfx
+      read (line,'(6x,5x,x,A4,x,A4,x,I4,4x,3F8.3,F6.2)') fpn(i),gpn(i),ityp,x(i),y(i),z(i),rfx
       if (rfx.eq.1.0) nfix=nfix+1
       if (ilast.ne.ityp) then
         if (j.gt.0) ne(j)=k
         j=j+1
         if (rfx.eq.1.0) nparfix=j
         sr(j)=i-1
-        k=1
+        k=0
       endif
       pe(i)=j
       ilast=ityp
     endif
     read(77,'(A)') line
   enddo
-  if (j.gt.0) ne(j)=k
+  if (j.gt.0) ne(j)=k+1
   close(77)
   ! Compute Center
   if (nfix.gt.0) then
@@ -435,6 +435,12 @@ write(*,*) 'Number of Elements: ',nop
 write(*,*) 'Number of Fixed Elements: ',nfix
 write(*,*) 'Number of Particles: ',npar
 write(*,*) 'Number of Fixed Particles: ',nparfix
+
+if (iprint.ge.6) then
+  write(*,*)
+  call printpdb(6,0,-1)
+  write(*,*)
+endif
 
 !  addresses remaining particles if any
 !i=nfxfr
@@ -552,8 +558,8 @@ do while(kode.eq.0)
     rdf(ip)=rdfp
     shift=0e0
     if (lelec) shift=ch(it1)*ch(it2)*coulf/rmax
-    dlr=-log(rdfp)                
-    if(rdfp.gt.0e0)then
+    if(rdfp.gt.0.0)then
+      dlr=-log(rdfp)
       if(.not.lpot)pot(nr,it1,it2)=shift+dlr
       ind(nr,it1,it2)=.true.
       if(.not.lpot)pot(nr,it2,it1)=shift+dlr
@@ -614,7 +620,7 @@ if(iprint.ge.6) then
   do it=1,ntyp
     do jt=1,it
       do nr=1,na
-        write(*,'(2i5,3f12.4,i4)') it,jt,ras(nr),rdf(ipot(nr,it,jt)),pot(nr,it,jt),ind(nr,it,jt)
+        write(*,'(2i5,3f12.4,l4)') it,jt,ras(nr),rdf(ipot(nr,it,jt)),pot(nr,it,jt),ind(nr,it,jt)
       enddo
     enddo
   enddo  
@@ -650,14 +656,7 @@ write(*,*) 'Init. energy = ',ener
 
 if (wpdb) then
   open(unit=88,file=wpdbnm,status='unknown')
-  if (mod(istep,wpdbfq).eq.0) then
-    write(line,*) 'REMARK ',nop,' Elem ',npar,' Par ','  Step #',nmksf,' LatVec: ',bv
-    write(88,'(A)') trim(line)
-    do i=1,nop
-      write (88,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
-    enddo
-    write(88, '(A)') 'END'
-  endif
+  if (mod(istep,wpdbfq).eq.0) call printpdb(88,nmksf,-1)
 endif
 
 !$omp parallel private(tid) 
@@ -849,14 +848,7 @@ virs=virs+virsl
 vire=vire+virel
 ! writes pdb
 if (wpdb) then
-!  if (mod(istep,wxyzfq).eq.0) then
-  write(line,*) 'REMARK ',nop,' Elem ',npar,' Par   Step #',istep,' LatVec: ',bv,' Proc# ',tid
-  write(88,'(A)') trim(line)
-  do i=1,nop
-    write (88,'(A6,I5,x,A5,A5,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),''
-  enddo
-  write(88, '(A)') 'END'
-!  endif
+  if (mod(istep,wpdbfq).eq.0) call printpdb(88, istep, tid)
 endif
 !$omp end critical
 !$omp end parallel
@@ -1808,8 +1800,8 @@ subroutine printheader()
 use invmc
 implicit none
 write(*,*) ' ___________________________________________________ '
-write(*,*) '|     IMC for Macromolecules                        |'
-write(*,*) '|     (Inverse Monte Carlo for Macromolecules)      |'
+write(*,*) '|   IMC-E for Macromolecules & molecular solvents   |'
+write(*,*) '|          (Inverse Monte Carlo Extended)           |'
 write(*,*) '|     ',label,       '     ',datestamp, '         |'
 write(*,*) '|___________________________________________________|'
 write(*,*) '|                                                   |'
@@ -2053,34 +2045,64 @@ use invmc
 use mathmod
 implicit none
 integer parn, parr,nen,srn,ner,srr,i,j
-real*8 rot(3,3),xxn(3,ne(parn)), xxr(3,ne(parn))
+real*8 rot(3,3),xxn(3,ne(parn)),xxr(3,ne(parn)),rx,ry,rz,nx,ny,nz
 if (ne(parn).lt.3) return
 if (ne(parn).ne.ne(parr)) stop 'not the same kind of particle'
 nen=ne(parn)
 srn=sr(parn)
 ner=ne(parr)
 srr=sr(parr)
+! get centroids
+call centroid(parn, nx, ny, nz)
+call centroid(parr, rx, ry, rz)
 j=0
 do i=1+srn,nen+srn
   j=j+1
-  xxn(1,j)=x(i)
-  xxn(2,j)=y(i)
-  xxn(3,j)=z(i)
+  xxn(1,j)=x(i)-nx
+  xxn(2,j)=y(i)-ny
+  xxn(3,j)=z(i)-nz
 enddo
 j=0
 do i=1+srr,ner+srr
   j=j+1
-  xxr(1,j)=x(i)
-  xxr(2,j)=y(i)
-  xxr(3,j)=z(i)
+  xxr(1,j)=x(i)-rx
+  xxr(2,j)=y(i)-ry
+  xxr(3,j)=z(i)-rz
 enddo
 call rotationmatrix(nen,xxr,xxn,rot)
-xxr=matmul(transpose(rot),xxn)
+xxr=matmul(rot,xxn)
+!m=sum((xxr-xxn)**2)
 j=0
 do i=1+srr,ner+srr
   j=j+1
-  x(i)=xxr(1,j)
-  y(i)=xxr(2,j)
-  z(i)=xxr(3,j)
+  x(i)=xxr(1,j)+rx
+  y(i)=xxr(2,j)+ry
+  z(i)=xxr(3,j)+rz
 enddo
+end subroutine
+
+subroutine printpdb(un,step,tid)
+use invmc
+implicit none
+integer un,step,i,tid
+character*1024 line
+if (tid.ge.0) then
+  write(line,*) 'REMARK ',nop,' Elem ',npar,' Par   Step #',step,' Proc# ',tid
+else
+  write(line,*) 'REMARK ',nop,' Elem ',npar,' Par   Step #',step
+endif
+write(un,'(A)') trim(adjustl(line))
+write(line,*) 'REMARK  LatVec: ',bv(1,:)
+write(un,'(A)') trim(adjustl(line))
+write(line,*) 'REMARK  LatVec: ',bv(2,:)
+write(un,'(A)') trim(adjustl(line))
+write(line,*) 'REMARK  LatVec: ',bv(3,:)
+write(un,'(A)') trim(adjustl(line))
+do i=1,nfix
+  write (un,'(A6,I5,x,A4,x,A4,x,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),gpn(i)
+enddo
+do i=1+nfix,nop
+  write (un,'(A6,I5,x,A4,x,A4,x,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),0.0,q(i),gpn(i)
+enddo
+write(un, '(A)') 'END'
 end subroutine

@@ -348,6 +348,7 @@ contains
   implicit none
   real*8 det, m(3,3)
   det=m(1,1)*(m(2,2)*m(3,3)-m(2,3)*m(3,2))+m(1,2)*(m(2,3)*m(3,1)-m(2,1)*m(3,3))+m(1,3)*(m(2,1)*m(3,2)-m(2,2)*m(3,1))
+  !det=m(1,1)*m(2,2)*m(3,3)+m(1,2)*m(2,3)*m(3,1)+m(1,3)*m(2,1)*m(3,2)-m(1,3)*m(2,2)*m(3,1)-m(1,2)*m(2,1)*m(3,3)-m(1,1)*m(2,3)*m(3,2)
   end function
 
   subroutine rotationmatrix(n,mat1,mat2,rot)
@@ -356,10 +357,11 @@ contains
   real*8 mat1(3,n),mat2(3,n),rot(3,3),a(3,3),s(3),u(3,3),v(3,3),one
   if (n.lt.4) stop 'number of particles cannot be lower than 4'
   a=matmul(mat1,transpose(mat2))
-  one=sign(1d0,det(a))
   call svd2(3,3,a,u,s,v)
-  v(1:3,3)=v(1:3,3)*one
-  rot=matmul(v,transpose(u))
+  one=sign(1d0,det(a))
+  v(:,3)=v(:,3)*one
+  !rot=matmul(v,transpose(u))
+  rot=matmul(u,transpose(v))
   end subroutine
 
 end module
