@@ -107,6 +107,7 @@ module invmc
 implicit none
 real*8,parameter :: i3=1e0/3e0 
 real*8,allocatable :: x(:),y(:),z(:),q(:)
+real*8,allocatable :: xc(:),yc(:),zc(:)
 real*8,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
 integer,allocatable :: itype(:),ipot(:,:,:),ina(:),ityp1(:),ityp2(:),nspec(:),nspecf(:),nspecfr(:)
 logical*1,allocatable :: ind(:,:,:)
@@ -158,7 +159,7 @@ character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
 logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
 real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
-integer i,j,k
+integer i,j,k,ii,jj,kk
 integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
 real*8 regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
 real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
@@ -167,7 +168,7 @@ real*8 deloc,efurl,del,enerl,enersl
 integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
 real*8 virel,virsl,virl,rfx
 integer,allocatable :: corsl(:),corpl(:,:)
-real*8,allocatable :: xl(:),yl(:),zl(:)
+real*8,allocatable :: xl(:),yl(:),zl(:),rt(:,:)
 
 integer*1 restyp
 !  input
@@ -317,7 +318,7 @@ if (rpdb) then
   enddo
   ! Assert
   if (nfxfr.ne.nop) stop 'PDB is incomplete and number of particles do not match between pdb and rdf file.'
-  allocate(sr(npar),ne(npar))
+  allocate(sr(npar),ne(npar),xc(npar),yc(npar),zc(npar))
   rewind(77)
   i=0
   j=0
@@ -345,28 +346,41 @@ if (rpdb) then
   enddo
   if (j.gt.0) ne(j)=k+1
   close(77)
-  ! Compute Center
-  if (nfix.gt.0) then
-    do i=1,nfix
-      cent(1)=cent(1)+x(i)
-      cent(2)=cent(2)+y(i)
-      cent(3)=cent(3)+z(i)
+  ! Compute Center and center each molecule
+  do i=1,npar
+    xc(i)=0.0
+    yc(i)=0.0
+    zc(i)=0.0
+    do j=sr(i)+1,ne(i)+sr(i)
+      xc(i)=xc(i)+x(j)
+      yc(i)=yc(i)+y(j)
+      zc(i)=zc(i)+z(j)
     enddo
-    cent(1)=cent(1)/nfix
-    cent(2)=cent(2)/nfix
-    cent(3)=cent(3)/nfix
-  endif
-  ! Translate system to the center
-  do i=1,nop
-    x(i)=x(i)-cent(1)
-    y(i)=y(i)-cent(2)
-    z(i)=z(i)-cent(3)
+    xc(i)=xc(i)/ne(i)
+    yc(i)=yc(i)/ne(i)
+    zc(i)=zc(i)/ne(i)
+    do j=sr(i)+1,ne(i)+sr(i)
+      x(j)=x(j)-xc(i)
+      y(j)=y(j)-yc(i)
+      z(j)=z(j)-zc(i)
+    enddo
   enddo
+  ! Translate system to the center
+  if (nparfix.gt.0)
+    do i=1+nparfix,npar
+      x(i)=x(i)-xc(nparfix)
+      y(i)=y(i)-yc(nparfix)
+      z(i)=z(i)-zc(nparfix)
+    enddo
+    xc(nparfix)=0.0
+    yc(nparfix)=0.0
+    zc(nparfix)=0.0
+  endif
   ! Compare size of box and size of fixed particle system
-  if (nfix.gt.1) call checkboxsize()
+  if (nparfix.gt.0) call checkboxsize()
   ! Put everything in the box
   do i=1+nparfix,npar
-    call pbcpar(i)
+    call pbc(xc(i),yc(i),zc(i))
   enddo
   ! compute number of fixed and free species
   do i=1,nop
@@ -537,7 +551,7 @@ if(lpot)then
       enddo
     enddo
   enddo
-  close(3)   
+  close(3)
   write(*,*)'Potential is taken from ',filpot
 endif
 
@@ -669,56 +683,56 @@ end if
 
 !   Monte Carlo  
 do istep=1,nmks0
-  i=(nop-nfix)*rndm()+1+nfix
-  it=itype(i)
-  chi=ch(it)
-  x1=x(i)+dr*(rndm()-0.5e0)
-  y1=y(i)+dr*(rndm()-0.5e0)
-  z1=z(i)+dr*(rndm()-0.5e0)
+  ii=(npar-nparfix)*rndm()+1+nparfix
+  x1=xc(ii)+dr*(rndm()-0.5e0)
+  y1=yc(ii)+dr*(rndm()-0.5e0)
+  z1=zc(ii)+dr*(rndm()-0.5e0)
   call pbc(x1,y1,z1)
+  if (allocated(rt)) deallocate(rt)
+  allocate (rt(3,ne(ii)))
+  rt=0.0
+  if (ne(ii).gt.1) call uranrot(ii,rt)
   !  Energy difference
   de=0d0
-!$omp parallel private(j,jt,dx,dy,dz,rrn2,rrn,deloc,dee,rro2,rro,nr)
-  deloc=0d0
-!$omp do
-  do j=1,nop
-    if(i.ne.j)then
-      jt=itype(j)
-      dx=x(j)-x1
-      dy=y(j)-y1
-      dz=z(j)-z1
-      call pbc(dx,dy,dz)
-      rrn2=dx**2+dy**2+dz**2
-      if(rrn2.lt.rcut2)then
-        rrn=sqrt(rrn2)
-        nr=(rrn-rmin)*iri+1
-        deloc=deloc+pot(nr,it,jt)
-        if (lelec) then
-          dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1e0)/rrn
-          deloc=deloc+dee
+  do jj=1,npar
+    if (ii.eq.jj) cycle
+    do i=1+sr(ii),ne(ii)+sr(ii)
+      it=itype(i)
+      chi=ch(it)
+      do j=1+sr(jj),ne(jj)+sr(jj)
+        jt=itype(j)
+        k=i-sr(ii)
+        dx=x(j)+xc(jj)-rt(1,k)-x1
+        dy=y(j)+yc(jj)-rt(2,k)-y1
+        dz=z(j)+zc(jj)-rt(3,k)-z1
+        call pbc(dx,dy,dz)
+        rrn2=dx**2+dy**2+dz**2
+        if(rrn2.lt.rcut2)then
+          rrn=sqrt(rrn2)
+          nr=(rrn-rmin)*iri+1
+          de=de+pot(nr,it,jt)
+          if (lelec) then
+            dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1e0)/rrn
+            de=de+dee
+          endif
         endif
-      endif
-      dx=x(j)-x(i)
-      dy=y(j)-y(i)
-      dz=z(j)-z(i)
-      call pbc(dx,dy,dz)
-      rro2=dx**2+dy**2+dz**2
-      if(rro2.lt.rcut2)then
-        rro=sqrt(rro2)
-        nr=(rro-rmin)*iri+1
-        deloc=deloc-pot(nr,it,jt)
-        if (lelec) then
-          dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1e0)/rro
-          deloc = deloc-dee
+        dx=x(j)+xc(jj)-x(i)-xc(ii) 
+        dy=y(j)+yc(jj)-y(i)-yc(ii)
+        dz=z(j)+zc(jj)-z(i)-zc(ii)
+        call pbc(dx,dy,dz)
+        rro2=dx**2+dy**2+dz**2
+        if(rro2.lt.rcut2)then
+          rro=sqrt(rro2)
+          nr=(rro-rmin)*iri+1
+          de=de-pot(nr,it,jt)
+          if (lelec) then
+            dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1e0)/rro
+            de = de-dee
+          endif
         endif
-      endif
-    endif
+      enddo
+    enddo
   enddo
-!$omp end do
-!$omp critical
-de=de+deloc
-!$omp end critical
-!$omp end parallel
   !  Corrections due to electrostatics
   if (lelec) then 
     call difew(x1,y1,z1,i,chi,dee)
@@ -727,9 +741,15 @@ de=de+deloc
   !  MC transition
   if (de.le.0.0.or.(de.le.18e0.and.exp(-de).ge.rndm())) then 
   !  New configuration
-    x(i)=x1
-    y(i)=y1
-    z(i)=z1
+    xc(ii)=x1
+    yc(ii)=y1
+    zc(ii)=z1
+    do i=1,ne(ii)
+      k=i+sr(ii)
+      x(k)=rt(1,i) 
+      y(k)=rt(2,i) 
+      z(k)=rt(3,i) 
+    enddo
     ener=ener+de
     iud=iud+1
     if (lelec) call recsin
@@ -740,6 +760,13 @@ de=de+deloc
     write(*,'(i10,a5,3f12.4,a7,f12.4)') istep,'  en:',ener*inop,vir*inop,efur*inop*i3,'  pres=',pres 
   endif
 enddo   
+
+!ToDos
+!Convert jobs.aun cycle
+!Convert correlpar routine
+!Check how the rdf is normalized and use solution from df_charmm
+!Check all the rest
+
 cova=(nmks-nmks0)/(nth*iav)+1
 nmksf=cova*nth*iav+nmks0
 write(*,*) nmks,nmks0,nth,iav,nmksf,cova
@@ -1600,7 +1627,7 @@ do i=1+nfix,nop
     dz=zl(i)-zl(j)
     call pbc(dx,dy,dz)
     rr2=dx**2+dy**2+dz**2
-    if(rr2.lt.rcut2)then
+    if (rr2.lt.rcut2) then
       rr=sqrt(rr2)
       nr=(rr-rmin)*iri+1
       dde=pot(nr,it,jt)
@@ -1929,14 +1956,13 @@ vvv=dot_product(cross_product(boxv1,boxv2),boxv3)
 end subroutine
 
 ! Randomly rotates a particle
-! only use nocenter true when particle is at the origin
-subroutine uranrot(parn)
+subroutine uranrot(parn,rt)
 use math
 use invmc
 implicit none
 integer parn
 real*8 phi, theta, psi, cosp, sinp, ocosp
-real*8 rx,ry,rz,rot(3,3)
+real*8 rx,ry,rz,rot(3,3),rt(*,*)
 if (ne(parn).lt.2) return
 theta=acos(2.0*argauss()-1.0) ! from 0 to pi
 phi=twopi*argauss()           ! from 0 to 2*pi
@@ -1963,13 +1989,13 @@ rot(3,1)=rx*rz*ocosp-ry*sinp
 rot(3,2)=ry*rz*ocosp+rx*sinp
 rot(3,3)=cosp+rz*rz*ocosp
 ! Get Centroid
-call centroid(parn, rx, ry, rz)
+!call centroid(parn, rx, ry, rz)
 ! Remove Centroid
-call rmcoor(parn, rx, ry, rz)
+!call rmcoor(parn, rx, ry, rz)
 ! Rotate Particle
-call rotatepar(parn, rot)
+call rotatepar(parn, rot, rt)
 ! Restore Centroid
-call addcoor(parn, rx, ry, rz)
+!call addcoor(parn, rx, ry, rz)
 end subroutine
 
 subroutine centroid(parn, rx, ry, rz)
@@ -2022,20 +2048,17 @@ do i=1+sri,nei+sri
 enddo
 end subroutine
 
-subroutine rotatepar(parn, rot)
+subroutine rotatepar(parn, rot, rt)
 use invmc
 implicit none
 integer parn, sri, nei, i
-real*8 rx, ry, rz, rot(3,3)
+real*8 rx, ry, rz, rot(3,3), rt(*,*)
 nei=ne(parn)
 sri=sr(parn)
 do i=1+sri,nei+sri
-   rx=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
-   ry=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
-   rz=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
-   x(i)=rx
-   y(i)=ry
-   z(i)=rz
+   rt(1,i-sri)=rot(1,1)*x(i)+rot(1,2)*y(i)+rot(1,3)*z(i)
+   rt(2,i-sri)=rot(2,1)*x(i)+rot(2,2)*y(i)+rot(2,3)*z(i)
+   rt(3,i-sri)=rot(3,1)*x(i)+rot(3,2)*y(i)+rot(3,3)*z(i)
 enddo
 end subroutine
 
@@ -2045,7 +2068,7 @@ use invmc
 use mathmod
 implicit none
 integer parn, parr,nen,srn,ner,srr,i,j
-real*8 rot(3,3),xxn(3,ne(parn)),xxr(3,ne(parn)),rx,ry,rz,nx,ny,nz
+real*8 rot(3,3),xxn(3,ne(parn)),xxr(3,ne(parn))!,rx,ry,rz,nx,ny,nz
 if (ne(parn).lt.3) return
 if (ne(parn).ne.ne(parr)) stop 'not the same kind of particle'
 nen=ne(parn)
@@ -2053,21 +2076,21 @@ srn=sr(parn)
 ner=ne(parr)
 srr=sr(parr)
 ! get centroids
-call centroid(parn, nx, ny, nz)
-call centroid(parr, rx, ry, rz)
+!call centroid(parn, nx, ny, nz)
+!call centroid(parr, rx, ry, rz)
 j=0
 do i=1+srn,nen+srn
   j=j+1
-  xxn(1,j)=x(i)-nx
-  xxn(2,j)=y(i)-ny
-  xxn(3,j)=z(i)-nz
+  xxn(1,j)=x(i)!-nx
+  xxn(2,j)=y(i)!-ny
+  xxn(3,j)=z(i)!-nz
 enddo
 j=0
 do i=1+srr,ner+srr
   j=j+1
-  xxr(1,j)=x(i)-rx
-  xxr(2,j)=y(i)-ry
-  xxr(3,j)=z(i)-rz
+  xxr(1,j)=x(i)!-rx
+  xxr(2,j)=y(i)!-ry
+  xxr(3,j)=z(i)!-rz
 enddo
 call rotationmatrix(nen,xxr,xxn,rot)
 xxr=matmul(rot,xxn)
@@ -2075,9 +2098,9 @@ xxr=matmul(rot,xxn)
 j=0
 do i=1+srr,ner+srr
   j=j+1
-  x(i)=xxr(1,j)+rx
-  y(i)=xxr(2,j)+ry
-  z(i)=xxr(3,j)+rz
+  x(i)=xxr(1,j)!+rx
+  y(i)=xxr(2,j)!+ry
+  z(i)=xxr(3,j)!+rz
 enddo
 end subroutine
 
