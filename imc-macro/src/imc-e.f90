@@ -15,7 +15,7 @@
 !    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module math
-!use ifport ! for intel
+!use ifport 
 implicit none
 real*8, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real*8, parameter :: pi2=2.0*pi 
@@ -1497,6 +1497,7 @@ do i=2,nfix,1
   it=itype(i)
   do j=1,i-1,1
     jt=itype(j)
+    if (pe(i).eq.pe(j)) cycle
     dx=x(i)-x(j)
     dy=y(i)-y(j)
     dz=z(i)-z(j)
@@ -1538,6 +1539,7 @@ do i=1+nfix,nop
   it=itype(i)
   do j=1,i-1,1 
     jt=itype(j) 
+    if (pe(i).eq.pe(j)) cycle
     dx=x(i)-x(j)
     dy=y(i)-y(j)
     dz=z(i)-z(j)      
@@ -1582,6 +1584,7 @@ do i=1+nfix,nop
   it=itype(i) 
   do j=1,i-1,1
     jt=itype(j)
+    if (pe(i).eq.pe(j)) cycle
     dx=x(i)-x(j)
     dy=y(i)-y(j)
     dz=z(i)-z(j)

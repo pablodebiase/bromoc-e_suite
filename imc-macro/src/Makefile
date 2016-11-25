@@ -22,12 +22,15 @@ LDFLAG =
 
 # Implicit rules
 
-.SUFFIXES: .vec .f .c .s .o .a .lib .f90
+.SUFFIXES: .vec .f .c .s .o .a .lib .f90 .fpp
 
 .f.o:
 	$(FCOMPL) -c $(FFLAGC) $(OPT) -o $@ $<
 
 .f90.o:
+	$(FCOMPL) -c $(FFLAGC) $(OPT) -o $@ $<
+
+.fpp.o:
 	$(FCOMPL) -c $(FFLAGC) $(OPT) -o $@ $<
 
 .s.o:
@@ -63,12 +66,22 @@ OBJECTS3 = convertrst.o
 # Clean OBJects
 
 clean:
-	@rm -f $(OBJECTS) $(OBJECTS1) $(OBJECTS1P) $(OBJECTS2P) $(OBJECTS2) $(OBJECTS3) $(OBJ) $(PAR) $(PAR2) $(OBJ2) *.mod imc2xyz convertrst
+	@rm -f $(OBJECTS) $(OBJECTS1) $(OBJECTS1P) $(OBJECTS2P) $(OBJECTS2) $(OBJECTS3) $(OBJ) $(PAR) $(PAR2) $(OBJ2) *.mod imc2xyz convertrst *__*.f90
 
 # Main program target
 
 debuge: OPT = -Wall -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -fbacktrace -g -fdump-core -fcheck=all -fopenmp
 debuge: $(OBJ2)
+
+intele:	FCOMPL = ifort
+intele:	INTEL = 1
+intele:	OPT = -ip -O3 -xHost -qopenmp
+intele:	$(OBJ2)
+
+inteledbg:	FCOMPL = ifort
+inteledbg:	INTEL = 1
+inteledbg:	OPT = -warn all -O0 -g -traceback -fpe:0 -check all -fp-stack-check -debug all -qopenmp
+inteledbg:	$(OBJ2)
 
 $(OBJ): $(SYSDEP) $(VECTOR) $(OBJECTS) $(FFILES) $(UTILS)
 	$(FCOMPL) $(FFLAGC) $(LDFLAG) $(OPT) -o $(OBJ) $(OBJECTS) $(SYSDEP) $(UTILS)
