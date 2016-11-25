@@ -1500,9 +1500,9 @@ do i=2,nfix,1
   do j=1,i-1,1
     jt=itype(j)
     if (pe(i).eq.pe(j)) cycle
-    dx=x(i)-x(j)
-    dy=y(i)-y(j)
-    dz=z(i)-z(j)
+    dx=x(i)+xc(pe(i))-x(j)-xc(pe(j))
+    dy=y(i)+yc(pe(i))-y(j)-yc(pe(j))
+    dz=z(i)+zc(pe(i))-z(j)-zc(pe(j))
     call pbc(dx,dy,dz)
     rr2=dx**2+dy**2+dz**2
     if(rr2.lt.rcut2)then
@@ -1542,9 +1542,9 @@ do i=1+nfix,nop
   do j=1,i-1,1 
     jt=itype(j) 
     if (pe(i).eq.pe(j)) cycle
-    dx=x(i)-x(j)
-    dy=y(i)-y(j)
-    dz=z(i)-z(j)      
+    dx=x(i)+xc(pe(i))-x(j)-xc(pe(j))
+    dy=y(i)+yc(pe(i))-y(j)-yc(pe(j))
+    dz=z(i)+zc(pe(i))-z(j)-zc(pe(j))      
     call pbc(dx,dy,dz)
     rr=sqrt(dx**2+dy**2+dz**2)
     if(rr.lt.rcut)then
@@ -1587,9 +1587,9 @@ do i=1+nfix,nop
   do j=1,i-1,1
     jt=itype(j)
     if (pe(i).eq.pe(j)) cycle
-    dx=x(i)-x(j)
-    dy=y(i)-y(j)
-    dz=z(i)-z(j)
+    dx=x(i)+xc(pe(i))-x(j)-xc(pe(j))
+    dy=y(i)+yc(pe(i))-y(j)-yc(pe(j))
+    dz=z(i)+zc(pe(i))-z(j)-zc(pe(j))
     call pbc(dx,dy,dz)
     rr2=dx**2+dy**2+dz**2
     if(rr2.lt.rcut2)then
