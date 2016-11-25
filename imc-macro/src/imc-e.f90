@@ -1618,7 +1618,7 @@ enddo
 vir=vir*iri*i3
 enew=enew+de+fce
 if (lelec) efur=efur+fcee
-if(abs(ener-enew).gt.0.05)write(*,'(i10,a,g16.8,a,f16.8)') istep,' En.error.  New:',enew,'    old:',ener
+if(abs(ener-enew).gt.0.05)write(*,'(i10,a,g16.8,a,g16.8)') istep,' En.error.  New:',enew,'    old:',ener
 ener=enew
 !   correlators                       
 do i=1,npot
@@ -1694,7 +1694,7 @@ enddo
 virl=virl*iri*i3
 enew=enew+del+fce
 if (lelec) efurl=efurl+fcee
-if(abs(enerl-enew).gt.0.05)write(*,'(a,f12.4,a,f12.4)') ' En.error.  New:',enew,'    old:',enerl
+if(abs(enerl-enew).gt.0.05)write(*,'(a,g16.8,a,g16.8)') ' En.error.  New:',enew,'    old:',enerl
 enerl=enew
 !   correlators                       
 do i=1,npot
