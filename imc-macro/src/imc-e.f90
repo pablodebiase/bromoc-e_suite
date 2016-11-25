@@ -20,6 +20,7 @@ implicit none
 real*8, parameter :: pi=3.14159265358979323846264338327950288419716939937510
 real*8, parameter :: pi2=2.0*pi 
 real*8, parameter :: twopi=2.0*pi
+real*8, parameter :: itwopi=1.0/twopi
 contains
   function inintv(vec)
   real*8 vec(3),inintv(3)
@@ -93,7 +94,8 @@ contains
 
   real*8 function argauss()
   implicit none
-  argauss = abs(rgauss())
+  argauss = abs(rgauss())*itwopi
+  if (argauss.gt.1.0) argauss=1.0
   return
   end function
 end module
@@ -770,7 +772,7 @@ do istep=1,nmks0
   ! writes step, energy & pressure
   if(mod(istep,iout).eq.0)then
     pres=nop-vir-efur*i3
-    write(*,'(i10,a5,3f12.4,a7,f12.4)') istep,'  en:',ener*inop,vir*inop,efur*inop*i3,'  pres=',pres 
+    write(*,'(i10,a,3g16.8,a7,g16.8)') istep,'  en:',ener*inop,vir*inop,efur*inop*i3,'  pres=',pres 
   endif
 enddo   
 
@@ -808,9 +810,9 @@ do jobs=1,nth
   do aun=1,cova
     do istepl=1,iav
       ii=(npar-nparfix)*rndm()+1+nparfix
-      x1=xcl(i)+dr*(rndm()-0.5e0)
-      y1=ycl(i)+dr*(rndm()-0.5e0)
-      z1=zcl(i)+dr*(rndm()-0.5e0)
+      x1=xcl(ii)+dr*(rndm()-0.5e0)
+      y1=ycl(ii)+dr*(rndm()-0.5e0)
+      z1=zcl(ii)+dr*(rndm()-0.5e0)
       call pbc(x1,y1,z1)
       if (allocated(rt)) deallocate(rt)
       allocate (rt(3,ne(ii)))
@@ -840,9 +842,9 @@ do jobs=1,nth
                 del = del+dee
               endif
             endif
-            dx=xl(j)-xl(i)
-            dy=yl(j)-yl(i)
-            dz=zl(j)-zl(i)
+            dx=xl(j)+xcl(jj)-xl(i)-xcl(ii)
+            dy=yl(j)+ycl(jj)-yl(i)-ycl(ii)
+            dz=zl(j)+zcl(jj)-zl(i)-zcl(ii)
             call pbc(dx,dy,dz)
             rro2=dx**2+dy**2+dz**2
             if(rro2.lt.rcut2)then
@@ -885,7 +887,7 @@ do jobs=1,nth
     virel=virel+efurl*i3
     ! writes step, energy & pressure
     pres=nop-virl-efurl*i3
-    write(*,'(i0,x,i0,x,a5,3f12.4,a7,f12.4)') tid,aun,'  en:',enerl*inop,virl*inop,efurl*inop*i3,'  pres=',pres
+    write(*,'(i0,x,i0,x,a5,3g16.8,a7,g16.8)') tid,aun,'  en:',enerl*inop,virl*inop,efurl*inop*i3,'  pres=',pres
   enddo
 enddo
 !$omp end do
@@ -1616,7 +1618,7 @@ enddo
 vir=vir*iri*i3
 enew=enew+de+fce
 if (lelec) efur=efur+fcee
-if(abs(ener-enew).gt.0.05)write(*,'(i10,a,f12.4,a,f12.4)') istep,' En.error.  New:',enew,'    old:',ener
+if(abs(ener-enew).gt.0.05)write(*,'(i10,a,g16.8,a,f16.8)') istep,' En.error.  New:',enew,'    old:',ener
 ener=enew
 !   correlators                       
 do i=1,npot
