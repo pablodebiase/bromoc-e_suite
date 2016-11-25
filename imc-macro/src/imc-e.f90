@@ -109,6 +109,7 @@ real*8,parameter :: i3=1e0/3e0
 real*8,allocatable :: x(:),y(:),z(:),q(:)
 real*8,allocatable :: xc(:),yc(:),zc(:)
 real*8,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
+integer,allocatable :: paircnt(:)
 integer,allocatable :: itype(:),ipot(:,:,:),ina(:),ityp1(:),ityp2(:),nspec(:),nspecf(:),nspecfr(:)
 logical*1,allocatable :: ind(:,:,:)
 integer*1,allocatable :: potres(:,:)
@@ -159,7 +160,7 @@ character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
 logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
 real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
-integer i,j,k,ii,jj,kk
+integer i,j,k,ii,jj
 integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
 real*8 regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
 real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
@@ -169,6 +170,7 @@ integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_nu
 real*8 virel,virsl,virl,rfx
 integer,allocatable :: corsl(:),corpl(:,:)
 real*8,allocatable :: xl(:),yl(:),zl(:),rt(:,:)
+real*8,allocatable :: xcl(:),ycl(:),zcl(:)
 
 integer*1 restyp
 !  input
@@ -266,7 +268,7 @@ if (vol.le.0.0) stop 'Error: Box size/lattice vectors wrong'
 open(unit=4,file=filrdf,status='old')
 read(4,*) ntyp,na,rmin,rmax  ! Reads number of particle types, number of data points, min and max distance
 allocate (nms(ntyp),ch(ntyp),nspec(ntyp),nspecf(ntyp),nspecfr(ntyp),potres(ntyp,ntyp))
-allocate (shelv(na),pot(na,ntyp,ntyp),ras(na),ind(na,ntyp,ntyp),ipot(na,ntyp,ntyp))
+allocate (shelv(na),pot(na,ntyp,ntyp),ras(na),ind(na,ntyp,ntyp),ipot(na,ntyp,ntyp),paircnt(ntyp*(ntyp+1)/2))
 rdfinc=(rmax-rmin)/float(na)
 iri=float(na)/(rmax-rmin)
 aone=1-rmax/na/10e0
@@ -319,6 +321,7 @@ if (rpdb) then
   ! Assert
   if (nfxfr.ne.nop) stop 'PDB is incomplete and number of particles do not match between pdb and rdf file.'
   allocate(sr(npar),ne(npar),xc(npar),yc(npar),zc(npar))
+  allocate (xcl(npar),ycl(npar),zcl(npar)) ! COORD
   rewind(77)
   i=0
   j=0
@@ -366,7 +369,7 @@ if (rpdb) then
     enddo
   enddo
   ! Translate system to the center
-  if (nparfix.gt.0)
+  if (nparfix.gt.0) then
     do i=1+nparfix,npar
       x(i)=x(i)-xc(nparfix)
       y(i)=y(i)-yc(nparfix)
@@ -434,6 +437,16 @@ if (rpdb) then
       enddo
     enddo
   endif
+  ! pair count
+  paircnt=0
+  do i=1+nfix,nop
+    it=itype(i)
+    do j=1,i-1,1
+      if (pe(i).eq.pe(j)) cycle
+      jt=itype(j)
+      paircnt(idx(it,jt))=paircnt(idx(it,jt))+1
+    enddo
+  enddo
 else
   stop 'Cannot work without pdb'  
 endif
@@ -452,7 +465,7 @@ write(*,*) 'Number of Fixed Particles: ',nparfix
 
 if (iprint.ge.6) then
   write(*,*)
-  call printpdb(6,0,-1)
+  call printpdb(6,xc,yc,zc,x,y,z,0,-1)
   write(*,*)
 endif
 
@@ -670,7 +683,7 @@ write(*,*) 'Init. energy = ',ener
 
 if (wpdb) then
   open(unit=88,file=wpdbnm,status='unknown')
-  if (mod(istep,wpdbfq).eq.0) call printpdb(88,nmksf,-1)
+  if (mod(istep,wpdbfq).eq.0) call printpdb(88,xc,yc,zc,x,y,z,nmksf,-1)
 endif
 
 !$omp parallel private(tid) 
@@ -761,19 +774,16 @@ do istep=1,nmks0
   endif
 enddo   
 
-!ToDos
-!Convert jobs.aun cycle
-!Convert correlpar routine
-!Check how the rdf is normalized and use solution from df_charmm
-!Check all the rest
-
 cova=(nmks-nmks0)/(nth*iav)+1
 nmksf=cova*nth*iav+nmks0
 write(*,*) nmks,nmks0,nth,iav,nmksf,cova
-!$omp parallel private(jobs,x1,y1,z1,i,it,chi,del,aun,istepl,j,jt,dx,dy,dz,rrn2,rrn,deloc,dee,rro2,rro,nr,xl,yl,zl,tid,isd,iudl,ssinl,scosl,ddsinl,ddcosl,efurl,virl,enerl,enersl,corsl,corpl,navl,virsl,virel,pres)
+!$omp parallel private(ii,jj,jobs,x1,y1,z1,i,it,chi,del,aun,istepl,j,jt,dx,dy,dz,rrn2,rrn,deloc,dee,rro2,rro,nr,xl,yl,zl,xcl,ycl,zcl,tid,isd,iudl,ssinl,scosl,ddsinl,ddcosl,efurl,virl,enerl,enersl,corsl,corpl,navl,virsl,virel,pres,rt,k)
 xl=x
 yl=y
 zl=z
+xcl=xc
+ycl=yc
+zcl=zc
 iudl=0
 navl=0
 if (lelec) then 
@@ -797,47 +807,55 @@ call srand(isd*(tid+1))
 do jobs=1,nth
   do aun=1,cova
     do istepl=1,iav
-      i=(nop-nfix)*rndm()+1+nfix
-      it=itype(i)
-      chi=ch(it)
-      x1=xl(i)+dr*(rndm()-0.5e0)
-      y1=yl(i)+dr*(rndm()-0.5e0)
-      z1=zl(i)+dr*(rndm()-0.5e0)
+      ii=(npar-nparfix)*rndm()+1+nparfix
+      x1=xcl(i)+dr*(rndm()-0.5e0)
+      y1=ycl(i)+dr*(rndm()-0.5e0)
+      z1=zcl(i)+dr*(rndm()-0.5e0)
       call pbc(x1,y1,z1)
+      if (allocated(rt)) deallocate(rt)
+      allocate (rt(3,ne(ii)))
+      rt=0.0
+      if (ne(ii).gt.1) call uranrot(ii,rt)
       !  Energy difference
       del=0d0
-      do j=1,nop
-        if(i.ne.j)then
-          jt=itype(j)
-          dx=xl(j)-x1
-          dy=yl(j)-y1
-          dz=zl(j)-z1
-          call pbc(dx,dy,dz)
-          rrn2=dx**2+dy**2+dz**2
-          if(rrn2.lt.rcut2)then
-            rrn=sqrt(rrn2)
-            nr=(rrn-rmin)*iri+1
-            del=del+pot(nr,it,jt)
-            if (lelec) then
-              dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1e0)/rrn
-              del = del+dee
+      do jj=1,npar
+        if (ii.eq.jj) cycle
+        do i=1+sr(ii),ne(ii)+sr(ii)
+          it=itype(i)
+          chi=ch(it)
+          do j=1+sr(jj),ne(jj)+sr(jj)
+            jt=itype(j)
+            k=i-sr(ii)
+            dx=xl(j)+xcl(jj)-rt(1,k)-x1
+            dy=yl(j)+ycl(jj)-rt(2,k)-y1
+            dz=zl(j)+zcl(jj)-rt(3,k)-z1
+            call pbc(dx,dy,dz)
+            rrn2=dx**2+dy**2+dz**2
+            if(rrn2.lt.rcut2)then
+              rrn=sqrt(rrn2)
+              nr=(rrn-rmin)*iri+1
+              del=del+pot(nr,it,jt)
+              if (lelec) then
+                dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1e0)/rrn
+                del = del+dee
+              endif
             endif
-          endif
-          dx=xl(j)-xl(i)
-          dy=yl(j)-yl(i)
-          dz=zl(j)-zl(i)
-          call pbc(dx,dy,dz)
-          rro2=dx**2+dy**2+dz**2
-          if(rro2.lt.rcut2)then
-            rro=sqrt(rro2)
-            nr=(rro-rmin)*iri+1
-            del=del-pot(nr,it,jt)
-            if (lelec) then
-              dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1e0)/rro
-              del = del-dee
+            dx=xl(j)-xl(i)
+            dy=yl(j)-yl(i)
+            dz=zl(j)-zl(i)
+            call pbc(dx,dy,dz)
+            rro2=dx**2+dy**2+dz**2
+            if(rro2.lt.rcut2)then
+              rro=sqrt(rro2)
+              nr=(rro-rmin)*iri+1
+              del=del-pot(nr,it,jt)
+              if (lelec) then
+                dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1e0)/rro
+                del = del-dee
+              endif
             endif
-          endif
-        endif
+          enddo
+        enddo
       enddo
       !  Corrections due to electrostatics
       if (lelec) then
@@ -847,16 +865,22 @@ do jobs=1,nth
       !  MC transition
       if (del.le.0.0.or.(del.le.18e0.and.exp(-del).ge.rndm())) then
       !  New configuration
-        xl(i)=x1
-        yl(i)=y1
-        zl(i)=z1
+        xcl(ii)=x1
+        ycl(ii)=y1
+        zcl(ii)=z1
+        do i=1,ne(ii)
+          k=i+sr(ii)
+          xl(k)=rt(1,i)
+          yl(k)=rt(2,i)
+          zl(k)=rt(3,i)
+        enddo
         enerl=enerl+del
         iudl=iudl+1
         if (lelec) call recsinpar(ssinl,scosl,ddsinl,ddcosl)
       endif
     enddo
     !   Averaging
-    call correlpar(ssinl,scosl,efurl,del,virl,enerl,enersl,corsl,corpl,navl,xl,yl,zl)
+    call correlpar(ssinl,scosl,efurl,del,virl,enerl,enersl,corsl,corpl,navl,xl,yl,zl,xcl,ycl,zcl)
     virsl=virsl+virl
     virel=virel+efurl*i3
     ! writes step, energy & pressure
@@ -875,7 +899,7 @@ virs=virs+virsl
 vire=vire+virel
 ! writes pdb
 if (wpdb) then
-  if (mod(istep,wpdbfq).eq.0) call printpdb(88, istep, tid)
+  if (mod(istep,wpdbfq).eq.0) call printpdb(88,xcl,ycl,zcl,xl,yl,zl,istep,tid)
 endif
 !$omp end critical
 !$omp end parallel
@@ -930,18 +954,18 @@ do it=1,ntyp
       ipt=ipot(nr,it,jt)
       crc=float(cors(ipt))*fnr 
       rdfref=rdf(ipt)
-      crr=rdfref*shelv(nr)*nspec(it)*nspec(jt)/vol
-      rdfc=crc*vol/(nspec(it)*nspec(jt)*shelv(nr))
-      if(it.eq.jt)then
+      crr=rdfref*shelv(nr)*paircnt(idx(it,jt))/vol
+      rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
+!      if(it.eq.jt)then
 !   may be important!
 !   How do you normalize RDF between likewise particles?
 !   The same should be done ~ 100 lines below
 !   Normalize on N*(N-1)/2
 !	        fac=0.5*(dfloat(nspec(it))-1.d0)/dfloat(nspec(it))
 !   Normalize on N**2/2
-        crr=crr*(nspec(it)-1)/(nspec(it)*2e0)
-        rdfc=rdfc*2e0*dfloat(nspec(it))/dfloat(nspec(it)-1)
-      endif 
+!        crr=crr*(nspec(it)-1)/(nspec(it)*2e0)
+!        rdfc=rdfc*2e0*dfloat(nspec(it))/dfloat(nspec(it)-1)
+!      endif 
       felc=felc+(crc-crr)**2                         ! total error
       felr=felr+(rdfref-rdfc)**2
       difrc=(crc-crr)*regp 
@@ -1109,16 +1133,16 @@ do it=1,ntyp
     do nr=1,na 
       ipt=ipot(nr,it,jt)
       crc=float(cors(ipt))*fnr
-      rdfc=crc*vol/(nspec(it)*nspec(jt)*shelv(nr))
-      if(it.eq.jt)then
+      rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
+!      if(it.eq.jt)then
 !   may be important!
 !   How do you normalize RDF between likewise particles?
 !   The same should be done ~ 100 lines below
 !   Normalize on N*(N-1)/2
 !	        fac=0.5*(dfloat(nspec(it))-1.d0)/dfloat(nspec(it))
 !   Normalize on N**2/2
-        rdfc=rdfc*2e0*dfloat(nspec(it))/dfloat(nspec(it)-1)
-      endif
+!        rdfc=rdfc*2e0*dfloat(nspec(it))/dfloat(nspec(it)-1)
+!      endif
       poten=pot(nr,it,jt)
       potnew=poten+cor(ipt) 
       if(ind(nr,it,jt)) write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
@@ -1141,6 +1165,16 @@ write(*,*) 'Normal termination'
 ! Time Stamp
 call timestamp()
 write(*,*) 'Wall Time (ms): ',timer()-wall
+contains
+  integer function idx(itype,jtype)
+  implicit none
+  integer itype,jtype,maxi,mini
+  
+  maxi=MAX(itype,jtype)
+  mini=MIN(itype,jtype)
+  idx=maxi*(maxi-1)/2+mini
+  end function
+
 end program
 
 subroutine calcnkvm()
@@ -1599,13 +1633,14 @@ end subroutine
 ! 
 !===================== correlpar ========================================
 !     
-subroutine correlpar(ssinl,scosl,efurl,del,virl,enerl,enersl,corsl,corpl,navl,xl,yl,zl)
+subroutine correlpar(ssinl,scosl,efurl,del,virl,enerl,enersl,corsl,corpl,navl,xl,yl,zl,xcl,ycl,zcl)
 use invmc
 implicit none
 real*8 dde,dee,dx,dy,dz,rr,rr2,virl !,eit(nop),ett
 real*8 enew,efurl,del,enerl,enersl
 integer i,j,it,jt,nr,nr1,nr2,ipt,ccor(npot),ccc,navl
 real*8 ssinl(*),scosl(*),xl(*),yl(*),zl(*)
+real*8 xcl(*),ycl(*),zcl(*)
 integer corsl(npot),corpl(npot,npot)
 
 if (lelec) then
@@ -1621,10 +1656,11 @@ ccor=0
 do i=1+nfix,nop
   it=itype(i)
   do j=1,i-1,1
+    if (pe(i).eq.pe(j)) cycle
     jt=itype(j)
-    dx=xl(i)-xl(j)
-    dy=yl(i)-yl(j)
-    dz=zl(i)-zl(j)
+    dx=xcl(pe(i))+xl(i)-xl(j)-xcl(pe(j))
+    dy=ycl(pe(i))+yl(i)-yl(j)-ycl(pe(j))
+    dz=zcl(pe(i))+zl(i)-zl(j)-zcl(pe(j))
     call pbc(dx,dy,dz)
     rr2=dx**2+dy**2+dz**2
     if (rr2.lt.rcut2) then
@@ -1962,7 +1998,7 @@ use invmc
 implicit none
 integer parn
 real*8 phi, theta, psi, cosp, sinp, ocosp
-real*8 rx,ry,rz,rot(3,3),rt(*,*)
+real*8 rx,ry,rz,rot(3,3),rt(3,ne(parn))
 if (ne(parn).lt.2) return
 theta=acos(2.0*argauss()-1.0) ! from 0 to pi
 phi=twopi*argauss()           ! from 0 to 2*pi
@@ -2052,7 +2088,7 @@ subroutine rotatepar(parn, rot, rt)
 use invmc
 implicit none
 integer parn, sri, nei, i
-real*8 rx, ry, rz, rot(3,3), rt(*,*)
+real*8 rot(3,3), rt(3,ne(parn))
 nei=ne(parn)
 sri=sr(parn)
 do i=1+sri,nei+sri
@@ -2104,10 +2140,11 @@ do i=1+srr,ner+srr
 enddo
 end subroutine
 
-subroutine printpdb(un,step,tid)
+subroutine printpdb(un,xcl,ycl,zcl,xl,yl,zl,step,tid)
 use invmc
 implicit none
 integer un,step,i,tid
+real*8 xcl(*),ycl(*),zcl(*),xl(*),yl(*),zl(*)
 character*1024 line
 if (tid.ge.0) then
   write(line,*) 'REMARK ',nop,' Elem ',npar,' Par   Step #',step,' Proc# ',tid
@@ -2122,10 +2159,10 @@ write(un,'(A)') trim(adjustl(line))
 write(line,*) 'REMARK  LatVec: ',bv(3,:)
 write(un,'(A)') trim(adjustl(line))
 do i=1,nfix
-  write (un,'(A6,I5,x,A4,x,A4,x,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),1.0,q(i),gpn(i)
+  write (un,'(A6,I5,x,A4,x,A4,x,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),xcl(pe(i))+xl(i),ycl(pe(i))+yl(i),zcl(pe(i))+zl(i),1.0,q(i),gpn(i)
 enddo
 do i=1+nfix,nop
-  write (un,'(A6,I5,x,A4,x,A4,x,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),x(i),y(i),z(i),0.0,q(i),gpn(i)
+  write (un,'(A6,I5,x,A4,x,A4,x,I4,4x,3F8.3,2F6.2,6x,A4)') 'ATOM  ',i,fpn(i),gpn(i),pe(i),xcl(pe(i))+xl(i),ycl(pe(i))+yl(i),zcl(pe(i))+zl(i),0.0,q(i),gpn(i)
 enddo
 write(un, '(A)') 'END'
 end subroutine
