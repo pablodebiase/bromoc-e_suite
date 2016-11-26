@@ -157,7 +157,7 @@ integer*8 timer,wall
 integer kode,iseed,wpdbfq,npartyp
 integer rstfq,ityp,jtyp,ilast
 character*256 fdmp
-logical*1 ldmp,lrst,lrefcrd
+logical*1 ldmp,lrefcrd
 character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
 logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
@@ -176,7 +176,7 @@ real*8,allocatable :: xcl(:),ycl(:),zcl(:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,lrst,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -465,12 +465,6 @@ write(*,*) 'Number of Fixed Elements: ',nfix
 write(*,*) 'Number of Particles: ',npar
 write(*,*) 'Number of Fixed Particles: ',nparfix
 
-if (iprint.ge.6) then
-  write(*,*)
-  call printpdb(6,xc,yc,zc,x,y,z,0,-1)
-  write(*,*)
-endif
-
 !  addresses remaining particles if any
 !i=nfxfr
 !do ityp=1,ntyp
@@ -685,7 +679,10 @@ write(*,*) 'Init. energy = ',ener
 
 if (wpdb) then
   open(unit=88,file=wpdbnm,status='unknown')
-  if (mod(istep,wpdbfq).eq.0) call printpdb(88,xc,yc,zc,x,y,z,nmksf,-1)
+endif
+
+if (wpdb) then
+  if (iprint.ge.6) call printpdb(88,xc,yc,zc,x,y,z,0,-1)
 endif
 
 !$omp parallel private(tid) 
@@ -772,9 +769,13 @@ do istep=1,nmks0
   ! writes step, energy & pressure
   if(mod(istep,iout).eq.0)then
     pres=nop-vir-efur*i3
-    write(*,'(i10,a,3g16.8,a7,g16.8)') istep,'  en:',ener*inop,vir*inop,efur*inop*i3,'  pres=',pres 
+    write(*,'(i10,a,3g16.8,a7,g16.8)') istep,'  en:',ener,vir*inop,efur*inop*i3,'  pres=',pres 
   endif
 enddo   
+
+if (wpdb) then
+  call printpdb(88,xc,yc,zc,x,y,z,nmks0,-1)
+endif
 
 cova=(nmks-nmks0)/(nth*iav)+1
 nmksf=cova*nth*iav+nmks0
@@ -887,7 +888,7 @@ do jobs=1,nth
     virel=virel+efurl*i3
     ! writes step, energy & pressure
     pres=nop-virl-efurl*i3
-    write(*,'(i0,x,i0,x,a5,3g16.8,a7,g16.8)') tid,aun,'  en:',enerl*inop,virl*inop,efurl*inop*i3,'  pres=',pres
+    write(*,'(i0,x,i0,x,a5,3g16.8,a7,g16.8)') tid,aun,'  en:',enerl,virl*inop,efurl*inop*i3,'  pres=',pres
   enddo
 enddo
 !$omp end do
@@ -1495,7 +1496,7 @@ real*8 dde,dee,dx,dy,dz,rr,rr2
 ! compute fixed coulombic energy
 fce=0d0
 fcee=0d0
-do i=2,nfix,1
+do i=1,nfix,1
   it=itype(i)
   do j=1,i-1,1
     jt=itype(j)
@@ -1537,7 +1538,7 @@ else
   enew=0d0
 endif
 de=0d0
-do i=1+nfix,nop   
+do i=1+nfix,nop 
   it=itype(i)
   do j=1,i-1,1 
     jt=itype(j) 

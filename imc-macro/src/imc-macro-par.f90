@@ -1214,7 +1214,7 @@ real dde,dee,dx,dy,dz,rr,rr2
 ! compute fixed coulombic energy
 fce=0d0
 fcee=0d0
-do i=2,nfix,1
+do i=1,nfix,1
   it=itype(i)
   do j=1,i-1,1
     jt=itype(j)
