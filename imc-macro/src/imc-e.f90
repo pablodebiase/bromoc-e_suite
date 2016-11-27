@@ -888,7 +888,7 @@ do jobs=1,nth
     virel=virel+efurl*i3
     ! writes step, energy & pressure
     pres=nop-virl-efurl*i3
-    write(*,'(i0,x,i0,x,a5,3g16.8,a7,g16.8)') tid,aun,'  en:',enerl,virl*inop,efurl*inop*i3,'  pres=',pres
+    write(*,'(i3,x,i7,x,a,3g16.8,a7,g16.8)') tid,aun,'en:',enerl,virl*inop,efurl*inop*i3,'  pres=',pres
   enddo
 enddo
 !$omp end do
@@ -945,7 +945,7 @@ write(*,*)'Pressure components    ',nop,-virs*fnr,-vire*fnr
 write(*,*)'------------------------------------'
 
 ! Radial distribution function
-if(iprint.ge.6)write(*,*)'Radial distribution functions:'
+write(*,*)'Radial distribution functions:'
 felc=0e0
 felr=0e0
 do it=1,ntyp
@@ -1046,10 +1046,10 @@ if(info.ne.0)then
    if (info.lt.0) write(*,*) 'The ',-info,'th argument had an illegal value'
    if (info.gt.0) write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
    write(*,*) 'DIM = ',nur
-   write(*,*) 'A = '
+   if (iprint.ge.6) write(*,*) 'A = '
    if (iprint.ge.6) write(*,*) cross(1:nur,1:nur)
-   write(*,*) 'B = '
-   write(*,*) diff(1:nur)
+   if (iprint.ge.6) write(*,*) 'B = '
+   if (iprint.ge.6) write(*,*) diff(1:nur)
    stop
 endif
 
