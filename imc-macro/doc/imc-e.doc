@@ -156,10 +156,11 @@ Meaning of parameters are:
  ZEROMOVE=1.0,                       ! if S is zero move potential up to this limit
  LELEC=.t.,                          ! if .true. compute electrostatics and ewald
  LRESPOT=.f.,                        ! if .true. several restriction to the potential for pairs may be specified in respotnm
- RESPOTNM='imc-macro-fix.pot'        ! Format: rows must contain 2 columns with each particle type numbers
- LSEPPOT=.f.                         ! Dump separated potential files for each pair (can be used combined with LDMPPOT)
- LSEPRDF=.f.                         ! Dump separated RDF and S (=4.pi.r^2.RDF) files for each pair
- lREFCRD=.f.                         ! Use first particle in pdb as internal coordinates reference for the rest of the particles
+ RESPOTNM='imc-macro-fix.pot',       ! Format: rows must contain 2 columns with each particle type numbers
+ LSEPPOT=.f.,                        ! Dump separated potential files for each pair (can be used combined with LDMPPOT)
+ LSEPRDF=.f.,                        ! Dump separated RDF and S (=4.pi.r^2.RDF) files for each pair
+ lREFCRD=.f.,                        ! Use first particle in pdb as internal coordinates reference for the rest of the particles
+ LDMPPDB=.f.,                        ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
  &END
 
 A sample input file is included (imc-macro.in)

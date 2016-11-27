@@ -160,7 +160,7 @@ character*256 fdmp
 logical*1 lrefcrd
 character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
-logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
+logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound,ldmppdb
 real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer i,j,k,ii,jj
 integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
@@ -176,7 +176,7 @@ real*8,allocatable :: xcl(:),ycl(:),zcl(:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd,ldmppdb
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -221,6 +221,7 @@ respotnm = 'imc-macro-fix.pot'  ! Format: particle type 1 particle type 2 free,f
 lseppot  = .false.              ! Dump separated potential files for each pair (can be used combined with ldmppot)
 lseprdf  = .false.              ! Dump separated RDF and S files for each pair 
 lrefcrd  = .false.              ! Use first particle in pdb as internal coordinates reference for the rest of the particles
+ldmppdb  = .false.              ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
 
 ! Time Stamp
 call timestamp()
@@ -681,7 +682,12 @@ if (wpdb) then
 endif
 
 if (wpdb) then
-  if (iprint.ge.7) call printpdb(88,xc,yc,zc,x,y,z,0,-1)
+  if (iprint.ge.7.or.ldmppdb) call printpdb(88,xc,yc,zc,x,y,z,0,-1)
+endif
+
+if (ldmppdb) then
+  close(88)
+  stop 'PDB dumped'
 endif
 
 !$omp parallel private(tid) 
