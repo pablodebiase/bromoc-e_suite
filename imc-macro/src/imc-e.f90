@@ -455,7 +455,7 @@ endif
 
 ! iav 
 if (iav.le.0) then
-  iav=int(1.5*(nop-nfix))
+  iav=int(1.00*(npar-nparfix))
   write(*,*) 'Setting iav to ',iav
   write(*,*)
 endif
