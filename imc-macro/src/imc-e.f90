@@ -638,7 +638,7 @@ if (ldmppot) then
   stop
 endif
 
-if(iprint.ge.6) then 
+if(iprint.ge.7) then 
   write(*,*) 'n1  n2      r       rdf          pot       ind'
   do it=1,ntyp
     do jt=1,it
@@ -682,7 +682,7 @@ if (wpdb) then
 endif
 
 if (wpdb) then
-  if (iprint.ge.6) call printpdb(88,xc,yc,zc,x,y,z,0,-1)
+  if (iprint.ge.7) call printpdb(88,xc,yc,zc,x,y,z,0,-1)
 endif
 
 !$omp parallel private(tid) 
@@ -945,12 +945,12 @@ write(*,*)'Pressure components    ',nop,-virs*fnr,-vire*fnr
 write(*,*)'------------------------------------'
 
 ! Radial distribution function
-write(*,*)'Radial distribution functions:'
 felc=0e0
 felr=0e0
 do it=1,ntyp
   do jt=it,ntyp
     if(iprint.ge.6)then
+      write(*,*)'Radial distribution functions:'
       write(*,*)' This pair:',nms(it),' - ',nms(jt) 
       write(*,*)'   R       RDF   RDFref     <S(R)> ','   <S(R)ref>    delta           typ '
     endif
@@ -1046,10 +1046,10 @@ if(info.ne.0)then
    if (info.lt.0) write(*,*) 'The ',-info,'th argument had an illegal value'
    if (info.gt.0) write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
    write(*,*) 'DIM = ',nur
-   if (iprint.ge.6) write(*,*) 'A = '
-   if (iprint.ge.6) write(*,*) cross(1:nur,1:nur)
-   if (iprint.ge.6) write(*,*) 'B = '
-   if (iprint.ge.6) write(*,*) diff(1:nur)
+   if (iprint.ge.8) write(*,*) 'A = '
+   if (iprint.ge.8) write(*,*) cross(1:nur,1:nur)
+   if (iprint.ge.8) write(*,*) 'B = '
+   if (iprint.ge.8) write(*,*) diff(1:nur)
    stop
 endif
 
