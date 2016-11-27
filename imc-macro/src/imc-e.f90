@@ -902,10 +902,11 @@ virs=virs+virsl
 vire=vire+virel
 ! writes pdb
 if (wpdb) then
-  if (mod(istep,wpdbfq).eq.0) call printpdb(88,xcl,ycl,zcl,xl,yl,zl,istep,tid)
+  if (mod(aun,wpdbfq).eq.0) call printpdb(88,xcl,ycl,zcl,xl,yl,zl,aun,tid)
 endif
 !$omp end critical
 !$omp end parallel
+
 if (wpdb) close(88) 
 
 fnr=1e0/float(nav)
