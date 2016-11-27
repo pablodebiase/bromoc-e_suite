@@ -157,7 +157,7 @@ integer*8 timer,wall
 integer kode,iseed,wpdbfq,npartyp
 integer rstfq,ityp,jtyp,ilast
 character*256 fdmp
-logical*1 ldmp,lrefcrd
+logical*1 lrefcrd
 character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
 logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound
@@ -176,7 +176,7 @@ real*8,allocatable :: xcl(:),ycl(:),zcl(:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,ldmp,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -220,7 +220,6 @@ lrespot  = .false.              ! if .true. several restriction to the potential
 respotnm = 'imc-macro-fix.pot'  ! Format: particle type 1 particle type 2 free,fix,sas,scale,shift,fixce 
 lseppot  = .false.              ! Dump separated potential files for each pair (can be used combined with ldmppot)
 lseprdf  = .false.              ! Dump separated RDF and S files for each pair 
-ldmp     = .false.              ! ignored, not used
 lrefcrd  = .false.              ! Use first particle in pdb as internal coordinates reference for the rest of the particles
 
 ! Time Stamp

@@ -111,7 +111,6 @@ Meaning of parameters are:
  NMKS0=500000,                       ! num of MC steps for equilibration
  LPOT=.f.,                           ! .t. : trial potential from the input file,
                                        otherwise mean force potential used
- LDMP=.t.,                           ! dump restart file
  LRST=.f.,                           ! .t. - start from the restart file
                                        otherwise - new run
  FILRDF='imc-macro.rdf',             ! file with reference RDF
