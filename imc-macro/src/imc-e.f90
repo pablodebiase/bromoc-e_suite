@@ -1047,7 +1047,7 @@ if(info.ne.0)then
    if (info.gt.0) write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
    write(*,*) 'DIM = ',nur
    write(*,*) 'A = '
-   write(*,*) cross(1:nur,1:nur)
+   if (iprint.ge.6) write(*,*) cross(1:nur,1:nur)
    write(*,*) 'B = '
    write(*,*) diff(1:nur)
    stop
