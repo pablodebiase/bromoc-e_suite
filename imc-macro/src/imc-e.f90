@@ -452,6 +452,20 @@ else
   stop 'Cannot work without pdb'  
 endif
 
+if (iprint.ge.7) then
+  write(*,*) 'Pair Count:'
+  do it=1,ntyp
+    do jt=it,ntyp
+      if (it.eq.jt) then
+        i=nspec(it)*(nspec(it)-1)/2
+      else
+        i=nspec(it)*nspec(jt)
+      endif
+      write(*,*) it, jt, idx(it,jt), nspec(it), nspec(jt), i, paircnt(idx(it,jt))
+    enddo
+  enddo
+endif
+
 ! iav 
 if (iav.le.0) then
   iav=int(1.00*(npar-nparfix))
@@ -1044,7 +1058,7 @@ allocate (ipvt(nur))
 call sgesv(nur,1,cross(1:nur,1:nur),nur,ipvt,diff(1:nur),nur,info)
 
 if(info.ne.0)then
-   write(*,*)'STOP singular correlation matrix. Error #',info
+   write(*,*)'Singular correlation matrix problem. Error #',info
    if (info.lt.0) write(*,*) 'The ',-info,'th argument had an illegal value'
    if (info.gt.0) write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
    write(*,*) 'DIM = ',nur
@@ -1052,7 +1066,7 @@ if(info.ne.0)then
    if (iprint.ge.8) write(*,*) cross(1:nur,1:nur)
    if (iprint.ge.8) write(*,*) 'B = '
    if (iprint.ge.8) write(*,*) diff(1:nur)
-   stop
+   if (info.lt.0) stop
 endif
 
 cor=0e0
