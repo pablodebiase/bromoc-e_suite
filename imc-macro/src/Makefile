@@ -11,8 +11,8 @@ all : $(OBJ) $(PAR) $(PAR2) $(OBJ2)
 # System dependent compilation commands
 
 FCOMPL = gfortran #gnu
-#FFLAGC = -fdefault-real-8 # gnu real*8 
-FFLAGC =  # gnu real*4 (default)
+FFLAGC = -fdefault-real-8 # gnu real*8 
+#FFLAGC =  # gnu real*4 (default)
 CCOMPL = gcc # gnu
 CFLAGC =
 OPT = -march=native -ffast-math -fno-protect-parens -ffree-line-length-none -O3 -fopenmp #-Wall
@@ -110,7 +110,7 @@ install:
 	@ if [ -f $(PAR) ]; then mv $(PAR) ../bin/ ; fi
 	@ if [ -f $(PAR2) ]; then mv $(PAR2) ../bin/ ; fi
 	@ if [ -f $(OBJ2) ]; then mv $(OBJ2) ../bin/ ; fi
-	@ if [ ! -e ../../bin/$(OBJ) ]; then ln -s ../imc-macro/bin/$(OBJ) ../../bin/$(OBJ) ; fi
-	@ if [ ! -e ../../bin/$(PAR) ]; then ln -s ../imc-macro/bin/$(PAR) ../../bin/$(PAR) ; fi
-	@ if [ ! -e ../../bin/$(PAR2) ]; then ln -s ../imc-macro/bin/$(PAR2) ../../bin/$(PAR2) ; fi
-	@ if [ ! -e ../../bin/$(OBJ2) ]; then ln -s ../imc-macro/bin/$(OBJ2) ../../bin/$(OBJ2) ; fi
+	@ if [ ! -e ../../bin/$(OBJ) ]; then rm -f ../../bin/$(OBJ) ; ln -s ../imc-macro/bin/$(OBJ) ../../bin/$(OBJ) ; fi
+	@ if [ ! -e ../../bin/$(PAR) ]; then rm -f ../../bin/$(PAR) ; ln -s ../imc-macro/bin/$(PAR) ../../bin/$(PAR) ; fi
+	@ if [ ! -e ../../bin/$(PAR2) ]; then rm -f ../../bin/$(PAR2) ; ln -s ../imc-macro/bin/$(PAR2) ../../bin/$(PAR2) ; fi
+	@ if [ ! -e ../../bin/$(OBJ2) ]; then rm -f ../../bin/$(OBJ2) ; ln -s ../imc-macro/bin/$(OBJ2) ../../bin/$(OBJ2) ; fi

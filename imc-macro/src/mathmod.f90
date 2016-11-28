@@ -70,7 +70,7 @@ contains
   is=0d0
   s=0d0
   do i=1,mp
-    is(i,i)=1d0/dsqrt(ss(i))
+    is(i,i)=1d0/sqrt(ss(i))
     s(i,i)=ss(i)
   enddo
   u=matmul(matmul(a,v),is)
@@ -85,7 +85,7 @@ contains
   is=0d0
   !s=0d0
   do i=1,mp
-    is(i,i)=1d0/dsqrt(ss(i))
+    is(i,i)=1d0/sqrt(ss(i))
   !  s(i,i)=ss(i)
   enddo
   u=matmul(matmul(a,v),is)
@@ -219,7 +219,7 @@ contains
             h=h+a(i,k)**2
   12      continue
           f=a(i,l)
-          g=-sign(dsqrt(h),f)
+          g=-sign(sqrt(h),f)
           e(i)=scale*g
           h=h-f*g
           a(i,l)=f-g
@@ -302,7 +302,7 @@ contains
         if(iter.eq.30) stop 'too many iterations'
         iter=iter+1
         g=(d(l+1)-d(l))/(2d0*e(l))
-        r=dsqrt(g**2+1d0)
+        r=sqrt(g**2+1d0)
         g=d(m)-d(l)+e(l)/(g+sign(r,g))
         s=1d0
         c=1d0
@@ -312,13 +312,13 @@ contains
           b=c*e(i)
           if(abs(f).ge.abs(g))then
             c=g/f
-            r=dsqrt(c**2+1d0)
+            r=sqrt(c**2+1d0)
             e(i+1)=f*r
             s=1d0/r
             c=c*s
           else
             s=f/g
-            r=dsqrt(s**2+1d0)
+            r=sqrt(s**2+1d0)
             e(i+1)=g*r
             c=1d0/r  
             s=s*c
@@ -358,7 +358,7 @@ contains
   if (n.lt.4) stop 'number of particles cannot be lower than 4'
   a=matmul(mat1,transpose(mat2))
   call svd2(3,3,a,u,s,v)
-  one=sign(1d0,det(a))
+  one=sign(1.0,det(a))
   v(:,3)=v(:,3)*one
   !rot=matmul(v,transpose(u))
   rot=matmul(u,transpose(v))

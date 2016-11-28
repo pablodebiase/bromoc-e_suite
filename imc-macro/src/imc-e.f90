@@ -270,9 +270,9 @@ open(unit=4,file=filrdf,status='old')
 read(4,*) ntyp,na,rmin,rmax  ! Reads number of particle types, number of data points, min and max distance
 allocate (nms(ntyp),ch(ntyp),nspec(ntyp),nspecf(ntyp),nspecfr(ntyp),potres(ntyp,ntyp))
 allocate (shelv(na),pot(na,ntyp,ntyp),ras(na),ind(na,ntyp,ntyp),ipot(na,ntyp,ntyp),paircnt(ntyp*(ntyp+1)/2))
-rdfinc=(rmax-rmin)/float(na)
-iri=float(na)/(rmax-rmin)
-aone=1-rmax/na/10e0
+rdfinc=(rmax-rmin)/na
+iri=na/(rmax-rmin)
+aone=1-rmax/na*0.1
 nms=''
 do i=1,ntyp
   read(4,*) nms(i),ch(i),nspec(i)  ! Reads particle type label, particle charge, number of particles of this type
@@ -283,7 +283,7 @@ nop=0
 do ityp=1,ntyp
   nop=nop+nspec(ityp)
 enddo
-inop=1e0/nop
+inop=1.0/nop
 
 !allocate nop dependent arrays
 allocate (itype(nop)) ! INT
@@ -303,7 +303,7 @@ allocate (cross(npot,npot),diff(npot),cor(npot),iucmp(npot))
 nfix=0
 nspecf=0
 nspecfr=0
-cent=0e0
+cent=0.0
 nfxfr=0
 if (rpdb) then
   open(unit=77,file=rpdbnm,status='old')
@@ -972,7 +972,7 @@ do it=1,ntyp
     endif
     do nr=1,na 
       ipt=ipot(nr,it,jt)
-      crc=float(cors(ipt))*fnr 
+      crc=cors(ipt)*fnr 
       rdfref=rdf(ipt)
       crr=rdfref*shelv(nr)*paircnt(idx(it,jt))/vol
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
@@ -1033,7 +1033,7 @@ do ic=1,nur
   do jc=ic,nur 
     j=iucmp(jc)
     if(i.gt.j)write(*,*)'!!!  Violation in uncompressing' 
-    cross(ic,jc) = float(corp(i,j))*fnr-float(cors(i))*float(cors(j))*fnr**2
+    cross(ic,jc) = corp(i,j)*fnr-cors(i)*fnr*cors(j)*fnr
     cross(jc,ic)=cross(ic,jc)
   enddo
 enddo 
@@ -1062,6 +1062,12 @@ if(info.ne.0)then
    if (info.lt.0) write(*,*) 'The ',-info,'th argument had an illegal value'
    if (info.gt.0) write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
    write(*,*) 'DIM = ',nur
+   if (iprint.ge.5.and.info.gt.0) write(*,*) 'A (Row = ',info,') = ',cross(info,1:nur)
+   if (iprint.ge.5.and.info.gt.0) write(*,*) 'A (Column = ',info,') = ',cross(1:nur,info)
+   if (iprint.ge.5.and.info.gt.0) write(*,*) 'B (',info,') = ',diff(info)
+   if (iprint.ge.5.and.info.gt.0) write(*,*) 'INA = ',ina(iucmp(1:nur))
+   if (iprint.ge.5.and.info.gt.0) write(*,*) 'IT = ',ityp1(iucmp(1:nur))
+   if (iprint.ge.5.and.info.gt.0) write(*,*) 'JT = ',ityp2(iucmp(1:nur))
    if (iprint.ge.8) write(*,*) 'A = '
    if (iprint.ge.8) write(*,*) cross(1:nur,1:nur)
    if (iprint.ge.8) write(*,*) 'B = '
@@ -1081,7 +1087,7 @@ do i=1,npot
   if(lzm.and.ind(nr,it1,it2).and.cors(i).eq.0)cor(i)=-zeromove
   if(cor(i).lt.-dpotm)cor(i)=-dpotm
   if(cor(i).gt.dpotm)cor(i)=dpotm
-  if(potres(it1,it2).eq.0)cor(i)=0e0
+  if(potres(it1,it2).eq.0)cor(i)=0.0
 enddo
 
 if (lrespot) then 
@@ -1152,7 +1158,7 @@ do it=1,ntyp
     endif
     do nr=1,na 
       ipt=ipot(nr,it,jt)
-      crc=float(cors(ipt))*fnr
+      crc=cors(ipt)*fnr
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
 !      if(it.eq.jt)then
 !   may be important!
