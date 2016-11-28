@@ -154,7 +154,7 @@ integer,allocatable :: iucmp(:),ipvt(:)
 character,allocatable :: nms(:)*4,partypnam(:)*4
 character :: nmst1*4,nmst2*4,keyword*5
 integer*8 timer,wall
-integer kode,iseed,wpdbfq,npartyp
+integer kode,iseed,npartyp
 integer rstfq,ityp,jtyp,ilast
 character*256 fdmp
 logical*1 lrefcrd
@@ -176,7 +176,7 @@ real*8,allocatable :: xcl(:),ycl(:),zcl(:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,wpdbfq,lrefcrd,ldmppdb
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -209,7 +209,6 @@ b3z      = 0e0                  ! lattice vector 3 z
 iout     = 1000                 ! frequency parameter for writing output
 wpdb     = .false.              ! If .true. writes an pdb file
 wpdbnm   = 'imc-macro-out.pdb'  ! .pdb output filename 
-wpdbfq   = 1000                 ! frequency of saving for xyz 
 rpdb     = .false.              ! If .true. reads from an pdb file fixed and free atomic and molecular particles coordinates and names
 rpdbnm   = 'imc-macro-in.pdb'   ! .pdb output filename
 ldmppot  = .false.              ! dump first guess of potential or the readed potential and stop
@@ -682,7 +681,7 @@ if (wpdb) then
 endif
 
 if (wpdb) then
-  if (iprint.ge.7.or.ldmppdb) call printpdb(88,xc,yc,zc,x,y,z,0,-1)
+  call printpdb(88,xc,yc,zc,x,y,z,0,-1)
 endif
 
 if (ldmppdb) then
@@ -778,9 +777,7 @@ do istep=1,nmks0
   endif
 enddo   
 
-if (wpdb) then
-  call printpdb(88,xc,yc,zc,x,y,z,nmks0,-1)
-endif
+if (wpdb) call printpdb(88,xc,yc,zc,x,y,z,nmks0,-1)
 
 cova=(nmks-nmks0)/(nth*iav)+1
 nmksf=cova*nth*iav+nmks0
@@ -907,7 +904,7 @@ virs=virs+virsl
 vire=vire+virel
 ! writes pdb
 if (wpdb) then
-  if (mod(aun,wpdbfq).eq.0) call printpdb(88,xcl,ycl,zcl,xl,yl,zl,aun,tid)
+  call printpdb(88,xcl,ycl,zcl,xl,yl,zl,nmks,tid)
 endif
 !$omp end critical
 !$omp end parallel

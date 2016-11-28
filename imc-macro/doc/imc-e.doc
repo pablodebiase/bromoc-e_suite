@@ -146,11 +146,10 @@ Meaning of parameters are:
  RTM=10.,                            ! keep this
  ISEED=777,                          ! random seed integer number. Omit or use number lower-equal 
                                        zero to use cpu clock as seeder
- WPDB     = .f.                      ! If .true. writes an pdb file
- WPDBNM   = 'imc-macro-out.pdb'      ! .pdb output filename 
- WPDBFQ   = 1000                     ! frequency of saving for xyz 
- RPDB     = .f.                      ! If .true. reads from an pdb file fixed and free atomic and molecular particles coordinates and names
- RPDBNM   = 'imc-macro-in.pdb'       ! .pdb output filename (Ignored if RPDB = .f.)
+ WPDB     = .f.,                     ! If .true. writes an pdb file
+ WPDBNM   = 'imc-macro-out.pdb',     ! .pdb output filename 
+ RPDB     = .f.,                     ! If .true. reads from an pdb file fixed and free atomic and molecular particles coordinates and names
+ RPDBNM   = 'imc-macro-in.pdb',      ! .pdb output filename (Ignored if RPDB = .f.)
  LDMPPOT=.f.,                        ! if .true. dump first guess of potential or the readed potential and stop
  LZM=.t.,                            ! if .true., if Ref RDF is not null and if S is zero reduce potential to limit (useful to fix overestimated guess potential values)
  ZEROMOVE=1.0,                       ! if S is zero move potential up to this limit
