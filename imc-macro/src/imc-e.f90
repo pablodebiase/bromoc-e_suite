@@ -107,7 +107,7 @@ module invmc
 !   namax - max number of grid points
 !   nkvm - max number of k-vectors in reciprocal Ewald
 implicit none
-real*8,parameter :: i3=1e0/3e0 
+real*8,parameter :: i3=1.0/3.0 
 real*8,allocatable :: x(:),y(:),z(:),q(:)
 real*8,allocatable :: xc(:),yc(:),zc(:)
 real*8,allocatable :: rdf(:),pot(:,:,:),ras(:),ch(:)
@@ -173,6 +173,7 @@ real*8 virel,virsl,virl,rfx
 integer,allocatable :: corsl(:),corpl(:,:)
 real*8,allocatable :: xl(:),yl(:),zl(:),rt(:,:)
 real*8,allocatable :: xcl(:),ycl(:),zcl(:)
+real*8,allocatable :: potbak(:,:,:)
 
 integer*1 restyp
 !  input
@@ -180,15 +181,15 @@ namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
-dr       = 5e0                  ! max particle displacement at each step
+dr       = 5.0                  ! max particle displacement at each step
 iav      = 0                    ! how often < SaSb > evaluated (if iav=0 => iav=1.5*number of particles)
-regp     = 1e0                  ! regularization parameter - between 0 and 1
-dpotm    = 20e0                 ! maximum change of the potential at this iteration
-rtm      = 10e0                 ! keep this 
-af       = 3e0                  ! erfc(af)=0. Ewald parameter, keep this. (erfc(AF) must be small) Put zero if no electrostatics forces out cut-off
-fq       = 9e0                  ! exp(-fq**2)=0. Defines k-cut-off in reciprocal Ewald (exp(-FQ) must be small)
-eps      = 78.3e0               ! dielectric permittivity (default water) 
-temp     = 300e0                ! temperature Note: Ewald parameters, Eps and temperature define only out cut-off corrections of electrostatic interactions
+regp     = 1.0                  ! regularization parameter - between 0 and 1
+dpotm    = 20.0                 ! maximum change of the potential at this iteration
+rtm      = 10.0                 ! keep this 
+af       = 3.0                  ! erfc(af)=0. Ewald parameter, keep this. (erfc(AF) must be small) Put zero if no electrostatics forces out cut-off
+fq       = 9.0                  ! exp(-fq**2)=0. Defines k-cut-off in reciprocal Ewald (exp(-FQ) must be small)
+eps      = 78.3                 ! dielectric permittivity (default water) 
+temp     = 300.0                ! temperature Note: Ewald parameters, Eps and temperature define only out cut-off corrections of electrostatic interactions
 iseed    = 0                    ! random seed integer number. Omit or use number lower-equal zero to use cpu clock as seeder
 iprint   = 5                    ! level of output ( 5 is a good value)
 nmks     = 6100000              ! num of MC-steps
@@ -197,15 +198,15 @@ lpot     = .false.              ! .t. - trial potential from the input file   .f
 filrdf   = 'imc-macro.rdf'      ! file with reference RDF
 filpot   = 'imc-macro-in.pot'   ! input file with "trial" potential (not needed if LPOT=.f.)
 fout     = 'imc-macro-out.pot'  ! improved potential (output), to be used as input at next iteration
-b1x      = 0e0                  ! lattice vector 1 x
-b1y      = 0e0                  ! lattice vector 1 y 
-b1z      = 0e0                  ! lattice vector 1 z
-b2x      = 0e0                  ! lattice vector 2 x
-b2y      = 0e0                  ! lattice vector 2 y
-b2z      = 0e0                  ! lattice vector 2 x
-b3x      = 0e0                  ! lattice vector 3 z
-b3y      = 0e0                  ! lattice vector 3 y
-b3z      = 0e0                  ! lattice vector 3 z
+b1x      = 0.0                  ! lattice vector 1 x
+b1y      = 0.0                  ! lattice vector 1 y 
+b1z      = 0.0                  ! lattice vector 1 z
+b2x      = 0.0                  ! lattice vector 2 x
+b2y      = 0.0                  ! lattice vector 2 y
+b2z      = 0.0                  ! lattice vector 2 x
+b3x      = 0.0                  ! lattice vector 3 z
+b3y      = 0.0                  ! lattice vector 3 y
+b3z      = 0.0                  ! lattice vector 3 z
 iout     = 1000                 ! frequency parameter for writing output
 wpdb     = .false.              ! If .true. writes an pdb file
 wpdbnm   = 'imc-macro-out.pdb'  ! .pdb output filename 
@@ -235,7 +236,7 @@ write(*,*)
 read(*,input)
 write(*,input)
 
-latvec=b1y.ne.0e0.or.b1z.ne.0e0.or.b2x.ne.0e0.or.b2z.ne.0e0.or.b3x.ne.0e0.or.b3y.ne.0e0
+latvec=b1y.ne.0.0.or.b1z.ne.0.0.or.b2x.ne.0.0.or.b2z.ne.0.0.or.b3x.ne.0.0.or.b3y.ne.0.0
 boxlx=b1x
 boxly=b2y
 boxlz=b3z 
@@ -588,11 +589,11 @@ write(*,*)
 ! Get RDF and make first approximation
 read(4,*,iostat=kode)rr,rdfp,it1,it2
 do while(kode.eq.0)
-  nr=(rr-rmin)*iri+aone
+  nr=int((rr-rmin)*iri+aone)
   if (nr.ge.1.and.nr.le.na) then 
     ip=ipot(nr,it1,it2)
     rdf(ip)=rdfp
-    shift=0e0
+    shift=0.0
     if (lelec) shift=ch(it1)*ch(it2)*coulf/rmax
     if(rdfp.gt.0.0)then
       dlr=-log(rdfp)
@@ -611,8 +612,7 @@ if(.not.lpot)write(*,*)'Mean force potential is used'
 
 do nr=1,na
   ras(nr)=rmin+nr*rdfinc
-!  shelv(nr)=4e0*pi*rdfinc*(ras(nr)**2+rdfinc**2/12e0) 
-  shelv(nr)=4e0*pi*rdfinc*(ras(nr)**2+rdfinc**2*i3-rdfinc*ras(nr))
+  shelv(nr)=4.0*pi*rdfinc*(ras(nr)**2+rdfinc**2*i3-rdfinc*ras(nr))
 enddo
 
 if (lpot) then 
@@ -675,17 +675,17 @@ else
   allocate (ssinl(1),scosl(1),ddsinl(1),ddcosl(1)) ! FUR
 endif
 
-efur=0e0 
+efur=0.0 
 ! Set initial variables if no restart
 !   summators=0
 nmksf=0
 iud=0
 nav=0 
-eners=0e0 
-avexp=0e0 
-ave2=0e0
-virs=0e0
-vire=0e0
+eners=0.0 
+avexp=0.0 
+ave2=0.0
+virs=0.0
+vire=0.0
 cors=0
 corp=0
 call fixedenergy
@@ -717,17 +717,17 @@ end if
 
 !   Monte Carlo  
 do istep=1,nmks0
-  ii=(npar-nparfix)*rndm()+1+nparfix
-  x1=xc(ii)+dr*(rndm()-0.5e0)
-  y1=yc(ii)+dr*(rndm()-0.5e0)
-  z1=zc(ii)+dr*(rndm()-0.5e0)
+  ii=int((npar-nparfix)*rndm())+1+nparfix
+  x1=xc(ii)+dr*(rndm()-0.5)
+  y1=yc(ii)+dr*(rndm()-0.5)
+  z1=zc(ii)+dr*(rndm()-0.5)
   call pbc(x1,y1,z1)
   if (allocated(rt)) deallocate(rt)
   allocate (rt(3,ne(ii)))
   rt=0.0
   if (ne(ii).gt.1) call uranrot(ii,rt)
   !  Energy difference
-  de=0d0
+  de=0.0
   do jj=1,npar
     if (ii.eq.jj) cycle
     do i=1+sr(ii),ne(ii)+sr(ii)
@@ -743,10 +743,10 @@ do istep=1,nmks0
         rrn2=dx**2+dy**2+dz**2
         if(rrn2.lt.rcut2)then
           rrn=sqrt(rrn2)
-          nr=(rrn-rmin)*iri+1
+          nr=int((rrn-rmin)*iri)+1
           de=de+pot(nr,it,jt)
           if (lelec) then
-            dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1e0)/rrn
+            dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1.0)/rrn
             de=de+dee
           endif
         endif
@@ -757,10 +757,10 @@ do istep=1,nmks0
         rro2=dx**2+dy**2+dz**2
         if(rro2.lt.rcut2)then
           rro=sqrt(rro2)
-          nr=(rro-rmin)*iri+1
+          nr=int((rro-rmin)*iri)+1
           de=de-pot(nr,it,jt)
           if (lelec) then
-            dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1e0)/rro
+            dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1.0)/rro
             de = de-dee
           endif
         endif
@@ -830,7 +830,7 @@ call srand(isd*(tid+1))
 do jobs=1,nth
   do aun=1,cova
     do istepl=1,iav
-      ii=(npar-nparfix)*rndm()+1+nparfix
+      ii=int((npar-nparfix)*rndm())+1+nparfix
       x1=xcl(ii)+dr*(rndm()-0.5e0)
       y1=ycl(ii)+dr*(rndm()-0.5e0)
       z1=zcl(ii)+dr*(rndm()-0.5e0)
@@ -840,7 +840,7 @@ do jobs=1,nth
       rt=0.0
       if (ne(ii).gt.1) call uranrot(ii,rt)
       !  Energy difference
-      del=0d0
+      del=0.0
       do jj=1,npar
         if (ii.eq.jj) cycle
         do i=1+sr(ii),ne(ii)+sr(ii)
@@ -856,10 +856,10 @@ do jobs=1,nth
             rrn2=dx**2+dy**2+dz**2
             if(rrn2.lt.rcut2)then
               rrn=sqrt(rrn2)
-              nr=(rrn-rmin)*iri+1
+              nr=int((rrn-rmin)*iri)+1
               del=del+pot(nr,it,jt)
               if (lelec) then
-                dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1e0)/rrn
+                dee=chi*ch(jt)*coulf*(erfc(alpha*rrn)-1.0)/rrn
                 del = del+dee
               endif
             endif
@@ -870,10 +870,10 @@ do jobs=1,nth
             rro2=dx**2+dy**2+dz**2
             if(rro2.lt.rcut2)then
               rro=sqrt(rro2)
-              nr=(rro-rmin)*iri+1
+              nr=int((rro-rmin)*iri)+1
               del=del-pot(nr,it,jt)
               if (lelec) then
-                dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1e0)/rro
+                dee=chi*ch(jt)*coulf*(erfc(alpha*rro)-1.0)/rro
                 del = del-dee
               endif
             endif
@@ -929,7 +929,7 @@ endif
 
 if (wpdb) close(88) 
 
-fnr=1e0/float(nav)
+fnr=1.0/float(nav)
 
 !time stamp and wall time
 call timestamp()
@@ -965,8 +965,8 @@ write(*,*)'Pressure components    ',nop,-virs*fnr,-vire*fnr
 write(*,*)'------------------------------------'
 
 ! Radial distribution function
-felc=0e0
-felr=0e0
+felc=0.0
+felr=0.0
 do it=1,ntyp
   do jt=it,ntyp
     if(iprint.ge.6)then
@@ -980,20 +980,10 @@ do it=1,ntyp
       rdfref=rdf(ipt)
       crr=rdfref*shelv(nr)*paircnt(idx(it,jt))/vol
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
-!      if(it.eq.jt)then
-!   may be important!
-!   How do you normalize RDF between likewise particles?
-!   The same should be done ~ 100 lines below
-!   Normalize on N*(N-1)/2
-!	        fac=0.5*(dfloat(nspec(it))-1.d0)/dfloat(nspec(it))
-!   Normalize on N**2/2
-!        crr=crr*(nspec(it)-1)/(nspec(it)*2e0)
-!        rdfc=rdfc*2e0*dfloat(nspec(it))/dfloat(nspec(it)-1)
-!      endif 
-      felc=felc+(crc-crr)**2                         ! total error
+      felc=felc+(crc-crr)**2
       felr=felr+(rdfref-rdfc)**2
       difrc=(crc-crr)*regp 
-      if(crc.ne.0e0)then
+      if(crc.ne.0.0)then
         if(difrc/crc.gt. rtm)difrc= crc*rtm
         if(difrc/crc.lt.-rtm)difrc=-crc*rtm 
       endif
@@ -1103,10 +1093,10 @@ enddo
 if (lrespot) then 
   do it=1,ntyp
     do jt=it,ntyp
-      vrvs=0e0
-      vr=0e0
-      vs=0e0
-      vs2=0e0
+      vrvs=0.0
+      vr=0.0
+      vs=0.0
+      vs2=0.0
       it1=0
       do nr=1,na
         ipt=ipot(nr,it,jt)
@@ -1145,7 +1135,19 @@ if (lrespot) then
   enddo
 endif
 
-!   Output of potential
+! Prepare output potential
+allocate (potbak(na,ntyp,ntyp))
+potbak=pot
+do it=1,ntyp
+  do jt=it,ntyp
+    do nr=1,na
+      ipt=ipot(nr,it,jt)
+      pot(nr,it,jt)=potbak(nr,it,jt)+cor(ipt)
+    enddo
+ enddo
+enddo
+call fixpotential(ntyp)
+
 open(unit=2,file=fout,status='unknown')
 write(2,*)ntyp,na,rmin,rmax
 write(*,*)'------------------------------------'
@@ -1170,17 +1172,8 @@ do it=1,ntyp
       ipt=ipot(nr,it,jt)
       crc=cors(ipt)*fnr
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
-!      if(it.eq.jt)then
-!   may be important!
-!   How do you normalize RDF between likewise particles?
-!   The same should be done ~ 100 lines below
-!   Normalize on N*(N-1)/2
-!	        fac=0.5*(dfloat(nspec(it))-1.d0)/dfloat(nspec(it))
-!   Normalize on N**2/2
-!        rdfc=rdfc*2e0*dfloat(nspec(it))/dfloat(nspec(it)-1)
-!      endif
-      poten=pot(nr,it,jt)
-      potnew=poten+cor(ipt) 
+      poten=potbak(nr,it,jt)
+      potnew=pot(nr,it,jt)
       if(ind(nr,it,jt)) write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
       write(2,*)ras(nr),potnew,it,jt
       if(lseppot.and.ind(nr,it,jt)) then
@@ -1223,9 +1216,9 @@ real*8    cutk2,rk2,pial
 if(alpha.gt.0.001)then
   pial=(pi/alpha)**2
   cutk2=fq/pial
-  kmaxx=sqrt(cutk2)*boxlx+1
-  kmaxy=sqrt(cutk2)*boxly+1
-  kmaxz=sqrt(cutk2)*boxlz+1
+  kmaxx=int(sqrt(cutk2)*boxlx)+1
+  kmaxy=int(sqrt(cutk2)*boxly)+1
+  kmaxz=int(sqrt(cutk2)*boxlz)+1
 else
   kmaxx=0
   kmaxy=0
@@ -1273,12 +1266,12 @@ if(init)then
   if(alpha.gt.0.001)then
     pial=(pi/alpha)**2
     cutk2=fq/pial
-    kmaxx=sqrt(cutk2)*boxlx+1
-    kmaxy=sqrt(cutk2)*boxly+1
-    kmaxz=sqrt(cutk2)*boxlz+1
+    kmaxx=int(sqrt(cutk2)*boxlx)+1
+    kmaxy=int(sqrt(cutk2)*boxly)+1
+    kmaxz=int(sqrt(cutk2)*boxlz)+1
   else
-    pial=1e0
-    cutk2=0e0
+    pial=1.0
+    cutk2=0.0
     kmaxx=0
     kmaxy=0
     kmaxz=0
@@ -1314,7 +1307,7 @@ if(init)then
   enddo      
   nkv=ikv
   write(*,*)'kmaxx=',kmaxx,' kmaxy=',kmaxy,'kmaxz=',kmaxz,'    Num. of k-vectors ',nkv
-  esf=0e0
+  esf=0.0
   aff=alpha/sqrt(pi)
   do i=1,nop
     esf=esf-aff*coulf*q(i)**2
@@ -1326,8 +1319,8 @@ do ikv=1,nkv
   kxv=kx(ikv)
   kyv=ky(ikv)
   kzv=kz(ikv)
-  scs=0e0
-  ssn=0e0
+  scs=0.0
+  ssn=0.0
 !$DIR NO_RECURRENCE
   do i=1,nop
     sc=(kxv*x(i)*iboxlx + kyv*y(i)*iboxly + kzv*z(i)*iboxlz)*pi2 
@@ -1360,12 +1353,12 @@ if(init)then
   if(alpha.gt.0.001)then
     pial=(pi/alpha)**2
     cutk2=fq/pial
-    kmaxx=sqrt(cutk2)*boxlx+1
-    kmaxy=sqrt(cutk2)*boxly+1
-    kmaxz=sqrt(cutk2)*boxlz+1
+    kmaxx=int(sqrt(cutk2)*boxlx)+1
+    kmaxy=int(sqrt(cutk2)*boxly)+1
+    kmaxz=int(sqrt(cutk2)*boxlz)+1
   else
-    pial=1e0
-    cutk2=0e0
+    pial=1.0
+    cutk2=0.0
     kmaxx=0
     kmaxy=0
     kmaxz=0
@@ -1401,7 +1394,7 @@ if(init)then
   enddo
   nkv=ikv
   write(*,*)'kmaxx=',kmaxx,' kmaxy=',kmaxy,'kmaxz=',kmaxz,'    Num. of k-vectors ',nkv
-  esf=0e0
+  esf=0.0
   aff=alpha/sqrt(pi)
   do i=1,nop
     esf=esf-aff*coulf*q(i)**2
@@ -1413,8 +1406,8 @@ do ikv=1,nkv
   kxv=kx(ikv)
   kyv=ky(ikv)
   kzv=kz(ikv)
-  scs=0e0
-  ssn=0e0
+  scs=0.0
+  ssn=0.0
 !$DIR NO_RECURRENCE
   do i=1,nop
     sc=(kxv*x(i)*iboxlx + kyv*y(i)*iboxly + kzv*z(i)*iboxlz)*pi2
@@ -1438,8 +1431,8 @@ implicit none
 integer ikv,ikx,iky,ikz,i
 real*8 dee,chi,x1,y1,z1,ddd,dcs,scn,sco,scp,sinr,dsn
 !   reciprocal space Evald
-dee=0e0
-chi=2e0*chi 
+dee=0.0
+chi=2.0*chi 
 do ikv=1,nkv
   ikx=kx(ikv)
   iky=ky(ikv)
@@ -1452,7 +1445,7 @@ do ikv=1,nkv
   dcs=-sin(scp)*sinr
   ddsin(ikv)=dsn
   ddcos(ikv)=dcs
-  ddd=(2e0*ssin(ikv)+dsn)*dsn+(2e0*scos(ikv)+dcs)*dcs  
+  ddd=(2.0*ssin(ikv)+dsn)*dsn+(2.0*scos(ikv)+dcs)*dcs
   dee=dee+ddd*rkv(ikv)
 enddo
 end subroutine
@@ -1469,8 +1462,8 @@ real*8 dee,chi,x1,y1,z1,ddd,dcs,scn,sco,scp,sinr,dsn
 real*8 ssinl(*),scosl(*),ddsinl(*),ddcosl(*)
 
 !   reciprocal space Evald
-dee=0e0
-chi=2e0*chi
+dee=0.0
+chi=2.0*chi
 do ikv=1,nkv
   ikx=kx(ikv)
   iky=ky(ikv)
@@ -1483,7 +1476,7 @@ do ikv=1,nkv
   dcs=-sin(scp)*sinr
   ddsinl(ikv)=dsn
   ddcosl(ikv)=dcs
-  ddd=(2e0*ssinl(ikv)+dsn)*dsn+(2e0*scosl(ikv)+dcs)*dcs
+  ddd=(2.0*ssinl(ikv)+dsn)*dsn+(2.0*scosl(ikv)+dcs)*dcs
   dee=dee+ddd*rkv(ikv)
 enddo
 end subroutine
@@ -1527,8 +1520,8 @@ integer i,j,it,jt,nr
 real*8 dde,dee,dx,dy,dz,rr,rr2
 
 ! compute fixed coulombic energy
-fce=0d0
-fcee=0d0
+fce=0.0
+fcee=0.0
 do i=1,nfix,1
   it=itype(i)
   do j=1,i-1,1
@@ -1541,10 +1534,10 @@ do i=1,nfix,1
     rr2=dx**2+dy**2+dz**2
     if(rr2.lt.rcut2)then
       rr=sqrt(rr2)
-      nr=(rr-rmin)*iri+1
+      nr=int((rr-rmin)*iri)+1
       dde=pot(nr,it,jt)
       if (lelec) then 
-        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1e0)/rr
+        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1.0)/rr
         fce =fce + dee
         fcee=fcee+ dee
       endif
@@ -1568,9 +1561,9 @@ if (lelec) then
   write(*,*)' Efur=',efur
   enew=efur
 else
-  enew=0d0
+  enew=0.0
 endif
-de=0d0
+de=0.0
 do i=1+nfix,nop 
   it=itype(i)
   do j=1,i-1,1 
@@ -1582,10 +1575,10 @@ do i=1+nfix,nop
     call pbc(dx,dy,dz)
     rr=sqrt(dx**2+dy**2+dz**2)
     if(rr.lt.rcut)then
-      nr=(rr-rmin)*iri+1
+      nr=int((rr-rmin)*iri)+1
       dde=pot(nr,it,jt)
       if (lelec) then 
-        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1e0)/rr
+        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1.0)/rr
         efur=efur+dee 
         de =de + dee
       endif
@@ -1602,20 +1595,19 @@ end subroutine
 subroutine correl                                                                
 use invmc
 implicit none
-real*8 dde,dee,dx,dy,dz,rr,rr2 !,eit(nop),ett
+real*8 dde,dee,dx,dy,dz,rr,rr2
 real*8 enew
 integer i,j,it,jt,nr,nr1,nr2,ipt,ccor(npot),ccc
 
 if (lelec) then 
-  call ewald(enew) 
+  call ewald(enew)
   efur=enew
 else
-  enew=0d0
+  enew=0.0
 endif
-de=0d0     
-vir=0e0
+de=0.0
+vir=0.0
 ccor=0
-!eit=0e0
 do i=1+nfix,nop   
   it=itype(i) 
   do j=1,i-1,1
@@ -1628,15 +1620,15 @@ do i=1+nfix,nop
     rr2=dx**2+dy**2+dz**2
     if(rr2.lt.rcut2)then
       rr=sqrt(rr2)
-      nr=(rr-rmin)*iri+1
+      nr=int((rr-rmin)*iri)+1
       dde=pot(nr,it,jt)
       if (lelec) then 
-        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1e0)/rr
+        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1.0)/rr
         efur=efur+dee 
         de=de+dee
       endif
       de =de + dde 
-      nr1=(rr-rmin)*iri+0.5e0
+      nr1=int((rr-rmin)*iri+0.5)
       if(nr1.lt.1)then
         nr1=1 
       elseif(nr1+1.gt.na) then
@@ -1675,7 +1667,7 @@ end subroutine
 subroutine correlpar(ssinl,scosl,efurl,del,virl,enerl,enersl,corsl,corpl,navl,xl,yl,zl,xcl,ycl,zcl)
 use invmc
 implicit none
-real*8 dde,dee,dx,dy,dz,rr,rr2,virl !,eit(nop),ett
+real*8 dde,dee,dx,dy,dz,rr,rr2,virl
 real*8 enew,efurl,del,enerl,enersl
 integer i,j,it,jt,nr,nr1,nr2,ipt,ccor(npot),ccc,navl
 real*8 ssinl(*),scosl(*),xl(*),yl(*),zl(*)
@@ -1686,12 +1678,11 @@ if (lelec) then
   call ewaldpar(enew,ssinl,scosl)
   efurl=enew
 else
-  enew=0d0
+  enew=0.0
 endif
-del=0d0
-virl=0e0
+del=0.0
+virl=0.0
 ccor=0
-!eit=0e0
 do i=1+nfix,nop
   it=itype(i)
   do j=1,i-1,1
@@ -1704,15 +1695,15 @@ do i=1+nfix,nop
     rr2=dx**2+dy**2+dz**2
     if (rr2.lt.rcut2) then
       rr=sqrt(rr2)
-      nr=(rr-rmin)*iri+1
+      nr=int((rr-rmin)*iri)+1
       dde=pot(nr,it,jt)
       if (lelec) then
-        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1e0)/rr
+        dee=ch(it)*ch(jt)*coulf*(erfc(alpha*rr)-1.0)/rr
         efurl=efurl+dee
         del=del+dee
       endif
       del =del + dde
-      nr1=(rr-rmin)*iri+0.5e0
+      nr1=int((rr-rmin)*iri+0.5e0)
       if(nr1.lt.1)then
         nr1=1
       elseif(nr1+1.gt.na) then
@@ -1858,7 +1849,7 @@ dpm(9)=31+dpm(8)
 dpm(10)=30+dpm(9)
 dpm(11)=31+dpm(10)
 dpm(12)=30+dpm(11)
-dpy=int((ta(1)-1)/4)*(4*365.25)+mod(ta(1)-1,4)*365
+dpy=int(int((ta(1)-1)/4)*(4*365.25))+mod(ta(1)-1,4)*365
 timer=((((dpy+dpm(ta(2))+(ta(3)-1))*24+ta(5))*60+ta(6))*60+ta(7))*1000+ta(8)
 end function
 
@@ -1958,22 +1949,22 @@ do it=1,ntyp
   do jt=1,it
     ppi=0
     ppf=0
-    shift=0e0
+    shift=0.0
     if (lelec) shift=ch(it)*ch(jt)*coulf/rmax
     do nr=1,na
       ip=ipot(nr,it,jt)
       if(.not.ind(nr,it,jt))then
         if (nspec(it)==nspecf(it).and.nspec(jt)==nspecf(jt)) then
           if(.not.lpot) then 
-            pot(nr,it,jt)=0e0
-            pot(nr,jt,it)=0e0
+            pot(nr,it,jt)=0.0
+            pot(nr,jt,it)=0.0
           endif
-          rdf(ip)=1e0
+          rdf(ip)=1.0
         else
           ppf=nr+1
-!          pot(nr,it,jt)=500e0+100e0*(na-nr)
-!          pot(nr,jt,it)=500e0+100e0*(na-nr)
-!          rdf(ip)=0e0
+!          pot(nr,it,jt)=500.0+100.0*(na-nr)
+!          pot(nr,jt,it)=500.0+100.0*(na-nr)
+!          rdf(ip)=0.0
         endif
       else
         if (nspec(it).ne.nspecf(it).or.nspec(jt).ne.nspecf(jt)) then
