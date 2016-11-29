@@ -769,7 +769,7 @@ do istep=1,nmks0
     de=de+dee
   endif
   !  MC transition
-  if (de.le.0.0.or.(de.le.18e0.and.exp(-de).ge.rndm())) then 
+  if (de.le.0.0.or.(de.le.18.0.and.exp(-de).ge.rndm())) then 
   !  New configuration
     xc(ii)=x1
     yc(ii)=y1
@@ -1059,23 +1059,29 @@ call sgesv(nur,1,cross(1:nur,1:nur),nur,ipvt,diff(1:nur),nur,info)
 
 if(info.ne.0)then
    write(*,*)'Singular correlation matrix problem. Error #',info
-   if (info.lt.0) write(*,*) 'The ',-info,'th argument had an illegal value'
-   if (info.gt.0) write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
    write(*,*) 'DIM = ',nur
-   if (iprint.ge.5.and.info.gt.0) write(*,*) 'A (Row = ',info,') = ',cross(info,1:nur)
-   if (iprint.ge.5.and.info.gt.0) write(*,*) 'A (Column = ',info,') = ',cross(1:nur,info)
-   if (iprint.ge.5.and.info.gt.0) write(*,*) 'B (',info,') = ',diff(info)
-   if (iprint.ge.5.and.info.gt.0) write(*,*) 'INA = ',ina(iucmp(1:nur))
-   if (iprint.ge.5.and.info.gt.0) write(*,*) 'IT = ',ityp1(iucmp(1:nur))
-   if (iprint.ge.5.and.info.gt.0) write(*,*) 'JT = ',ityp2(iucmp(1:nur))
-   if (iprint.ge.8) write(*,*) 'A = '
-   if (iprint.ge.8) write(*,*) cross(1:nur,1:nur)
-   if (iprint.ge.8) write(*,*) 'B = '
-   if (iprint.ge.8) write(*,*) diff(1:nur)
-   if (info.lt.0) stop
+   if (info.lt.0) write(*,*) 'The ',-info,'th argument had an illegal value'
+   if (info.gt.0) then 
+     write(*,*) 'U(',info,',',info,') is exactly zero. The factorization has been completed, but the factor U is exactly singular, so the solution could not be computed.'
+     if (iprint.ge.5) then
+       write(*,*) 'A (Row = ',info,') = ',cross(info,1:nur)
+       write(*,*) 'A (Column = ',info,') = ',cross(1:nur,info)
+       write(*,*) 'B (',info,') = ',diff(info)
+       write(*,*) 'INA = ',ina(iucmp(1:nur))
+       write(*,*) 'IT = ',ityp1(iucmp(1:nur))
+       write(*,*) 'JT = ',ityp2(iucmp(1:nur))
+     endif
+   endif
+   if (iprint.ge.8) then
+     write(*,*) 'A = '
+     write(*,*) cross(1:nur,1:nur)
+     write(*,*) 'B = '
+     write(*,*) diff(1:nur)
+   endif
+   stop
 endif
 
-cor=0e0
+cor=0.0
 do ic=1,nur
   i=iucmp(ic)
   cor(i)=diff(ic)
