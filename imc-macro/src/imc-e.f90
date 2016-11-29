@@ -615,7 +615,11 @@ do nr=1,na
   shelv(nr)=4e0*pi*rdfinc*(ras(nr)**2+rdfinc**2*i3-rdfinc*ras(nr))
 enddo
 
-if (.not.lpot) call completepotential(ntyp)
+if (lpot) then 
+  call fixpotential(ntyp)
+else
+  call completepotential(ntyp)
+endif
 
 ! output potential and stop if required
 if (ldmppot) then 
@@ -1918,6 +1922,30 @@ write(*,*) '|               S-10691 Stockholm Sweden            |'
 write(*,*) '|               e-mail: sasha@physc.su.se           |'
 write(*,*) '|___________________________________________________|'
 write(*,*) 
+end subroutine
+
+subroutine fixpotential(ntyp)
+use invmc 
+implicit none
+integer it, jt, nr, ntyp, nn
+real*8 fac
+
+do it=1,ntyp
+  do jt=1,it
+    ! Find first 
+    do nr=1,na
+      if (ind(nr,it,jt)) then
+        nn=nr
+        exit
+      endif
+    enddo
+    fac=pot(nn,it,jt)*ras(nn)**12
+    do nr=1,nn-1
+      pot(nr,it,jt)=fac/ras(nr)**12
+      pot(nr,jt,it)=pot(nr,it,jt)
+    enddo
+  enddo
+enddo
 end subroutine
 
 subroutine completepotential(ntyp)

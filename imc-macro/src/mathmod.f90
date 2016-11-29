@@ -27,10 +27,10 @@ contains
   !implicit none
   !integer*4 iint
   !real*8 num
-  !if (num.ge.0.0d0) then
+  !if (num.ge.0.0.0) then
   !  iint=int(num)
   !else
-  !  if ((num-dfloat(int(num))).eq.0.0d0) then
+  !  if ((num-dfloat(int(num))).eq.0.0.0) then
   !    iint=int(num)
   !  else
   !    iint=int(num)-1
@@ -67,10 +67,10 @@ contains
   integer*4 np,mp,i
   real*8 a(np,mp),u(np,mp),v(mp,mp),ss(mp),s(mp,mp),is(mp,mp)
   call diag(matmul(transpose(a),a),mp,ss,v)
-  is=0d0
-  s=0d0
+  is=0.0
+  s=0.0
   do i=1,mp
-    is(i,i)=1d0/sqrt(ss(i))
+    is(i,i)=1.0/sqrt(ss(i))
     s(i,i)=ss(i)
   enddo
   u=matmul(matmul(a,v),is)
@@ -82,11 +82,9 @@ contains
   real*8 a(np,mp),u(np,mp),v(mp,mp),ss(mp),is(mp,mp)!,s(mp,mp)
   is=matmul(transpose(a),a)
   call diag(is,mp,ss,v)
-  is=0d0
-  !s=0d0
+  is=0.0
   do i=1,mp
-    is(i,i)=1d0/sqrt(ss(i))
-  !  s(i,i)=ss(i)
+    is(i,i)=1.0/sqrt(ss(i))
   enddo
   u=matmul(matmul(a,v),is)
   end subroutine
@@ -106,7 +104,7 @@ contains
   integer*4 np
   real*8 a(np,np),s(np),v(np,np),e(np)
   v=a
-  s=0d0
+  s=0.0
   call tred2(v,np,s,e)
   call tqli(s,e,np,v)
   end subroutine
@@ -115,15 +113,15 @@ contains
   implicit none
   integer*4 i,np,mp
   real*8 mat(np,mp),imat(mp,np),ss(mp),vv(mp,mp),s(mp,mp)
-  real*8,parameter :: low=1d-8
+  real*8,parameter :: low=1e-8
   call diag(matmul(transpose(mat),mat),mp,ss,vv)         ! A = V*S2*Vt
 !  write(*,*) ss
-  s=0d0
+  s=0.0
   do i=1,mp
     if (abs(ss(i)).le.low) then
-      s(i,i)=0d0
+      s(i,i)=0.0
     else
-      s(i,i)=1d0/ss(i)     ! S^2 -> S^-2
+      s(i,i)=1.0/ss(i)     ! S^2 -> S^-2
     endif
   enddo
   ! U = R*V*S-1
@@ -205,13 +203,13 @@ contains
   if(n.gt.1)then
     do 18 i=n,2,-1  
       l=i-1
-      h=0d0
-      scale=0d0
+      h=0.0
+      scale=0.0
       if(l.gt.1)then
         do 11 k=1,l
           scale=scale+abs(a(i,k))
   11    continue
-        if(scale.eq.0d0)then
+        if(scale.eq.0.0)then
           e(i)=a(i,l)
         else
           do 12 k=1,l
@@ -223,10 +221,10 @@ contains
           e(i)=scale*g
           h=h-f*g
           a(i,l)=f-g
-          f=0d0
+          f=0.0
           do 15 j=1,l
             a(j,i)=a(i,j)/h
-            g=0d0
+            g=0.0
             do 13 k=1,j
               g=g+a(j,k)*a(i,k)
   13        continue
@@ -254,13 +252,13 @@ contains
       d(i)=h
   18 continue
   endif
-  d(1)=0d0
-  e(1)=0d0
+  d(1)=0.0
+  e(1)=0.0
   do 23 i=1,n
     l=i-1
-    if(d(i).ne.0d0)then
+    if(d(i).ne.0.0)then
       do 21 j=1,l
-        g=0d0
+        g=0.0
         do 19 k=1,l
           g=g+a(i,k)*a(k,j)
   19    continue
@@ -270,11 +268,11 @@ contains
   21  continue
     endif
     d(i)=a(i,i)
-    a(i,i)=1d0
+    a(i,i)=1.0
     if(l.ge.1)then
       do 22 j=1,l
-        a(i,j)=0d0
-        a(j,i)=0d0
+        a(i,j)=0.0
+        a(j,i)=0.0
   22  continue
     endif
   23 continue
@@ -290,7 +288,7 @@ contains
     do 11 i=2,n
       e(i-1)=e(i)
   11  continue
-    e(n)=0d0
+    e(n)=0.0
     do 15 l=1,n
       iter=0
   1    do 12 m=l,n-1
@@ -301,30 +299,30 @@ contains
   2    if(m.ne.l)then
         if(iter.eq.30) stop 'too many iterations'
         iter=iter+1
-        g=(d(l+1)-d(l))/(2d0*e(l))
-        r=sqrt(g**2+1d0)
+        g=(d(l+1)-d(l))/(2.0*e(l))
+        r=sqrt(g**2+1.0)
         g=d(m)-d(l)+e(l)/(g+sign(r,g))
-        s=1d0
-        c=1d0
-        p=0d0
+        s=1.0
+        c=1.0
+        p=0.0
         do 14 i=m-1,l,-1
           f=s*e(i)
           b=c*e(i)
           if(abs(f).ge.abs(g))then
             c=g/f
-            r=sqrt(c**2+1d0)
+            r=sqrt(c**2+1.0)
             e(i+1)=f*r
-            s=1d0/r
+            s=1.0/r
             c=c*s
           else
             s=f/g
-            r=sqrt(s**2+1d0)
+            r=sqrt(s**2+1.0)
             e(i+1)=g*r
-            c=1d0/r  
+            c=1.0/r  
             s=s*c
           endif
           g=d(i+1)-p
-          r=(d(i)-g)*s+2d0*c*b
+          r=(d(i)-g)*s+2.0*c*b
           p=s*r
           d(i+1)=g+p
           g=c*r-b
@@ -336,7 +334,7 @@ contains
   14      continue
         d(l)=d(l)-p
         e(l)=g
-        e(m)=0d0
+        e(m)=0.0
         go to 1
       endif
   15  continue
