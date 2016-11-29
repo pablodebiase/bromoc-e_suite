@@ -1930,7 +1930,7 @@ do it=1,ntyp
         exit
       endif
     enddo
-    fac=pot(nn,it,jt)*ras(nn)**12
+    fac=abs(pot(nn,it,jt))*ras(nn)**12
     do nr=1,nn-1
       pot(nr,it,jt)=fac/ras(nr)**12
       pot(nr,jt,it)=pot(nr,it,jt)
@@ -1972,9 +1972,9 @@ do it=1,ntyp
             if (ppf.eq.nr) then
               if (ppi.eq.0) then
                 if (lpot) then 
-                  kc=(pot(nr,it,jt))*ras(ppf)**12
+                  kc=abs(pot(nr,it,jt))*ras(ppf)**12
                 else
-                  kc=(shift-log(rdf(ip)))*ras(ppf)**12
+                  kc=abs(shift-log(rdf(ip)))*ras(ppf)**12
                 endif
                 do i=ppi+1,ppf-1
                   pot(i,it,jt)=kc/ras(i)**12
