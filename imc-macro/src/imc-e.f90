@@ -169,7 +169,7 @@ real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
 real*8 vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z
 real*8 deloc,efurl,del,enerl,enersl
 integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
-real*8 virel,virsl,virl,rfx
+real*8 virel,virsl,virl,rfx,iavfac
 integer,allocatable :: corsl(:),corpl(:,:)
 real*8,allocatable :: xl(:),yl(:),zl(:),rt(:,:)
 real*8,allocatable :: xcl(:),ycl(:),zcl(:)
@@ -182,7 +182,8 @@ namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
 dr       = 5.0                  ! max particle displacement at each step
-iav      = 0                    ! how often < SaSb > evaluated (if iav=0 => iav=1.5*number of particles)
+iav      = 0                    ! how often < SaSb > evaluated (if iav=0 => iav=iavfac*number of particles)
+iavfac   = 1.0                  ! IAV Factor. (if iav=0 => iav=iavfac*number of particles)
 regp     = 1.0                  ! regularization parameter - between 0 and 1
 dpotm    = 20.0                 ! maximum change of the potential at this iteration
 rtm      = 10.0                 ! keep this 
@@ -469,7 +470,7 @@ endif
 
 ! iav 
 if (iav.le.0) then
-  iav=int(1.00*(npar-nparfix))
+  iav=int(iavfac*(npar-nparfix))
   write(*,*) 'Setting iav to ',iav
   write(*,*)
 endif

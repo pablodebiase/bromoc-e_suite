@@ -140,7 +140,8 @@ Meaning of parameters are:
  B3Z=50.0,                           ! lattice vector 3 z (a non-rectangular lattice will switch lelec=.f.)
  DR=5.,                              ! max particle displacement at each step
  IOUT=1000,                          ! frequency parameter for writing output
- IAV=0,                              ! how often <SaSb> evaluated (if iav<=0 -> iav=1.5*number of particles)
+ IAV=0,                              ! how often <SaSb> evaluated (if iav<=0 -> iav=iavfac*number of free particles)
+ IAVFAC=1.0,                         ! IAV Factor. (if iav=0 => iav=iavfac*number of free particles)
  REGP=1.,                            ! regularization parameter - between  0 and 1
  DPOTM=20.,                          ! maximum change of the potential at this iteration
  RTM=10.,                            ! keep this
