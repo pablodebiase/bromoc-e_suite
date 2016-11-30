@@ -177,7 +177,7 @@ real*8,allocatable :: potbak(:,:,:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
