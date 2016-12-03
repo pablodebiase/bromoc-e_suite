@@ -1932,7 +1932,7 @@ do it=1,ntyp
       endif
     enddo
     if (pot(nn,it,jt).le.0.0) then
-       fac=1.0*ras(nn)**12
+       fac=10.0*ras(nn)**12
     else
        fac=pot(nn,it,jt)*ras(nn)**12
     endif
