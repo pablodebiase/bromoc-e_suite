@@ -562,6 +562,7 @@ if (lrespot) then
 endif
 
 ! input of potential if present
+pot=0.0
 if(lpot)then
   open(unit=3,file=filpot,status='old')
   read(3,*)ntpp,nap,rmin,rmax
