@@ -1931,7 +1931,11 @@ do it=1,ntyp
         exit
       endif
     enddo
-    fac=abs(pot(nn,it,jt))*ras(nn)**12
+    if (pot(nn,it,jt).le.0.0) then
+       fac=1.0*ras(nn)**12
+    else
+       fac=pot(nn,it,jt)*ras(nn)**12
+    endif
     do nr=1,nn-1
       pot(nr,it,jt)=fac/ras(nr)**12
       pot(nr,jt,it)=pot(nr,it,jt)
