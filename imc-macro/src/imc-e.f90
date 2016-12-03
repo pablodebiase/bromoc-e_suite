@@ -1920,7 +1920,7 @@ subroutine fixpotential(ntyp)
 use invmc 
 implicit none
 integer it, jt, nr, ntyp, nn
-real*8 fac
+real*8 dv,lja,ljb
 
 do it=1,ntyp
   do jt=1,it
@@ -1931,13 +1931,12 @@ do it=1,ntyp
         exit
       endif
     enddo
-    if (pot(nn,it,jt).le.0.0) then
-       fac=10.0*ras(nn)**12
-    else
-       fac=pot(nn,it,jt)*ras(nn)**12
-    endif
+    dv=(pot(nn+1,it,jt)-pot(nn,it,jt))/(ras(nn+1)-ras(nn))
+    if (dv.ge.-5.0) dv=-5.0
+    lja=-ras(nn)**12*(pot(nn,it,jt)+ras(nn)*dv/6.0)
+    ljb=-ras(nn)**6*(2.0*pot(nn,it,jt)+ras(nn)*dv/6.0)
     do nr=1,nn-1
-      pot(nr,it,jt)=fac/ras(nr)**12
+      pot(nr,it,jt)=lja/ras(nr)**12-ljb/ras(nr)**6
       pot(nr,jt,it)=pot(nr,it,jt)
     enddo
   enddo
