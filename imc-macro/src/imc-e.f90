@@ -165,7 +165,7 @@ real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.022141
 integer i,j,k,ii,jj
 integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
 real*8 regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
-real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove
+real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove,bforce
 real*8 vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z
 real*8 deloc,efurl,del,enerl,enersl
 integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
@@ -177,7 +177,7 @@ real*8,allocatable :: potbak(:,:,:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb,bforce
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -223,6 +223,7 @@ lseppot  = .false.              ! Dump separated potential files for each pair (
 lseprdf  = .false.              ! Dump separated RDF and S files for each pair 
 lrefcrd  = .false.              ! Use first particle in pdb as internal coordinates reference for the rest of the particles
 ldmppdb  = .false.              ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
+bforce   = 10.0                 ! Force at head boundary to compute LJ repulsion potential
 
 ! Time Stamp
 call timestamp()
@@ -586,8 +587,8 @@ write(*,*)'Cut off ',rcut
 write(*,*)'Alpha ',alpha
 write(*,*)
 
-
 ! Get RDF and make first approximation
+rdf=0.0
 read(4,*,iostat=kode)rr,rdfp,it1,it2
 do while(kode.eq.0)
   nr=int((rr-rmin)*iri+aone)
@@ -617,7 +618,7 @@ do nr=1,na
 enddo
 
 if (lpot) then 
-  call fixpotential(ntyp)
+  call fixpotential(ntyp,bforce)
 else
   call completepotential(ntyp)
 endif
@@ -975,12 +976,16 @@ do it=1,ntyp
       write(*,*)' This pair:',nms(it),' - ',nms(jt) 
       write(*,*)'   R       RDF   RDFref     <S(R)> ','   <S(R)ref>    delta           typ '
     endif
-    do nr=1,na 
+    do nr=1,na
       ipt=ipot(nr,it,jt)
       crc=cors(ipt)*fnr 
       rdfref=rdf(ipt)
       crr=rdfref*shelv(nr)*paircnt(idx(it,jt))/vol
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
+      if (.not.ind(nr,it,jt)) then
+          if ((crc.gt.0).and.iprint.ge.5) write(*,*) 'Warning: Count detected at Null RDF zone. Adjust BFORCE. Count= ',crc, ' at ',ras(nr),nms(it),nms(jt)
+          cycle
+      endif
       felc=felc+(crc-crr)**2
       felr=felr+(rdfref-rdfc)**2
       difrc=(crc-crr)*regp 
@@ -989,7 +994,7 @@ do it=1,ntyp
         if(difrc/crc.lt.-rtm)difrc=-crc*rtm 
       endif
       cor(ipt)=difrc
-      if(ind(nr,it,jt).and.iprint.ge.6) write(*,'(f9.4,2f10.5,3f10.4,5x,3a4)') ras(nr),rdfc,rdfref,crc,crr,difrc,'rdf:',nms(it),nms(jt)
+      if(iprint.ge.6) write(*,'(f9.4,2f10.5,3f10.4,5x,3a4)') ras(nr),rdfc,rdfref,crc,crr,difrc,'rdf:',nms(it),nms(jt)
     enddo
   enddo
 enddo
@@ -1147,7 +1152,7 @@ do it=1,ntyp
     enddo
  enddo
 enddo
-call fixpotential(ntyp)
+call fixpotential(ntyp,bforce)
 
 open(unit=2,file=fout,status='unknown')
 write(2,*)ntyp,na,rmin,rmax
@@ -1916,11 +1921,11 @@ write(*,*) '|___________________________________________________|'
 write(*,*) 
 end subroutine
 
-subroutine fixpotential(ntyp)
+subroutine fixpotential(ntyp,bforce)
 use invmc 
 implicit none
 integer it, jt, nr, ntyp, nn
-real*8 dv,lja,ljb
+real*8 dv,lja,ljb,bforce
 
 do it=1,ntyp
   do jt=1,it
@@ -1932,7 +1937,7 @@ do it=1,ntyp
       endif
     enddo
     dv=(pot(nn+1,it,jt)-pot(nn,it,jt))/(ras(nn+1)-ras(nn))
-    if (dv.ge.-5.0) dv=-5.0
+    if (dv.gt.-bforce) dv=-bforce
     lja=-ras(nn)**12*(pot(nn,it,jt)+ras(nn)*dv/6.0)
     ljb=-ras(nn)**6*(2.0*pot(nn,it,jt)+ras(nn)*dv/6.0)
     do nr=1,nn-1

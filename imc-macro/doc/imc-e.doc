@@ -159,6 +159,7 @@ Meaning of parameters are:
  LSEPRDF=.f.,                        ! Dump separated RDF and S (=4.pi.r^2.RDF) files for each pair
  lREFCRD=.f.,                        ! Use first particle in pdb as internal coordinates reference for the rest of the particles
  LDMPPDB=.f.,                        ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
+ BFORCE=10.0,                        ! Force at head boundary to compute LJ repulsion potential
  &END
 
 A sample input file is included (imc-macro.in)
