@@ -226,7 +226,7 @@ ldmppdb  = .false.              ! Read PDB and dump PDB after processing. Useful
 lfixpot  = .false.              ! If .true. it will create a LJ repulsion potential at the head 
 bforce   = 10.0                 ! Force at head boundary to compute LJ repulsion potential
 potfac   = 1.0                  ! Potential Correction factor. It will scale the correction of the potential by this factor.
-potefac  = 0.0                  ! Scaling decay exponential factor for correction potential. Will apply corpot*exp(-potefac*abs(corpot)).
+potefac  = 0.0                  ! Softening potential correction. Will apply corpot*(potefac/(potefac+abs(corpot))). If 0 or negative is disabled.
 
 ! Time Stamp
 call timestamp()
@@ -1086,7 +1086,11 @@ endif
 cor=0.0
 do ic=1,nur
   i=iucmp(ic)
-  cor(i)=potfac*exp(-potefac*abs(diff(ic)))*diff(ic)
+  if (potefac.gt.0.0) then 
+    cor(i)=diff(ic)*potfac*(potefac/(potefac+abs(diff(ic))))
+  else
+    cor(i)=potfac*diff(ic)
+  endif
 enddo
 do i=1,npot
   nr=ina(i)

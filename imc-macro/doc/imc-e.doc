@@ -162,7 +162,7 @@ Meaning of parameters are:
  LFIXPOT=.t.,                        ! If .true. it will create a LJ repulsion potential at the head 
  BFORCE=10.0,                        ! Force at head boundary to compute LJ repulsion potential. Ignored if lfixpot = false
  POTFAC=1.0,                         ! Potential Correction factor. It will scale the correction of the potential by this factor. 
- POTEFAC=0.0                         ! Scaling decay exponential factor for correction potential. Will apply corpot*exp(-potefac*abs(corpot)).
+ POTEFAC=0.0                         ! Softening potential correction. Will apply corpot*(potefac/(potefac+abs(corpot))).
  &END
 
 A sample input file is included (imc-macro.in)
