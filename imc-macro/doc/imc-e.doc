@@ -141,7 +141,7 @@ Meaning of parameters are:
  IAV=0,                              ! how often <SaSb> evaluated (if iav<=0 -> iav=iavfac*number of free particles)
  IAVFAC=1.0,                         ! IAV Factor. (if iav=0 => iav=iavfac*number of free particles)
  REGP=1.,                            ! regularization parameter - between  0 and 1
- DPOTM=20.,                          ! maximum change of the potential at this iteration
+ DPOTM=0.,                           ! maximum change of the potential at this iteration. If 0, no limit.
  RTM=10.,                            ! keep this
  ISEED=777,                          ! random seed integer number. Omit or use number lower-equal 
                                        zero to use cpu clock as seeder
@@ -159,8 +159,9 @@ Meaning of parameters are:
  LSEPRDF=.f.,                        ! Dump separated RDF and S (=4.pi.r^2.RDF) files for each pair
  lREFCRD=.f.,                        ! Use first particle in pdb as internal coordinates reference for the rest of the particles
  LDMPPDB=.f.,                        ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
- LFIXPOT=.t.                         ! If .true. it will create a LJ repulsion potential at the head 
- BFORCE=10.0,                        ! Force at head boundary to compute LJ repulsion potential
+ LFIXPOT=.t.,                        ! If .true. it will create a LJ repulsion potential at the head 
+ BFORCE=10.0,                        ! Force at head boundary to compute LJ repulsion potential. Ignored if lfixpot = false
+ POTFAC=1.0                          ! Potential Correction factor. It will scale the correction of the potential by this factor. 
  &END
 
 A sample input file is included (imc-macro.in)
