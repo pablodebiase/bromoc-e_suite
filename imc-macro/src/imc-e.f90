@@ -167,7 +167,7 @@ integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
 real*8 regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
 real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove,bforce
 real*8 vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z
-real*8 deloc,efurl,del,enerl,enersl,potfac
+real*8 deloc,efurl,del,enerl,enersl,potfac,potefac
 integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
 real*8 virel,virsl,virl,rfx,iavfac
 integer,allocatable :: corsl(:),corpl(:,:)
@@ -177,7 +177,7 @@ real*8,allocatable :: potbak(:,:,:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb,bforce,lfixpot,potfac
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb,bforce,lfixpot,potfac,potefac
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -225,7 +225,8 @@ lrefcrd  = .false.              ! Use first particle in pdb as internal coordina
 ldmppdb  = .false.              ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
 lfixpot  = .false.              ! If .true. it will create a LJ repulsion potential at the head 
 bforce   = 10.0                 ! Force at head boundary to compute LJ repulsion potential
-potfac   = 1.0                  ! Potential Correction factor. It will scale the correction of the potential by this factor. 
+potfac   = 1.0                  ! Potential Correction factor. It will scale the correction of the potential by this factor.
+potefac  = 0.0                  ! Scaling decay exponential factor for correction potential. Will apply corpot*exp(-potefac*abs(corpot)).
 
 ! Time Stamp
 call timestamp()
@@ -1085,7 +1086,7 @@ endif
 cor=0.0
 do ic=1,nur
   i=iucmp(ic)
-  cor(i)=potfac*diff(ic)
+  cor(i)=potfac*exp(-potefac*abs(diff(ic)))*diff(ic)
 enddo
 do i=1,npot
   nr=ina(i)
