@@ -160,7 +160,7 @@ character*256 fdmp
 logical*1 lrefcrd
 character*256 filrdf,filpot,fout,respotnm,rpdbnm,wpdbnm
 character*1024 line
-logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound,ldmppdb
+logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound,ldmppdb,lfixpot
 real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer i,j,k,ii,jj
 integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
@@ -177,7 +177,7 @@ real*8,allocatable :: potbak(:,:,:)
 
 integer*1 restyp
 !  input
-namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb,bforce
+namelist /input/ nmks,nmks0,lpot,filrdf,filpot,fout,fdmp,af,fq,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z,dr,iout,iavfac,iav,iprint,regp,dpotm,rtm,eps,temp,iseed,rpdb,rpdbnm,rstfq,ldmppot,zeromove,lzm,lelec,lrespot,respotnm,lseppot,lseprdf,wpdb,wpdbnm,lrefcrd,ldmppdb,bforce,lfixpot
 
 label    = 'IMC-E v4.00'
 datestamp = '13-11-2016'
@@ -223,6 +223,7 @@ lseppot  = .false.              ! Dump separated potential files for each pair (
 lseprdf  = .false.              ! Dump separated RDF and S files for each pair 
 lrefcrd  = .false.              ! Use first particle in pdb as internal coordinates reference for the rest of the particles
 ldmppdb  = .false.              ! Read PDB and dump PDB after processing. Useful in combination with lrefcrd
+lfixpot  = .false.               ! If .true. it will create a LJ repulsion potential at the head 
 bforce   = 10.0                 ! Force at head boundary to compute LJ repulsion potential
 
 ! Time Stamp
@@ -619,7 +620,7 @@ do nr=1,na
 enddo
 
 if (lpot) then 
-  call fixpotential(ntyp,bforce)
+  if (lfixpot) call fixpotential(ntyp,bforce)
 else
   call completepotential(ntyp)
 endif
@@ -983,10 +984,7 @@ do it=1,ntyp
       rdfref=rdf(ipt)
       crr=rdfref*shelv(nr)*paircnt(idx(it,jt))/vol
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
-      if (.not.ind(nr,it,jt)) then
-          if ((crc.gt.0).and.iprint.ge.5) write(*,*) 'Warning: Count detected at Null RDF zone. Adjust BFORCE. Count= ',crc, ' at ',ras(nr),nms(it),nms(jt)
-          cycle
-      endif
+      if (.not.ind(nr,it,jt).and.crc.gt.0.and.iprint.ge.5.and.lfixpot) write(*,*) 'Warning: Count detected at Null RDF zone. Adjust BFORCE. Count= ',crc, ' at ',ras(nr),nms(it),nms(jt)
       felc=felc+(crc-crr)**2
       felr=felr+(rdfref-rdfc)**2
       difrc=(crc-crr)*regp 
@@ -1011,7 +1009,8 @@ do i=1,npot
   nr=ina(i)
   it1=ityp1(i)
   it2=ityp2(i)
-  if(ind(nr,it1,it2).and.cors(i).ne.0) then
+  !if(ind(nr,it1,it2).and.cors(i).ne.0) then
+  if(cors(i).ne.0) then
     if (potres(it1,it2).ge.1)then ! free, shift, scale or sas
       ic=ic+1
       iucmp(ic)=i
@@ -1153,7 +1152,7 @@ do it=1,ntyp
     enddo
  enddo
 enddo
-call fixpotential(ntyp,bforce)
+if (lfixpot) call fixpotential(ntyp,bforce)
 
 open(unit=2,file=fout,status='unknown')
 write(2,*)ntyp,na,rmin,rmax
@@ -1181,13 +1180,16 @@ do it=1,ntyp
       rdfc=crc*vol/(paircnt(idx(it,jt))*shelv(nr))
       poten=potbak(nr,it,jt)
       potnew=pot(nr,it,jt)
-      if(ind(nr,it,jt)) write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
+      !if(ind(nr,it,jt)) write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
+      write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
       write(2,*)ras(nr),potnew,it,jt
-      if(lseppot.and.ind(nr,it,jt)) then
+      !if(lseppot.and.ind(nr,it,jt)) then
+      if(lseppot) then
         write(13,'(f8.3$)') ras(nr)
         write(13,*) potnew
       endif
-      if(lseprdf.and.ind(nr,it,jt)) then
+      !if(lseprdf.and.ind(nr,it,jt)) then
+      if(lseprdf) then
         write(14,'(f8.3$)') ras(nr)
         write(14,*) rdfc,cors(ipt)
       endif
