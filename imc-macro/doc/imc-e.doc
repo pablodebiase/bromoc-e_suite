@@ -116,9 +116,6 @@ Meaning of parameters are:
                                        (not needed if LPOT=.f.)
  FOUT='imc-macro-out.pot',           ! improved potential (output), to be used as
                                        input at next iteration
- FDMP='imc-macro.dmp',               ! restart file
- RSTFQ=10000,                        ! used only if ldmp is true. If 0 dump restart at the end, 
-                                       otherwise dump every rstfq number of steps
  AF=3.,                              ! Ewald parameter, keep this. (erfc(AF) must be small)
                                        Put zero if no electrostatics forces out cut-off
  FQ=19.,                             ! Defines k-cut-off in reciprocal Ewald
