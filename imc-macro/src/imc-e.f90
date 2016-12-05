@@ -647,7 +647,7 @@ if (ldmppot) then
         call lcase(nms(jt),nmst2)
         open(unit=13,file=trim(nmst1)//'-'//trim(nmst2)//'.pot',status='replace',form='formatted')
         do nr=1,na
-          if(ind(nr,it,jt)) then 
+          if(ind(nr,it,jt).or.(nr.lt.na.and.ind(nr+1,it,jt))) then 
             write(13,'(f8.3$)') ras(nr)
             write(13,*) pot(nr,it,jt)
           endif
@@ -1191,7 +1191,7 @@ do it=1,ntyp
       write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
       write(2,*)ras(nr),potnew,it,jt
       !if(lseppot.and.ind(nr,it,jt)) then
-      if(lseppot) then
+      if(lseppot.and.((ind(nr,it,jt).or.(nr.lt.na.and.ind(nr+1,it,jt))))) then
         write(13,'(f8.3$)') ras(nr)
         write(13,*) potnew
       endif
