@@ -71,7 +71,7 @@ def fsync(data,dec):
             if i-l >= 0:
                 cdata[i]+=data[i-l]*b[lm-l]
             else:
-                cdata[i]+=data[l-i]*b[lm-l]
+                cdata[i]+=(2.0*data[i]-data[l-i])*b[lm-l]
             l+=1
         i+=1
     return cdata
@@ -107,7 +107,8 @@ def writepot(fname, x, y):
     out.close()
     return
 
-def main():
+# Single potential file
+def main2():
     if len(sys.argv) < 2:
         print 'No arguments given'
         return
@@ -128,6 +129,46 @@ def main():
     genplot(k,iy)
     return
 
+# Multiple potential file
+def main():
+    if len(sys.argv) < 2:
+        print 'No arguments given'
+        return
+    filename=sys.argv[1]
+    if len(sys.argv) < 3:
+        dec=3.0
+    else:
+        dec=float(sys.argv[2])
+    inp=open(filename,'r')
+    out=open('out.pot','w')
+    line=inp.readline()
+    out.write(line)
+    species, points = map(int,line.split()[0:2])
+    potentials=species*(species+1)/2
+    for i in range(potentials):
+        x=[]
+        y=[]
+        for j in range(points):
+            line=inp.readline()
+            xi, yi, it, jt = map(float,line.split()[0:4])
+            if yi > 15.0:
+                out.write('%21.16f %23.17G %12i %12i\n' % (xi,yi,it,jt))
+            else:
+                x.append(xi)
+                y.append(yi)
+        x=np.array(x)
+        y=np.array(y)
+        yf=fsync(y, dec)
+        for j in range(len(x)):
+            out.write('%21.16f %23.17G %12i %12i\n' % (x[j],y[j],it,jt))
+        #genplot(x,y,yf)
+    inp.close()
+    out.close()
+    return
+
 if __name__ == "__main__":
-    main()
+    if 'multi' in sys.argv[0]:
+        main()
+    else:
+        main2()
 

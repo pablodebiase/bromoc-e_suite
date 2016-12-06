@@ -1935,8 +1935,11 @@ subroutine fixpotential(ntyp,bforce)
 use invmc 
 implicit none
 integer it, jt, nr, ntyp, nn
-real*8 dv,lja,ljb,bforce
+real*8 dv,lja,ljb,bforce,k,bf,rm
 
+bf=bforce
+! Prevent negative or null bforce
+if (bforce.le.0.0) bf=1.0
 do it=1,ntyp
   do jt=1,it
     ! Find first 
@@ -1947,9 +1950,19 @@ do it=1,ntyp
       endif
     enddo
     dv=(pot(nn+1,it,jt)-pot(nn,it,jt))/(ras(nn+1)-ras(nn))
-    if (dv.gt.-bforce) dv=-bforce
+    ! Prevent Negative lja & ljb constants
+    if (pot(nn,it,jt).lt.0.0) then
+      k=-6.0*pot(nn,it,jt)/ras(nn)
+      if (dv.ge.k) dv=k-bforce
+    else
+      k=-12.0*pot(nn,it,jt)/ras(nn)
+      if (dv.ge.k) dv=k-bforce
+    endif
+    ! Prevent Positive or null derivative
+    if (dv.ge.0.0) dv=-bforce
     lja=-ras(nn)**12*(pot(nn,it,jt)+ras(nn)*dv/6.0)
     ljb=-ras(nn)**6*(2.0*pot(nn,it,jt)+ras(nn)*dv/6.0)
+    rm=(2.0*lja/ljb)**(1.0/6.0)
     do nr=1,nn-1
       pot(nr,it,jt)=lja/ras(nr)**12-ljb/ras(nr)**6
       pot(nr,jt,it)=pot(nr,it,jt)
