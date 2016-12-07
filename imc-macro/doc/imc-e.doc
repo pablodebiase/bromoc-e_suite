@@ -152,6 +152,7 @@ Meaning of parameters are:
  LELEC=.t.,                          ! if .true. compute electrostatics and ewald
  LRESPOT=.f.,                        ! if .true. several restriction to the potential for pairs may be specified in respotnm
  RESPOTNM='imc-macro-fix.pot',       ! Format: rows must contain 2 columns with each particle type numbers
+ NPSEPPOT = 0,                       ! The number of potentials points before not null RDF to include in the separated potential
  LSEPPOT=.f.,                        ! Dump separated potential files for each pair (can be used combined with LDMPPOT)
  LSEPRDF=.f.,                        ! Dump separated RDF and S (=4.pi.r^2.RDF) files for each pair
  lREFCRD=.f.,                        ! Use first particle in pdb as internal coordinates reference for the rest of the particles

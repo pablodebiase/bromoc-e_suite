@@ -162,12 +162,12 @@ character*1024 line
 logical*1 rpdb,ldmppot,lzm,lrespot,lseppot,lseprdf,latvec,wpdb,lnotfound,ldmppdb,lfixpot
 real*8,parameter :: eps0=8.854187817620e-12,elch=1.60217656535e-19,avag=6.0221412927e23,boltz=1.380648813e-23
 integer i,j,k,ii,jj
-integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp
+integer ntyp,nmks,iout,iav,ic,info,ip,ipt,it,it1,it2,jc,jt,nmksf,nr,nur,nap,ntpp,npseppot
 real*8 regp,dpotm,rtm,eps,temp,chi,crc,crr,dee,difrc,dlr,dx,dy,dz,felc,felr,fnr,osm,poten,potnew,pres,rdfc,rdfp
 real*8 rdfinc,rdfref,rr,rrn,rrn2,rro,rro2,shift,x1,y1,z1,cent(3),aone,zeromove,bforce
 real*8 vrvs,vr,vs,vs2,a,b,b1x,b1y,b1z,b2x,b2y,b2z,b3x,b3y,b3z
 real*8 deloc,efurl,del,enerl,enersl,potfac,potefac
-integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first
+integer jobs,tid,nth,isd,iud,iudl,cova,aun,omp_get_num_threads,omp_get_thread_num,istepl,navl,first,nn
 real*8 virel,virsl,virl,rfx,iavfac
 integer,allocatable :: corsl(:),corpl(:,:)
 real*8,allocatable :: xl(:),yl(:),zl(:),rt(:,:)
@@ -218,6 +218,7 @@ zeromove = 1.0                  ! if S is zero move potential up to this limit
 lelec    = .true.               ! if .true. compute electrostatics and ewald
 lrespot  = .false.              ! if .true. several restriction to the potential for pairs may be specified in respotnm
 respotnm = 'imc-macro-fix.pot'  ! Format: particle type 1 particle type 2 free,fix,sas,scale,shift,fixce 
+npseppot = 0                    ! The number of potentials points before not null RDF to include in the separated potential
 lseppot  = .false.              ! Dump separated potential files for each pair (can be used combined with ldmppot)
 lseprdf  = .false.              ! Dump separated RDF and S files for each pair 
 lrefcrd  = .false.              ! Use first particle in pdb as internal coordinates reference for the rest of the particles
@@ -643,11 +644,20 @@ if (ldmppot) then
   if(lseppot) then 
     do it=1,ntyp
       do jt=it,ntyp
+        ! Find first 
+        do nr=1,na
+          if (ind(nr,it,jt)) then
+            nn=nr
+            exit
+          endif
+        enddo
+        nn=nn-npseppot
+        if (nn.lt.1) nn=1
         call lcase(nms(it),nmst1)
         call lcase(nms(jt),nmst2)
         open(unit=13,file=trim(nmst1)//'-'//trim(nmst2)//'.pot',status='replace',form='formatted')
         do nr=1,na
-          if(ind(nr,it,jt).or.(nr.lt.na.and.ind(nr+1,it,jt))) then 
+          if(ind(nr,it,jt).or.nr.ge.nn) then 
             write(13,'(f8.3$)') ras(nr)
             write(13,*) pot(nr,it,jt)
           endif
@@ -1174,6 +1184,15 @@ do it=1,ntyp
     if (lseppot.or.lseprdf) then
       call lcase(nms(it),nmst1)
       call lcase(nms(jt),nmst2)
+      ! Find first 
+      do nr=1,na
+        if (ind(nr,it,jt)) then
+          nn=nr
+          exit
+        endif
+      enddo
+      nn=nn-npseppot
+      if (nn.lt.1) nn=1
       if (lseppot) then 
         open(unit=13,file=trim(nmst1)//'-'//trim(nmst2)//'.pot',status='replace',form='formatted')
       endif
@@ -1190,12 +1209,10 @@ do it=1,ntyp
       !if(ind(nr,it,jt)) write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
       write(*,'(f9.4,5f10.5,7x,3a4) ') ras(nr),rdfc,rdf(ipt),potnew,poten,cor(ipt),'pot:',nms(it),nms(jt)
       write(2,*)ras(nr),potnew,it,jt
-      !if(lseppot.and.ind(nr,it,jt)) then
-      if(lseppot.and.((ind(nr,it,jt).or.(nr.lt.na.and.ind(nr+1,it,jt))))) then
+      if(lseppot.and.((ind(nr,it,jt).or.nr.ge.nn))) then
         write(13,'(f8.3$)') ras(nr)
         write(13,*) potnew
       endif
-      !if(lseprdf.and.ind(nr,it,jt)) then
       if(lseprdf) then
         write(14,'(f8.3$)') ras(nr)
         write(14,*) rdfc,cors(ipt)
@@ -1935,8 +1952,10 @@ subroutine fixpotential(ntyp,bforce)
 use invmc 
 implicit none
 integer it, jt, nr, ntyp, nn
-real*8 dv,lja,ljb,bforce,k,bf,rm
+real*8 dv,lja,ljb,bforce,k,bf,dvtmp
 
+dv=0.0
+dvtmp=dv
 bf=bforce
 ! Prevent negative or null bforce
 if (bforce.le.0.0) bf=1.0
@@ -1949,7 +1968,14 @@ do it=1,ntyp
         exit
       endif
     enddo
+    ! Compute derivative between actual and next point
     dv=(pot(nn+1,it,jt)-pot(nn,it,jt))/(ras(nn+1)-ras(nn))
+    ! Compute derivative if possible between previous and next
+    ! Keep value only if it is more negative than the previous
+    if (nn.gt.1) then
+      dvtmp=(pot(nn+1,it,jt)-pot(nn-1,it,jt))/(ras(nn+1)-ras(nn-1))
+      if (dvtmp.gt.dv) dv=dvtmp
+    endif
     ! Prevent Negative lja & ljb constants
     if (pot(nn,it,jt).lt.0.0) then
       k=-6.0*pot(nn,it,jt)/ras(nn)
@@ -1960,9 +1986,10 @@ do it=1,ntyp
     endif
     ! Prevent Positive or null derivative
     if (dv.ge.0.0) dv=-bforce
+    ! Compute lja and ljb
     lja=-ras(nn)**12*(pot(nn,it,jt)+ras(nn)*dv/6.0)
     ljb=-ras(nn)**6*(2.0*pot(nn,it,jt)+ras(nn)*dv/6.0)
-    rm=(2.0*lja/ljb)**(1.0/6.0)
+    !rm=(2.0*lja/ljb)**(1.0/6.0)  ! Distance at minimum
     do nr=1,nn-1
       pot(nr,it,jt)=lja/ras(nr)**12-ljb/ras(nr)**6
       pot(nr,jt,it)=pot(nr,it,jt)
