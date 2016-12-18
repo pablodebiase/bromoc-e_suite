@@ -3,6 +3,7 @@ import sys
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import glob,copy
 from scipy.fftpack import fft,ifft,fftshift,ifftshift
 
 def genplot(xdat,y1dat,y2dat=[],y3dat=[],y4dat=[],y5dat=[],title=''):
@@ -129,6 +130,20 @@ def main2():
     genplot(k,iy)
     return
 
+def getdict(filename):
+    rdfdict={}
+    with open(filename,'r') as rdf:
+        spec=int(rdf.readline().split()[0])
+        for i in range(spec):
+            rdf.readline()
+        for line in rdf.readlines():
+            xi, yi = map(float,line.split()[0:2])
+            it, jt = map(int,line.split()[2:4])
+            if yi == 0.0:
+               rdfdict['%d,%d' % (min(it,jt),max(it,jt))] = xi
+    return rdfdict
+
+            
 # Multiple potential file
 def main():
     if len(sys.argv) < 2:
@@ -141,6 +156,12 @@ def main():
         dec=float(sys.argv[2])
     inp=open(filename,'r')
     out=open('out.pot','w')
+    rdfs=glob.glob('*.rdf')
+    isrdf=len(rdfs) > 0
+    rdf=''
+    if isrdf:
+        rdfdict=getdict(rdfs[0])
+    print rdfdict
     line=inp.readline()
     out.write(line)
     species, points = map(int,line.split()[0:2])
@@ -150,18 +171,35 @@ def main():
         y=[]
         for j in range(points):
             line=inp.readline()
-            xi, yi, it, jt = map(float,line.split()[0:4])
-            if yi > 15.0:
+            xi, yi = map(float,line.split()[0:2])
+            it, jt = map(int,line.split()[2:4])
+            if isrdf:
+                fac=rdfdict['%d,%d' % (min(it,jt),max(it,jt))]
+            else:
+                fac=3.0
+            if isrdf and xi <= fac:
+                out.write('%21.16f %23.17G %12i %12i\n' % (xi,yi,it,jt))
+                
+            elif not isrdf and yi > 21.0:
                 out.write('%21.16f %23.17G %12i %12i\n' % (xi,yi,it,jt))
             else:
                 x.append(xi)
                 y.append(yi)
         x=np.array(x)
         y=np.array(y)
-        yf=fsync(y, dec)
+        i0=0 #np.abs(x-fac-1.0).argmin()+1
+        i1=np.abs(x-5.0).argmin()+1
+        i2=np.abs(x-10.0).argmin()+1
+        i3=np.abs(x-15.0).argmin()+1
+        yf=copy.copy(y)
+        yf[i0:i1+1]=fsync(y, 3.0)[i0:i1+1]
+        yf[i1:i2+1]=fsync(y, 5.0)[i1:i2+1]
+        yf[i2:i3+1]=fsync(y, 7.0)[i2:i3+1]
+        yf[i3:]=fsync(y, 9.0)[i3:]
         for j in range(len(x)):
-            out.write('%21.16f %23.17G %12i %12i\n' % (x[j],y[j],it,jt))
-        #genplot(x,y,yf)
+            out.write('%21.16f %23.17G %12i %12i     %23.17G\n' % (x[j],yf[j],it,jt,y[j]))
+        print it,jt
+        genplot(x,y,yf)
     inp.close()
     out.close()
     return
