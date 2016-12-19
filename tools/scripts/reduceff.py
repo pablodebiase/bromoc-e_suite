@@ -44,7 +44,6 @@ def main():
     if len(spec) == 0:
         return
     spec.add('X')
-    head=['ATOM','BOND','ANGL','THET','DIHE','IMPR','IMPH','NONB','NBON','CMAP','NBFI','HBON','PHI']
     virtual='' 
     with open(sys.argv[2], 'r') as prm:
         for line in prm.readlines():

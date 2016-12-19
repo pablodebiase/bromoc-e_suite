@@ -22,7 +22,7 @@ module ioxmod
 !
 implicit none
 integer           maxopen
-parameter         (maxopen = 30)
+parameter         (maxopen = 100)
 !
 !.....allocation flag array
 !
