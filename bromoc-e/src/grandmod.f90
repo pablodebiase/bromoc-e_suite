@@ -24,7 +24,7 @@
 module grandmod
 implicit none
 integer   dtype, datom, mxcnt
-parameter (datom = 23000, dtype = 1000) ! if datom bigger than 23000 start giving segm fault in ifort, solution -heap-arrays 0
+parameter (datom = 2000, dtype = 100) ! if datom bigger than 23000 start giving segm fault in ifort, solution -heap-arrays 0
 integer   dbuff
 parameter (dbuff = 2*dtype)
 !integer   dindx
