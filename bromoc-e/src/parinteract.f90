@@ -415,8 +415,14 @@ integer i,j,is
 real dist, dist2, dist6, idist, idist2
 real pener,qiqj
 logical*1 Qchr
-!real emembi,erfpari,estaticfi,evdwgdi,enonbondi
+
 energy = 0.0
+emembi = 0.0
+erfpari = 0.0
+estaticfi = 0.0
+evdwgdi = 0.0
+einterni = 0.0
+enonbondi = 0.0
 
 ! Membrane
 if (Qmemb) then 
@@ -451,50 +457,55 @@ if (Qphiv) then
 endif ! Qphiv
 
 ! Ignore all internal energies of every particle
+! Internal (bonded) energy of chosen particle
+!if (Qbond) then
+!  if (parl(parn)%ne.gt.1.and.ptypl(parl(parn)%ptyp)%Qpsf) call charmmenergy(parn,einterni)
+!  energy=energy+einterni
+!endif
+
 ! Compute energy between all particles and the test particle (parn)
 if (Qnonbond) then
   srn = parl(parn)%sr
   nen = parl(parn)%ne
   enonbondi=0.0
   do parm=1,npar
-    if (parm.ne.parn) then
-      nem = parl(parm)%ne
-      srm = parl(parm)%sr
-      do i = srm+1,srm+nem
-        itype = et(i)
-        do j=srn+1,srn+nen
-          jtype=et(j) 
-          is=etpidx(itype,jtype)
-          dist2 = dist2car(r(i),r(j))
-          if (Qefpot(is)) then
-            call gety(is,dist2,pener,dist)
-            enonbondi=enonbondi+pener
-          else
-            idist2 = 1.0/dist2
-            qiqj=q(i)*q(j)
-            Qchr=qiqj.ne.0.0
-            if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
-            !electrostatic interaction    
-            if (Qchr) enonbondi=enonbondi+cecd*qiqj*idist
-            !Lennard-Jones 6-12 potential 
-            if (Qlj(is)) then
-              dist6 = (sgp2(is)*idist2)**3
-              enonbondi=enonbondi+epp4(is)*dist6*(dist6-1.0)
-            endif
-            !water-mediated short-range ion-ion interaction  
-            if (Qsrpmfi(is)) then
-              if (dist2.le.rth) then
-                dist=1.0/idist
-                pener = c0(is)*exp((c1(is)-dist)*c2(is))*cos(c3(is)*pi*(c1(is)-dist))+c4(is)*(c1(is)*idist)**6
-                if (dist.ge.srpx) pener=pener*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
-                ! Eq. 9 W. Im,and B. Roux J. Mol. Biol. 322:851-869 (2002)
-                enonbondi=enonbondi+pener
-              endif
+    if (parm.eq.parn) cycle
+    nem = parl(parm)%ne
+    srm = parl(parm)%sr
+    do i = srm+1,srm+nem
+      itype = et(i)
+      do j=srn+1,srn+nen
+        jtype=et(j) 
+        is=etpidx(itype,jtype)
+        dist2 = dist2car(r(i),r(j))
+        if (Qefpot(is)) then
+          call gety(is,dist2,pener,dist)
+          enonbondi=enonbondi+pener
+        else
+          idist2 = 1.0/dist2
+          qiqj=q(i)*q(j)
+          Qchr=qiqj.ne.0.0
+          if (Qchr.or.Qsrpmfi(is)) idist = sqrt(idist2)
+          !electrostatic interaction    
+          if (Qchr) enonbondi=enonbondi+cecd*qiqj*idist
+          !Lennard-Jones 6-12 potential 
+          if (Qlj(is)) then
+            dist6 = (sgp2(is)*idist2)**3
+            enonbondi=enonbondi+epp4(is)*dist6*(dist6-1.0)
+          endif
+          !water-mediated short-range ion-ion interaction  
+          if (Qsrpmfi(is)) then
+            if (dist2.le.rth) then
+              dist=1.0/idist
+              pener = c0(is)*exp((c1(is)-dist)*c2(is))*cos(c3(is)*pi*(c1(is)-dist))+c4(is)*(c1(is)*idist)**6
+              if (dist.ge.srpx) pener=pener*exp(-srpk*(dist-srpx))-srpy  ! smoothly fix discontinuity 
+              ! Eq. 9 W. Im,and B. Roux J. Mol. Biol. 322:851-869 (2002)
+              enonbondi=enonbondi+pener
             endif
           endif
-        enddo 
-      enddo
-    endif
+        endif
+      enddo 
+    enddo
   enddo
   energy=energy+enonbondi
 endif !Qnonbond
