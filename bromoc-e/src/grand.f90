@@ -80,8 +80,10 @@ do igrand = 1, ngcmc
         rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib))
       else
-        rate = (avnum(ib)/nat(ib))*exp(-(dener-mu(ib))*ikBT)
+        !rate = (avnum(ib)/nat(ib))*exp(-(dener-mu(ib))*ikBT)
         ! Eq. 17 W. Im, and B. Roux Biophys. J. 79:188-801 (2000)
+        rate = (nat(ib)/avnum(ib))*exp((dener-mu(ib))*ikBT)
+        ! Pablo's correction
       endif
       rate = 1.0/(1.0+rate) ! destruction transition probability
       ! Eq. 6 W. Im, and B. Roux Biophys. J. 79:188-801 (2000)
