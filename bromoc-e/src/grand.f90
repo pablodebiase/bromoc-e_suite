@@ -50,10 +50,10 @@ do igrand = 1, ngcmc
       call movepar(npar,rr) ! Just move the particle added since Particle Type is centered at (0,0,0)
       call par_interact(npar, dener)
       if (Qbufferbias(ib)) then
-        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
+        rate = avnum(ib)+kb(ib)*(avnum(ib)-float(ntotat(ib))/float(icycle))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib)+1)
       else
-        rate = (avnum(ib)/float(nat(ib)+1))*exp(-(dener-mu(ib))*ikBT)
+        rate = avnum(ib)/float(nat(ib)+1)*exp(-(dener-mu(ib))*ikBT)
         ! Eq. 17 W. Im, and B. Roux Biophys. J. 79:188-801 (2000)          
       endif
       rate = rate/(1.0+rate) ! creation transition probability
@@ -77,13 +77,11 @@ do igrand = 1, ngcmc
       call find(ib,ip,iat)
       call par_interact(iat,dener)
       if (Qbufferbias(ib)) then
-        rate = (avnum(ib)+kb(ib)*(avnum(ib)-real(ntotat(ib)/icycle)))
+        rate = avnum(ib)+kb(ib)*(avnum(ib)-float(ntotat(ib))/float(icycle))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib))
       else
-        !rate = (avnum(ib)/nat(ib))*exp(-(dener-mu(ib))*ikBT)
+        rate = avnum(ib)/float(nat(ib))*exp(-(dener-mu(ib))*ikBT)
         ! Eq. 17 W. Im, and B. Roux Biophys. J. 79:188-801 (2000)
-        rate = (nat(ib)/avnum(ib))*exp((dener-mu(ib))*ikBT)
-        ! Pablo's correction
       endif
       rate = 1.0/(1.0+rate) ! destruction transition probability
       ! Eq. 6 W. Im, and B. Roux Biophys. J. 79:188-801 (2000)
