@@ -385,6 +385,55 @@ enddo
 return
 end subroutine
 
+subroutine accessiblevolume(vol)
+use gsbpmod
+use grandmod
+
+!local variables
+implicit none
+integer ncyz,i,j,k,llx,lly,ix,iy,jjmp,izn,izp
+integer minx,miny,surfz
+real xi, yi, vol
+logical*1 ety
+
+ncyz = ncly2*nclz2
+xi=(lx2p+lx2m)*0.5 ! cx
+yi=(ly2p+ly2m)*0.5 ! cy
+ix=int((xi+tranx2-xbcen2)*idcel2)
+iy=int((yi+trany2-ybcen2)*idcel2)
+izn=int((lz2m+tranz2-zbcen2)*idcel2)
+izp=int((lz2p+tranz2-zbcen2)*idcel2)
+minx=int((lx2p-lx2m)*idcel2*0.5) ! half x range
+miny=int((ly2p-ly2m)*idcel2*0.5) ! half y range
+
+surfz=0
+do k=izn,izp
+  llx=0
+  lly=0
+  ety=.true.
+  do while (llx<minx.and.lly<miny.and.ety)
+    ety=.false.
+    do i=ix-llx,ix+llx
+      if (i.eq.ix-llx.or.i.eq.ix+llx) then
+        jjmp=1
+      else
+        jjmp=2*lly
+        if (lly.eq.0) jjmp=1
+      endif
+      do j=iy-lly,iy+lly,jjmp
+        if (i.lt.0.or.j.lt.0.or.k.lt.0.or.i.ge.nclx2.or.j.ge.ncly2.or.k.ge.nclz2.or.phiv(i*ncyz+j*nclz2+k+1).eq.0) then
+          ety=.true.
+          surfz=surfz+1
+        endif
+      enddo
+    enddo
+    llx=llx+1
+    lly=lly+1
+  enddo
+enddo
+vol=surfz*dcel2**3
+end subroutine
+
 subroutine getstatic(xii,yii,zii,stat)
 use gsbpmod
 integer ncyz,ix,iy,iz,n1,in1,n2,in2,n3,in3
