@@ -401,7 +401,7 @@ do i=sr+1,sr+ne
 enddo
 end subroutine
 
-subroutine par_interact(parn, energy)
+subroutine par_interact(parn, energy, forceanapot)
 use listmod
 use grandmod
 use constamod
@@ -409,12 +409,13 @@ use gsbpmod
 implicit none
 integer,intent(in) :: parn
 real,intent(out) :: energy
+logical*1,optional,intent(in) :: forceanapot
 integer parm,itype,jtype
 integer nen,srn,nem,srm
 integer i,j,is
 real dist, dist2, dist6, idist, idist2
 real pener,qiqj
-logical*1 Qchr
+logical*1 Qchr,Qfap
 
 energy = 0.0
 emembi = 0.0
@@ -423,6 +424,11 @@ estaticfi = 0.0
 evdwgdi = 0.0
 einterni = 0.0
 enonbondi = 0.0
+if (present(forceanapot)) then
+   Qfap = forceanapot
+else
+   Qfap = .false.
+endif
 
 ! Membrane
 if (Qmemb) then 
@@ -478,7 +484,7 @@ if (Qnonbond) then
         jtype=et(j) 
         is=etpidx(itype,jtype)
         dist2 = dist2car(r(i),r(j))
-        if (Qefpot(is)) then
+        if (Qefpot(is).and..not.Qfap) then
           call gety(is,dist2,pener,dist)
           enonbondi=enonbondi+pener
         else

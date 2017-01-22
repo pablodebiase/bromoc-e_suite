@@ -130,6 +130,7 @@ Qchden       = .false.
 frmt         = ''
 Qenergy      = .true.
 Qforces      = .false.
+Qforceanapot = .false.
 Qbond        = .true.
 Qecyl        = .false.
 Qnonbond     = .true.
@@ -1144,6 +1145,7 @@ do while (.not. logfinal)
   !        ---------------
      if (.not.Qpar) call error ('shell_simul', 'BUFFER order is defined before PARTICLE order', faterr)
      if (.not.Qsystem) call error ('shell_simul', 'BUFFER order is defined before SYSTEM order', faterr)
+     Qforceanapot=check(com, 'forceanapot')
      endlog = .false.
      nbuffer=0
      do while (.not.endlog)

@@ -537,7 +537,7 @@ As shown in Ref. 2, it may be a bit difficult to maintain boundary concentration
 
 syntax:
 
-  [BUFFERS]
+  [BUFFERS] {forceanapot}
   <ion-type> conc (real) aver (real) mu (real) [volt (real)] LZmin (real) LZmax (real) [{bufferbias} kb (real)] Rmin (real) Rmax (real)
   END
   
@@ -553,6 +553,9 @@ syntax:
   LZmax 	 |LZ/2| : a maximum position of a buffer along the Z-axis (Ang.)
   {bufferbias}          : Activates avoidance of unexpected large deviation from an average number of ions in the buffer regions.
   kb              |0.0| : needed in bufferbias. kb has no dimension
+  {forceanapot}         : Activates the use of analytical potentials for the GCMC step instead of the effective potentials
+                          This prevents strange behaviours and chemical potentials must be computed using analytical potentials.
+                          Charges and LJ parameters must be present along with effective potentials.
 
 example 1: an orthorhombic system 
 

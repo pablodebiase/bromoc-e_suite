@@ -48,7 +48,7 @@ do igrand = 1, ngcmc
       call insert(ib,rr%x,rr%y,rr%z)
       call addpar(itype,3,ib)
       call movepar(npar,rr) ! Just move the particle added since Particle Type is centered at (0,0,0)
-      call par_interact(npar, dener)
+      call par_interact(npar, dener, Qforceanapot)
       if (Qbufferbias(ib)) then
         rate = avnum(ib)+kb(ib)*(avnum(ib)-float(ntotat(ib))/float(icycle))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib)+1)
@@ -76,7 +76,7 @@ do igrand = 1, ngcmc
     if (ib.le.nbuffer .and. ip.le.nat(ib)) then
       itype = ibfftyp(ib) ! ion type
       call find(ib,ip,iat)
-      call par_interact(iat,dener)
+      call par_interact(iat,dener,Qforceanapot)
       if (Qbufferbias(ib)) then
         rate = avnum(ib)+kb(ib)*(avnum(ib)-float(ntotat(ib))/float(icycle))
         rate = rate*exp(-(dener-mu(ib))*ikBT)/float(nat(ib))
