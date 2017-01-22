@@ -24,7 +24,7 @@
 module grandmod
 implicit none
 integer   dtype, datom, mxcnt
-parameter (datom = 2000, dtype = 100) ! if datom bigger than 23000 start giving segm fault in ifort, solution -heap-arrays 0
+parameter (datom = 2000, dtype = 20) ! if datom bigger than 23000 start giving segm fault in ifort, solution -heap-arrays 0
 integer   dbuff
 parameter (dbuff = 2*dtype)
 !integer   dindx
@@ -35,11 +35,12 @@ real    temp,kbt,kBTdt,dnatemp,kbtdna
 real*8 runtime
 integer nbuffer
 integer,allocatable :: warn(:)
-integer     ibfftyp(dbuff),nat(dtype)
+integer     ibfftyp(dbuff),nat(dtype),ncnt(dtype)
 integer     nremove(dtype),ninsert(dtype),ntotat(dtype)
 real        ampl1(dtype),p1(2,dtype)
 real        ampl2(dtype),p2(2,dtype),rcylinder(dtype),deltaz,ampl3(dtype),p3(dtype)
-real        volume(dbuff),avnum(dbuff),mu(dbuff),density(dbuff),kb(dbuff),LZmin(dbuff),LZmax(dbuff),Rmin(dbuff),Rmax(dbuff)
+real        volume(dbuff),avnum(dbuff),mu(dbuff),density(dbuff),kb(dbuff)
+real        LZmin(dbuff),LZmax(dbuff),Rmin(dbuff),Rmax(dbuff)
 character*4 atnam(dtype), atnam2(dtype)
 logical*1   Qbufferbias(dtype)
 

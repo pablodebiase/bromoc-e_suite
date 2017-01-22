@@ -75,7 +75,7 @@ integer    nsec
 type(car) :: rr
 !for TEST order
 real       maxl,minl,maxlg,minlg
-real       dener, rate
+real       dener, rate, totvol
 !for MEMBRANE and ION-ION orders
 !for effective dielectric constant for DNA
 real       conc
@@ -2552,6 +2552,11 @@ do while (.not. logfinal)
   !        ---------------
      if (.not.Qbuf) call error ('shell_simul', 'COUNT order is defined before BUFFER order', faterr)
      call count
+     ncnt=0
+     do i = nparnuc+1, npar
+       itype = parl(i)%ptyp
+       ncnt(itype) = ncnt(itype) + 1
+     enddo
      write(outu,*)
      write(outu,'(6x,a,i4)') 'Total number of ions ',npar-nparnuc
      do ib = 1, nbuffer
@@ -2656,6 +2661,11 @@ do while (.not. logfinal)
        endif
        write(outu,'(6x,a)') 'coordinates have been read'
        call count
+       ncnt = 0
+       do i = nparnuc+1, npar
+         itype = parl(i)%ptyp
+         ncnt(itype) = ncnt(itype) + 1
+       enddo
      elseif (check(com,'gener')) then
        doions=Qbuf
        if (.not.doions) call error ('shell_simul', 'ions missing after COOR gener', faterr)
@@ -2673,13 +2683,19 @@ do while (.not. logfinal)
                call movepar(npar,rr) ! locate and rotate
                call par_interact(npar, dener)
                rate = (avnum(ib)/float(nat(ib)+1))*exp(-(dener-mu(ib))*ikBT)
+               rate = rate/(1.0+rate)
                if (rndm().le.rate) exit
                call delpar(npar,3)
              enddo
            enddo
          enddo
        endif ! Qbuf
-       call count() 
+       call count
+       ncnt = 0
+       do i = nparnuc+1, npar
+         itype = parl(i)%ptyp
+         ncnt(itype) = ncnt(itype) + 1
+       enddo
        write(outu,'(6x,a)') 'coordinates have been generated'
      elseif (check(com,'rot').and.Qnucl) then
        ! rotation for DNA sites coordinates
@@ -2797,79 +2813,82 @@ do while (.not. logfinal)
   elseif (wrd5.eq.'gsbp') then !  generalized solvent boundary potential
   !        ---------------
   !REPULSIVE POTENTIAL
-     Qadj = check(com,'adjust')
-     Qphiv = check(com,'phiv')
-     if (Qphiv) then
-       ! Threshold for 27 and 8 cells
-       call gtdpar(com,'thold27',thold27,27.0)
-       call gtdpar(com,'thold8',thold8,8.0)
-       ! Magnitude of grid-based repulsive potential 'phiv'
-       ! [real*8,default=0] 
-       call gtdpar(com,'svdw',svdw,50.0)
-       ! Trilinear interpolation is used for 'phiv'
-       ! [default=3rd-order B-spline interpolation]
-!       Qtrln = check(com,'trilinear')
-       Qtrln = .not.check(com,'bspline')
-       if (Qtrln) then
-          write(outu,'(6x,a)') 'Trilinear function will be used for repulsive potential'
-       else
-          write(outu,'(6x,a)') 'B-spline function will be used for repulsive potential'
-       endif
-       Qnmcden = check(com,'nmcden')
-       if (Qnmcden) then
-         write(outu,*)
-         write(outu,'(6x,a)') 'Different ion-accessible space is used for different ions and sites'
-         totnumb=netyp
-         if (.not.Qatexp.and..not.Qnucl .and. .not. Qpar) then
-           call error ('shell_simul', 'GSBP order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
-         endif
-         if (totnumb.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
-         call gtcpar(com,'munit',nn,word)
-         if (nn.eq.0) call error ('shell_simul','munit cannot be empty or ommited',faterr)
-         if (nn.ne.totnumb) call error ('shell_simul','number of units in munit does not match with number of types',faterr)
-         call gtcipar(word,vecphiv)
-         do i=1,totnumb
-           iunit=vecphiv(i)
-           if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
-           if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
-           if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in GSBP order', faterr)
-           vecphiv(i) = unvec(iunit)
-         enddo
-         iunit=vecphiv(1)
-         write(outu,'(6x,a,10i3)') 'Reading grid-based repulsive potential from unit ',(vecphiv(i),i=1,totnumb)
-       else
-         call gtipar(com,'phivunit',iunit,1)
-         if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
-         if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
-         if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in GSBP order', faterr)
-         iunit = unvec(iunit)
-         write(outu,*)
-         write(outu,'(6x,a,i3)')'Reading grid-based repulsive potential from unit ',iunit
-       endif
-       call readphi(iunit,outu,'PHIV',Qadj)
-       ! Maximum position of a grid for 'phiv' along the Z-axis
-       ! [real*8,default=max map limit]
-       call gtdpar(com,'vzmax',vzmax,zbcen2+tranz2)
-       if (vzmax.gt.zbcen2+tranz2) call error('shell_simul', 'vzmax cannot be outside boundaries of repulsion map', faterr)
-       ! Minimum position of a grid for 'phiv' along the Z-axis
-       ! [real*8,default=-min map limit]         
-       call gtdpar(com,'vzmin',vzmin,zbcen2-tranz2)
-       if (vzmin.lt.zbcen2-tranz2) call error('shell_simul', 'vzmin cannot be outside boundaries of repulsion map', faterr)
-       write(outu,'(6x,A,F8.2,A,F8.2,A,F8.2)') 'Uniformed repusive potential will be scaled by ',svdw,' kcal/mol between ',vzmin,' and ',vzmax 
-       call gtipar(com,'repwalls',wallsi4,126)
-       if (wallsi4.gt.0) then
-         if (wallsi4.gt.126) then
-           walls=126
-         else
-           walls=itoi1(wallsi4)
-         endif
-         call repwalls(walls)
-         write(outu,'(6x,a,i0)') 'REPWALLS activated. Number of walls defined: ',walls
-       else
-         walls=0
-         write(outu,'(6x,a,i0)') 'REPWALLS deactivated. Strongly recommended to be used.'
-       endif
-     endif ! Qhiv
+    Qadj = check(com,'adjust')
+    Qphiv = check(com,'phiv')
+    if (Qphiv) then
+      ! Threshold for 27 and 8 cells
+      call gtdpar(com,'thold27',thold27,27.0)
+      call gtdpar(com,'thold8',thold8,8.0)
+      ! Magnitude of grid-based repulsive potential 'phiv'
+      ! [real*8,default=0] 
+      call gtdpar(com,'svdw',svdw,50.0)
+      ! Trilinear interpolation is used for 'phiv'
+      ! [default=3rd-order B-spline interpolation]
+!      Qtrln = check(com,'trilinear')
+      Qtrln = .not.check(com,'bspline')
+      if (Qtrln) then
+         write(outu,'(6x,a)') 'Trilinear function will be used for repulsive potential'
+      else
+         write(outu,'(6x,a)') 'B-spline function will be used for repulsive potential'
+      endif
+      Qnmcden = check(com,'nmcden')
+      if (Qnmcden) then
+        write(outu,*)
+        write(outu,'(6x,a)') 'Different ion-accessible space is used for different ions and sites'
+        totnumb=netyp
+        if (.not.Qatexp.and..not.Qnucl .and. .not. Qpar) then
+          call error ('shell_simul', 'GSBP order is defined before PTYPE, PARTICLE and/or NUCLEOTIDES orders', faterr)
+        endif
+        if (totnumb.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
+        call gtcpar(com,'munit',nn,word)
+        if (nn.eq.0) call error ('shell_simul','munit cannot be empty or ommited',faterr)
+        if (nn.ne.totnumb) call error ('shell_simul','number of units in munit does not match with number of types',faterr)
+        call gtcipar(word,vecphiv)
+        do i=1,totnumb
+          iunit=vecphiv(i)
+          if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
+          if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
+          if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in GSBP order', faterr)
+          vecphiv(i) = unvec(iunit)
+        enddo
+        iunit=vecphiv(1)
+        write(outu,'(6x,a,10i3)') 'Reading grid-based repulsive potential from unit ',(vecphiv(i),i=1,totnumb)
+      else
+        call gtipar(com,'phivunit',iunit,1)
+        if (iunit.le.0) call error ('shell_simul', 'unit is zero or a negative number', faterr)
+        if (iunit.gt.maxopen) call error ('shell_simul', 'unit is greater than maxopen', faterr)
+        if (unvec(iunit).eq.-1) call error ('shell_simul', 'unit incorrect in GSBP order', faterr)
+        iunit = unvec(iunit)
+        write(outu,*)
+        write(outu,'(6x,a,i3)')'Reading grid-based repulsive potential from unit ',iunit
+      endif
+      call readphi(iunit,outu,'PHIV',Qadj)
+      ! Maximum position of a grid for 'phiv' along the Z-axis
+      ! [real*8,default=max map limit]
+      call gtdpar(com,'vzmax',vzmax,zbcen2+tranz2)
+      if (vzmax.gt.zbcen2+tranz2) call error('shell_simul', 'vzmax cannot be outside boundaries of repulsion map', faterr)
+      ! Minimum position of a grid for 'phiv' along the Z-axis
+      ! [real*8,default=-min map limit]         
+      call gtdpar(com,'vzmin',vzmin,zbcen2-tranz2)
+      if (vzmin.lt.zbcen2-tranz2) call error('shell_simul', 'vzmin cannot be outside boundaries of repulsion map', faterr)
+      write(outu,'(6x,A,F8.2,A,F8.2,A,F8.2)') 'Uniformed repusive potential will be scaled by ',svdw,' kcal/mol between ',vzmin,' and ',vzmax 
+      call gtipar(com,'repwalls',wallsi4,126)
+      if (wallsi4.gt.0) then
+        if (wallsi4.gt.126) then
+          walls=126
+        else
+          walls=itoi1(wallsi4)
+        endif
+        call repwalls(walls)
+        write(outu,'(6x,a,i0)') 'REPWALLS activated. Number of walls defined: ',walls
+      else
+        walls=0
+        write(outu,'(6x,a,i0)') 'REPWALLS deactivated. Strongly recommended to be used.'
+      endif
+      call accessiblevolume(totvol)
+      write(outu,'(/6x,a,f20.8)') 'Accessible volume for ions: ', totvol
+    endif ! Qphiv
+
     !STATIC EXTERNAL FIELD
     Qphix = check(com,'phix')
     if (Qphix) then

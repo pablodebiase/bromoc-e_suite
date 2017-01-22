@@ -131,12 +131,7 @@ if (Qenergy) then
     endif
     call printline() 
     if (ngcmc.gt.0) then
-      ncount = 0
-      do iat = nparnuc+1, npar
-        itype = parl(iat)%ptyp
-        ncount(itype) = ncount(itype) + 1
-      enddo
-      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
+      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncnt(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
       call printline() 
     endif         
@@ -144,12 +139,7 @@ if (Qenergy) then
     call showener()
     call printline() 
     if (ngcmc.gt.0) then
-      ncount = 0
-      do iat = nparnuc+1, npar
-        itype = parl(iat)%ptyp
-        ncount(itype) = ncount(itype) + 1
-      enddo
-      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
+      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncnt(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
       call printline() 
     endif
@@ -341,13 +331,8 @@ do icycle = 1, ncycle
     call grand(ngcmc,prob,icycle)
     ! count ions and accumulate for average
     if (Qpar) then
-      ncount = 0
-      do iat = nparnuc+1, npar
-        itype = parl(iat)%ptyp
-        ncount(itype) = ncount(itype) + 1
-      enddo
       do itype = nptnuc+1,nptyp
-        ncountav(itype) = ncountav(itype) + ncount(itype)
+        ncountav(itype) = ncountav(itype) + ncnt(itype)
       enddo
     endif
   endif 
@@ -526,13 +511,8 @@ do icycle = 1, ncycle
       enddo
     endif
     !system
-    ncount = 0 
-    do iat = nparnuc+1, npar
-      itype = parl(iat)%ptyp
-      ncount(itype) = ncount(itype) + 1
-    enddo
     do itype = nptnuc+1, nptyp
-      prob3(itype,ncount(itype)) = prob3(itype,ncount(itype)) + 1
+      prob3(itype,ncnt(itype)) = prob3(itype,ncnt(itype)) + 1
     enddo
   endif ! Qprob
   !ion pairing analysis (S frequency)
@@ -642,12 +622,7 @@ do icycle = 1, ncycle
       endif 
     endif        
     if (Qpar.and.ngcmc.gt.0) then
-      ncount = 0
-      do iat = nparnuc+1, npar
-        itype = parl(iat)%ptyp
-        ncount(itype) = ncount(itype) + 1
-      enddo
-      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
+      write(ln,*) '          ',(ptypl(itype)%nam,'>',ncnt(itype),' | ',itype=nptnuc+1,nptyp)
       write(outu,'(a)') trim(ln)
       if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
       call printline() 
@@ -700,12 +675,7 @@ if (nprint.eq.0) then
     call printline() 
   endif   
   if (Qpar.and.ngcmc.gt.0) then
-    ncount = 0
-    do iat = nparnuc+1, npar
-      itype = parl(iat)%ptyp
-      ncount(itype) = ncount(itype) + 1
-    enddo
-    write(ln,*) '          ',(ptypl(itype)%nam,'>',ncount(itype),' | ',itype=nptnuc+1,nptyp)
+    write(ln,*) '          ',(ptypl(itype)%nam,'>',ncnt(itype),' | ',itype=nptnuc+1,nptyp)
     write(outu,'(a)') trim(ln)
     if (Qpres.and.nbd.gt.0) write(outu,'(6x,a,f18.5,a)') 'Pressure: ',pres/(nbd*icycle),' bar'
       call printline() 
@@ -746,14 +716,9 @@ if (Qpar) then
   write (outu,*) 
   write (outu,'(6x,a)') 'Statistics: '
   write (outu,*) 
-  ncount = 0
-  do ii = nparnuc+1, npar
-    itype = parl(ii)%ptyp
-    ncount(itype) = ncount(itype) + 1
-  enddo
   write(outu,'(6x,a)') 'Last total number of non-fixed ions per type:' 
   do itype=nptnuc+1,nptyp
-    write(outu,'(6x,a,a,i0)') ptypl(itype)%nam,' =  ',ncount(itype)
+    write(outu,'(6x,a,a,i0)') ptypl(itype)%nam,' =  ',ncnt(itype)
   enddo
   write (outu,*)
   write(outu,'(6x,a)') 'Average number of ions per type:' 
@@ -804,7 +769,7 @@ if (Qpar) then
   if (Qprob) then       
     ok = .not.Qmemb .and. czmin.eq.0.0.and.czmax.eq.0.0
     if (.not.ok) then   
-      write (outu,'(6x,a)') 'Distribution of particles in the'//' channel: '
+      write (outu,'(6x,a)') 'Distribution of particles in the channel: '
       if (Qmemb) then ! cylindrical channel
         write (outu,'(6x,a,f7.2,a,f7.2,a)') 'The channel is defined between ',zmemb1,' and ',zmemb2,' along Z-axis'
       else ! otherwise
@@ -819,12 +784,12 @@ if (Qpar) then
             write (outu,'(6x,i4,f12.3)') n,prob2(itype,n)*1.0/ncycle
           endif
         enddo
-        write (outu,'(6x,a,1x,f12.3)') 'Average number in the'//' channel:',ncount(itype)*1.0/ncycle
+        write (outu,'(6x,a,1x,f12.3)') 'Average number in the channel:',ncount(itype)*1.0/ncycle
         write (outu,*)
       enddo ! itype
     endif
 
-    write (outu,'(6x,a)') 'Distribution of particles in'//' the system: '
+    write (outu,'(6x,a)') 'Distribution of particles in the system: '
     do itype = nptnuc+1, nptyp
       write (outu,'(6x,a,1x,i5)') 'type ',itype
       ncount(itype) = 0
@@ -834,7 +799,7 @@ if (Qpar) then
           write (outu,'(6x,i4,2f12.3)') n,prob3(itype,n)*1.0/ncycle
         endif
       enddo
-      write(outu,'(6x,a,1x,f12.3)') 'Average number in the'//'  system:',ncount(itype)*1.0/ncycle
+      write(outu,'(6x,a,1x,f12.3)') 'Average number in the system:',ncount(itype)*1.0/ncycle
       write(outu,*)
     enddo ! itype
   endif ! Qprob

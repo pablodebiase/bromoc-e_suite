@@ -63,6 +63,7 @@ do igrand = 1, ngcmc
         ! between 0 and 1 is less than or equal to creation transition
         ! probability                   
         nat(ib) = nat(ib) + 1
+        ncnt(ibfftyp(ib))=ncnt(ibfftyp(ib)) + 1
         ninsert(ib) = ninsert(ib) + 1
       else
         call delpar(npar,3)
@@ -91,6 +92,7 @@ do igrand = 1, ngcmc
         nremove(ib) = nremove(ib) + 1
         call delpar(iat,3)
         nat(ib) = nat(ib) - 1
+        ncnt(ibfftyp(ib))=ncnt(ibfftyp(ib)) - 1
       endif
     endif  
   endif
