@@ -92,6 +92,7 @@ PARTICLES    define free particles (ions)
 ADDPART      add predefined particle types at a given position
 BUFFERS      define GCMC buffers region
 SDIFF        define single diffusion constants for each element type defined in PTYPE or PARTICLE
+MASS         define mass for element types
 LJSIN        define single particle Lennard Jones parameters
 LJPAR        define pair of particles Lennard Jones parameters
 MEMBRANE     define membrane
@@ -440,6 +441,30 @@ example:
   CLOSE unit 2
   CLOSE unit 3
 
+********************************************
+*** MASS: Define mass for element typess ***
+********************************************
+   Define or redefined mass for each element type declared in PTYPE, PARTICLE or NUCLEO.
+
+syntax:
+
+  [MASS]
+  <element-type> [mass (real)]
+  END
+
+  <element-type>      : element type (should be less than 4 characters)
+  mass          |0.0| : mass [g/mol or amu]
+
+example:
+
+  MASS
+  POT  mass 12.196
+  CLA  mass 10.203
+  Ab   mass 100.001
+  S    mass 90.001
+  P    mass 80.001
+  END
+
 *****************************************
 *** SDIFF: Single Diffusion Constants ***
 *****************************************
@@ -474,7 +499,7 @@ example:
 syntax:
 
   [PARTICLES]
-  <ion-type> [charge (real)] [diffusion (real)] {homodiffu}
+  <ion-type> [charge (real)] [mass (real)] [diffusion (real)] {homodiffu}
   END
   
   <ion-type>            : ion type (should be less than 4 characters)
@@ -483,6 +508,7 @@ syntax:
                         If the particle has multiple elements, the diffusivity of all elements will be scaled 
                         so that the sum of all diffusivities equals the chosen diffusion constant.
                         The diffusion constants computed in PTYPE with 'viscwat' and 'scaled' will be used as starting point.
+  mass          |0.0| : Define mass for particle. Used in Restrain Internal Forces in simul.
   {homodiffu}           If this option is invoked each element of a particle will have the same diffusivity and the sum
                         of each diffusivity will equal the diffusion constant chosen above.
 
@@ -1019,7 +1045,7 @@ syntax:
              {countions} [iuncnt (integer) svcntfq (integer) zcont (real),(real),... ]
              {denatured} nsfbs (integer) vfbs (real) iunfbs (integer) -
              {translocation} unitn (integer) ntras (integer) -
-             {security} units (integer) nsec (integer) {chden}
+             {security} units (integer) nsec (integer) {chden} riffac (real)
             
   ncycle            |0| : number of steps for general cycle that includes GCMC, BD and MC simulations
   ngcmc             |0| : number of steps for GCMC (Gran Canonical Monte Carlo)
@@ -1069,6 +1095,16 @@ syntax:
   units           | 1 | : Unit number to write security output
   nsec            | 1 | : Security file saving frequency
   {chden}               : Enables counting of ion during simulation to compute Charge Densities (see CHDEN)
+  riffac       | -2.0 | : Restrain Internal Forces Factor. If value is lower than -1.0 the 
+                          Restrain Internal Forces option is disabled. If value is greater equal -1.0 and lower than 0.0.
+                          Automatic Values are computed as 0.01/dt. If dt is lower equal 0.01 RIF is disabled.
+                          If 0.0 will only rotate and translate molecule making 0 and avoiding computation of bonded interactions.
+                          If value is greater than 0 it will substract the displacement and torque forces from each molecule to
+                          get the internal forces and it will scale the internal forces of the particle with the selected factor
+                          to allow the simulation of the system at higher time step using the simple integration algorithm of this
+                          program avoiding numerical instabilities. This feature may be computationally more expensive than using 
+                          a better integration algorithm but it is still useful to produce restrained internal coordinates brownian
+                          dynamics simulations by using riffac = 0.0.
 
 Comments:
 Count ions output explanation:

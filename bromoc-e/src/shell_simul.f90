@@ -149,6 +149,7 @@ Qsvdw        = .false.
 Qrfpsin      = .false.
 doions       = .false.
 dodna        = .false.
+Qresintfor   = .false.
 iseed        = 3141593
 ntype        = 0
 nbuffer      = 0
@@ -180,6 +181,7 @@ ys           = 0.0
 b            = 0.0
 c            = 0.0
 d            = 0.0
+riffac       = 0.0
 
 ! initialize lists
 call inivars()
@@ -764,6 +766,10 @@ do while (.not. logfinal)
           call gtdpar(com,'charge',ptypl(itype)%chg(1),0.0)
           ! Update Particle Charge
           call updateptypchg(itype)
+          ! element mass
+          call gtdpar(com,'mass',etypl(netyp)%mas,0.0)
+          ! particle mass
+          ptypl(nptyp)%mass=etypl(netyp)%mas
         endif
         ! diffusion constant [real*8,default=0.1]
         call gtdpar(com,'diffusion',diffu,0.0)
@@ -1279,6 +1285,40 @@ do while (.not. logfinal)
      enddo
      write(outu,*)
   ! **********************************************************************
+  elseif (wrd5.eq.'mass') then
+    if (.not.Qatexp.and..not.Qpar.and..not.Qnucl) call error ('shell_simul', 'MASS order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
+    endlog = .false.
+    do while (.not. endlog)
+      call getlin(com,inpu,outu) ! new commands line
+      endlog = check(com,'end')
+      if (.not.endlog) then
+        ! Obtention of ion type 
+        call getfirst(com,wrd4)
+        itype=getetyp(wrd4)
+        call gtdpar(com,'mass',etypl(itype)%mas,0.0)
+      endif
+    enddo
+
+    write(outu,*)
+    write(outu,'(6x,a)') 'Mass of element types:'
+    write(outu,'(6x,a)') '---------------------'
+    write(outu,'(6x,a)') 'type---mass(g/mol)---'
+    write(outu,'(6x,a)') '---------------------'
+    do  i = 1, netyp
+      write(outu,'(6x,a,f12.4)') etypl(i)%nam,etypl(i)%mas
+    enddo
+    
+    write(outu,*)
+    write(outu,'(6x,a)') 'Mass of particle types:'
+    write(outu,'(6x,a)') '-----------------------'
+    write(outu,'(6x,a)') 'ptype----mass(g/mol)---'
+    write(outu,'(6x,a)') '-----------------------'
+    do i = 1, nptyp
+      call updateptypmass(i)
+      write(outu,'(6x,a,2f12.4)') ptypl(i)%nam,ptypl(i)%mass
+    enddo
+    write(outu,*)
+  ! **********************************************************************
   elseif (wrd5.eq.'ljsin') then
     if (.not.Qatexp.and..not.Qpar.and..not.Qnucl) call error ('shell_simul', 'LJSIN order is defined before PTYPE, PARTICLE and/or NUCLEOTIDE order', faterr)
     if (Qljpar) call error ('shell_simul', 'LJSIN is defined after LJPAR', faterr)
@@ -1596,7 +1636,28 @@ do while (.not. logfinal)
      Qnonbond = .not.check(com,'nononbond')
      ! turn off bond energy
      Qbond = .not.check(com,'nobond')
-  
+     ! Restrain Internal Forces
+     call gtdpar(com,'resintfor',riffac,-2.0)
+     if (riffac.ge.-1.0) then
+         ! Enable it
+         Qresintfor = .true.
+         ! Auto value if factor is between [-1.0, 0.0)
+         if (riffac.lt.0.0) then
+             if (dt.le.0.01) then 
+                 Qresintfor = .false.  ! Auto value disabled
+             else
+                 riffac = 0.01 / dt    ! Auto value
+             endif
+         ! Disable bonded interactions since they will be scaled to 0
+         else if (riffac.eq.0.0) then 
+             Qbond = .false.
+         endif
+     ! If lower than -1.0 disable it
+     else
+         Qresintfor = .false.
+     endif
+     if (Qresintfor) call checkmass()
+
      call simul1(ncycle, ngcmc, nmcm, nbd, nsave, nsfbs, vfbs, ntras, nsec, iseed)
      
      if (sum(warn).gt.0) then

@@ -50,7 +50,7 @@ integer nprint,nanal,cntpts,svcntfq
 integer igr, nframe
 real    dt,mcmax,bdmax
 real dids(5,datom),fact2a(dtype),fact1a(dtype),fact2pd,beta,diff0,ibeta,diffcutoff
-real erfpar,estaticf,evdwgd
+real erfpar,estaticf,evdwgd,riffac
 real ener,eelec,evdw,ememb,esrpmf,eefpot,enonbond,eintern
 real emembi,erfpari,estaticfi,evdwgdi,enonbondi,einterni
 real    rsphe,rsphe2,lx,ly,lz,lx2p,ly2p,lz2p,lx2m,ly2m,lz2m,cx,cy,cz,iecx,iecy
@@ -60,8 +60,9 @@ real    cdie,rth,srpx,srpk,srpy,tvol
 real    afact,kappa,ikappa
 !integer typat(datom) 
 logical*1 Qsphere, Qecyl, Qbox
-logical*1 Qenergy, Qforces, Qbond, Qnonbond, Qmemb, Qgr, Qrho, Qrdna, Qprob, Qdiffuse, Qsrpmf, Qionpair
-logical*1 Qenerprofile, Qprofile, Qsec, Qpres, Qpore, Qwarn, Qcountion, Qproxdiff, Qforceanapot
+logical*1 Qenergy, Qforces, Qbond, Qnonbond, Qmemb, Qgr, Qrho, Qrdna, Qprob
+logical*1  Qdiffuse, Qsrpmf, Qionpair, Qforceanapot, Qresintfor
+logical*1 Qenerprofile, Qprofile, Qsec, Qpres, Qpore, Qwarn, Qcountion, Qproxdiff
 logical*1,allocatable :: Qlj(:),Qsrpmfi(:),Qefpot(:)
 
 ! membrane parameters

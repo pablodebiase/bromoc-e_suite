@@ -107,6 +107,7 @@ type :: partype
     type(car),allocatable,dimension(:)      :: r      !! Position Vector of Particle Elements :: Size of ne
     logical*1                               :: Qpsf   !! whether it is a psf particle
     type(psftype),allocatable,dimension(:)  :: psf    !! psf properties
+    real                                    :: mass   !! Particle mass
 end type partype
     
 ! Element Type
@@ -115,6 +116,7 @@ type :: eletype
     real        :: dif    ! Element Diffusivity
     real        :: eps    ! Element Epsilon Lennard Jones
     real        :: sig    ! Element Sigma Lennard Jones
+    real        :: mas    ! Element Mass
 end type eletype
 
 ! LIST DEFINITIONS
@@ -526,7 +528,7 @@ enddo
 end subroutine
 
 ! Add Mono Particle (Particle with Single Element)
-subroutine addmonoptyp(ename,pname,chg,dif,eps,sig)
+subroutine addmonoptyp(ename,pname,chg,dif,eps,sig,mas)
 implicit none
 character*(*) ename
 character*(*),optional,intent(in) :: pname
@@ -534,21 +536,25 @@ real,optional,intent(in)  :: chg    ! Element Charge
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
-real            :: lchg,ldif,leps,lsig
+real,optional,intent(in)  :: mas    ! Element Mass
+real            :: lchg,ldif,leps,lsig,lmas
 lchg=0.0
 ldif=0.0
 leps=0.0
 lsig=0.0
+lmas=0.0
 if (present(chg)) lchg=chg
 if (present(dif)) ldif=dif
 if (present(eps)) leps=eps
 if (present(sig)) lsig=sig
-call addetyp(ename,ldif,leps,lsig)
+if (present(mas)) lmas=mas
+call addetyp(ename,ldif,leps,lsig,lmas)
 if (present(pname)) then
   call addptyp(1,pname)
 else
   call addptyp(1,ename)
 endif
+ptypl(nptyp)%mass=lmas
 ptypl(nptyp)%tchg=lchg
 ptypl(nptyp)%chg(1)=lchg
 ptypl(nptyp)%etyp(1)=netyp
@@ -584,24 +590,27 @@ write(*,'(a,a,a)') 'Type name ',trim(adjustl(pname)),' not found'
 end function
 
 ! Edit Element Type
-subroutine editetyp(etype,dif,eps,sig)
+subroutine editetyp(etype,dif,eps,sig,mas)
 implicit none
 integer,intent(in)        :: etype  ! Element Type Number
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
+real,optional,intent(in)  :: mas    ! Element Mass
 if (present(dif)) etypl(etype)%dif=dif
 if (present(eps)) etypl(etype)%eps=eps
 if (present(sig)) etypl(etype)%sig=sig
+if (present(mas)) etypl(netyp)%mas=mas
 end subroutine
 
 ! Add Element Name to list
-subroutine addetyp(nam,dif,eps,sig)
+subroutine addetyp(nam,dif,eps,sig,mas)
 implicit none
 character*(*)             :: nam
 real,optional,intent(in)  :: dif    ! Element Diffusivity
 real,optional,intent(in)  :: eps    ! Element Epsilon Lennard Jones
 real,optional,intent(in)  :: sig    ! Element Sigma Lennard Jones
+real,optional,intent(in)  :: mas    ! Element Mass
 if (getetyp(nam).gt.0) then
   write(*,'(a,a,a)') 'WARNING: Element Type ',nam,' already exists.'
   return
@@ -614,9 +623,11 @@ etypl(netyp)%nam=nam
 etypl(netyp)%dif=0.0
 etypl(netyp)%eps=0.0
 etypl(netyp)%sig=0.0
+etypl(netyp)%mas=0.0
 if (present(dif)) etypl(netyp)%dif=dif
 if (present(eps)) etypl(netyp)%eps=eps
 if (present(sig)) etypl(netyp)%sig=sig
+if (present(mas)) etypl(netyp)%mas=mas
 end subroutine
 
 ! Set Element Type in Particle Type
@@ -636,6 +647,7 @@ enddo
 call updateptypchg(ptypn)
 end subroutine
 
+! Update net charge of the particle type
 subroutine updateptypchg(ptypn)
 implicit none
 integer ptypn,i
@@ -648,12 +660,26 @@ enddo
 ptypl(ptypn)%tchg=chg
 end subroutine
 
+! Update total mass of the particle type
+subroutine updateptypmass(ptypn)
+implicit none
+integer ptypn,i
+real mass
+if (.not.allocated(ptypl(ptypn)%etyp)) return
+mass=0.0
+do i=1,ptypl(ptypn)%ne
+  mass=mass+etypl(ptypl(ptypn)%etyp(i))%mas
+enddo
+ptypl(ptypn)%mass=mass
+end subroutine
+
 ! Add Particle Type
-subroutine addptyp(ne,pnam,chg)
+subroutine addptyp(ne,pnam,chg,mass)
 implicit none
 integer ne
 character*(*) pnam
 real,optional,intent(in) :: chg 
+real,optional,intent(in) :: mass 
 if (ne .lt. 1) return
 nptyp=nptyp+1
 if (nptyp .gt. size(ptypl)) call resizeptypl(nptyp)
@@ -664,6 +690,12 @@ if (present(chg)) then
 else
   ptypl(nptyp)%tchg = 0.0
 endif
+if (present(mass)) then
+  ptypl(nptyp)%mass = mass
+else
+  ptypl(nptyp)%mass = 0.0
+endif
+
 allocate (ptypl(nptyp)%etyp(ne),ptypl(nptyp)%r(ne),ptypl(nptyp)%chg(ne))
 ptypl(nptyp)%chg(:)=0.0
 ptypl(nptyp)%Qpsf=.false.
@@ -833,6 +865,49 @@ z=mat(3,1)*rc%x+mat(3,2)*rc%y+mat(3,3)*rc%z
 rc%x=x
 rc%y=y
 rc%z=z
+end subroutine
+
+subroutine checkmass()
+implicit none
+integer i
+
+do i=1,netyp
+  if (etypl(i)%mas.le.0.0) write(*,'(a)') 'Warning: Mass of element '//etypl(i)%nam//' is zero'
+enddo
+
+do i=1,nptyp
+  call updateptypmass(i)
+  if (ptypl(i)%mass.le.0.0) write(*,'(a)') 'Warning: Mass of particle '//ptypl(i)%nam//' is zero'
+enddo
+
+end subroutine
+
+subroutine getcentmass(parn,rc)
+implicit none
+integer i,ne,sr,ptyp
+real itmass
+integer,intent(in)    :: parn ! Particle Number 
+type(car),intent(out) :: rc  ! Particle Centroid
+type(car)             :: rs  ! Temporary Car  
+ne=parl(parn)%ne
+sr=parl(parn)%sr
+ptyp=parl(parn)%ptyp
+if (ne.eq.1) then
+  rc=r(sr+1)
+else
+  itmass=1.0/ptypl(ptyp)%mass
+  ! Compute Actual Center of mass
+  ! Zero vector
+  call setcarzero(rc)
+  ! Add each position vector to rc scaled by each element mass
+  do i=1,ne
+     rs=r(sr+i)
+     call mulcar(rs,etypl(ptypl(ptyp)%etyp(i))%mas)
+     call addcar(rc,rs)
+  enddo
+  ! divide rc by total mass
+  call mulcar(rc,itmass)
+endif
 end subroutine
 
 subroutine getcentroid(parn,rc)
@@ -1017,6 +1092,25 @@ real dotcarvec,v(3)
 type(car) :: r
 dotcarvec=v(1)*r%x+v(2)*r%y+v(3)*r%z
 end function
+
+! Module of a car
+subroutine modcar(r,norm)
+implicit none
+real norm
+type(car) :: r
+norm=sqrt(r%x*r%x+r%y*r%y+r%z*r%z)
+end subroutine
+
+subroutine unicar(r)
+implicit none
+real norm,inorm
+type(car) :: r
+norm=sqrt(r%x*r%x+r%y*r%y+r%z*r%z)
+inorm=1.0/norm
+r%x=r%x*inorm
+r%y=r%y*inorm
+r%z=r%z*inorm
+end subroutine
 
 ! Scalar Multiplication of Cartesian Types
 subroutine mulcar(r,sc)
@@ -1289,6 +1383,14 @@ do i=1,npar
       write(nunit,*) '      ',ptypl(parl(i)%ptyp)%etyp(j),r(k)%x,r(k)%y,r(k)%z
    enddo
 enddo
+end subroutine
+
+subroutine carcrossproduct(u,v,w)
+implicit none
+type(car) ::  u,v,w
+w%x=u%y*v%z-u%z*v%y
+w%y=u%z*v%x-u%x*v%z
+w%z=u%x*v%y-u%y*v%x
 end subroutine
 
 end module

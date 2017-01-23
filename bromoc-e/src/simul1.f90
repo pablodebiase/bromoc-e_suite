@@ -345,6 +345,7 @@ do icycle = 1, ncycle
     do istep = 1, nbd
       Qforces=.true.
       call energy()
+      if (Qresintfor) call resintfor()
       Qforces=.false.
       if (Qpres) then
         vir=dot_product(f(1:nele)%x,r(1:nele)%x)+dot_product(f(1:nele)%y,r(1:nele)%y)+dot_product(f(1:nele)%z,r(1:nele)%z)

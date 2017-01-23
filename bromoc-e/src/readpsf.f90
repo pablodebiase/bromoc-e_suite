@@ -401,7 +401,7 @@ do itype = 1, maxtypes
   ! ListMod {
   ! Set Diff, Eps, Sigma in ListMod
   m=getetyp(psf_non_labels(itype))
-  call editetyp(m,sdat(itype),nonbonded(1,intert),nonbonded(2,intert))
+  call editetyp(m,sdat(itype),nonbonded(1,intert),nonbonded(2,intert),psf_mass(itype))
   lj14(1,m)=nonbonded(3,intert)
   lj14(2,m)=nonbonded(4,intert)
   ! } ListMod
@@ -1098,6 +1098,7 @@ do i=1,m
   ptypl(nptyp)%psf(1)%lj(i)%sgp2=(0.5*(etypl(j)%sig+etypl(k)%sig))**2
   !write(*,*) etypl(j)%nam,etypl(j)%eps,etypl(j)%sig,etypl(k)%nam,etypl(k)%eps,etypl(k)%sig
 enddo
+! Masses
 ! } ListMod
 deallocate(lj14)
 deallocate(list14,listm14,listex,listmex)
