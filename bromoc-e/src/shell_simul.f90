@@ -1652,7 +1652,7 @@ do while (.not. logfinal)
      ! turn off bond energy
      Qbond = .not.check(com,'nobond')
      ! Restrain Internal Forces
-     call gtdpar(com,'resintfor',riffac,-2.0)
+     call gtdpar(com,'riffac',riffac,-2.0)
      if (riffac.ge.-1.0) then
          ! Enable it
          Qresintfor = .true.
