@@ -572,7 +572,7 @@ do while (getetyp.le.netyp)
    getetyp=getetyp+1
 enddo
 getetyp=0
-write(*,'(a,a,a)') 'Type name ',trim(adjustl(ename)),' not found'
+write(*,'(a,a,a)') 'Element type name ',trim(adjustl(ename)),' not found'
 end function
 
 ! get ptyp from pname
@@ -586,7 +586,7 @@ do while (getptyp.le.nptyp)
    getptyp=getptyp+1
 enddo
 getptyp=0
-write(*,'(a,a,a)') 'Type name ',trim(adjustl(pname)),' not found'
+write(*,'(a,a,a)') 'Particle type name ',trim(adjustl(pname)),' not found'
 end function
 
 ! Edit Element Type

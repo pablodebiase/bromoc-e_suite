@@ -790,12 +790,23 @@ do while (.not. logfinal)
           else
             totdiffu=0.0
             do i=1,ptypl(itype)%ne
-              totdiffu=totdiffu+etypl(ptypl(itype)%etyp(i))%dif
+              pardiffu=etypl(ptypl(itype)%etyp(i))%dif
+              totdiffu=totdiffu+pardiffu
             enddo
             if (totdiffu.eq.0.0) call error('shell_simul', 'sum of total diffusion coefficients equals zero',faterr)
             do i=1,ptypl(itype)%ne
-              pardiffu=etypl(ptypl(itype)%etyp(i))%dif  
-              etypl(ptypl(itype)%etyp(i))%dif=diffu*pardiffu/totdiffu
+              ! Do not repeat the type
+              ok=.true.
+              do j=1,i-1
+                 if (ptypl(itype)%etyp(i).eq.ptypl(itype)%etyp(j)) then
+                   ok=.false.
+                   exit
+                 endif
+              enddo
+              if (ok) then
+                pardiffu=etypl(ptypl(itype)%etyp(i))%dif
+                etypl(ptypl(itype)%etyp(i))%dif=diffu*pardiffu/totdiffu
+              endif
             enddo
           endif
         endif
