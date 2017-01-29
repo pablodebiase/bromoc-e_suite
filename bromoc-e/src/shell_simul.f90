@@ -50,7 +50,7 @@ real battery
 real r1,r2,r6,z1,v1,v2,y1,y2,x1,x2,x3,xm,ym,zm,z2
 integer ix1,iy1,iz1,ix2,iy2,iz2 
 real*4 idv
-real resol,pkind,diffu,totdiffu,pardiffu,inflim
+real resol,pkind,diffu,totdiffu,pardiffu,inflim,mass
 integer ikind
 real vc1(3),vc2(3),vc3(3)
 logical*1 endlog, logfinal, Qlsprmf, doions, dodna, Qadj, ok 
@@ -766,10 +766,14 @@ do while (.not. logfinal)
           call gtdpar(com,'charge',ptypl(itype)%chg(1),0.0)
           ! Update Particle Charge
           call updateptypchg(itype)
-          ! element mass
-          call gtdpar(com,'mass',etypl(netyp)%mas,0.0)
-          ! particle mass
-          ptypl(nptyp)%mass=etypl(netyp)%mas
+          ! mass
+          call gtdpar(com,'mass',mass,0.0)
+          if (mass.gt.0.0) then
+            ! element mass
+            etypl(netyp)%mas=mass
+            ! particle mass
+            ptypl(nptyp)%mass=mass
+          endif
         endif
         ! diffusion constant [real*8,default=0.1]
         call gtdpar(com,'diffusion',diffu,0.0)
@@ -786,7 +790,7 @@ do while (.not. logfinal)
           else
             totdiffu=0.0
             do i=1,ptypl(itype)%ne
-              totdiffu=etypl(ptypl(itype)%etyp(i))%dif
+              totdiffu=totdiffu+etypl(ptypl(itype)%etyp(i))%dif
             enddo
             if (totdiffu.eq.0.0) call error('shell_simul', 'sum of total diffusion coefficients equals zero',faterr)
             do i=1,ptypl(itype)%ne
