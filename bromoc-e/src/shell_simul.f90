@@ -1671,7 +1671,10 @@ do while (.not. logfinal)
      else
          Qresintfor = .false.
      endif
-     if (Qresintfor) call checkmass()
+     if (Qresintfor) then
+       call checkmass()
+       write(outu,'(6x,a,f10.6)') 'Restrained Internal Forces enabled. RIF Factor= ',riffac
+     endif
 
      call simul1(ncycle, ngcmc, nmcm, nbd, nsave, nsfbs, vfbs, ntras, nsec, iseed)
      
