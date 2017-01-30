@@ -1298,6 +1298,7 @@ do while (.not. logfinal)
           write(outu,'(6x,a,4f12.5,1x,2e12.4,f10.5)') ptypl(ibfftyp(ib))%nam,mu(ib),LZmin(ib),LZmax(ib),avnum(ib),density(ib),volume(ib),kb(ib)
         endif
      enddo
+     if (Qforceanapot) write (outu,'(6x,a)') 'Forcing Analytical Potential for GCMC. Check that LJ and charges are defined properly.'
      write(outu,*)
   ! **********************************************************************
   elseif (wrd5.eq.'mass') then
