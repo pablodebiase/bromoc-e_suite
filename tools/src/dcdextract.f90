@@ -57,6 +57,13 @@ uno=2
 !read charmm dcd head
 call readdcdhead(dcdinp,uni,ffr)
 
+if (charmm) then
+  call readarg('CHARMM format detected. Process DCD assuming it does not have lattice vectors (y/n)? [y]: ',narg,arg,yesno)
+  if (yesno.eq.'n'.or.yesno.eq.'N') then
+    charmm=.false.
+  endif
+endif
+
 dcde2dcd=inpdcde.and..not.outdcde
 dcd2dcde=.not.inpdcde.and.outdcde
 if (charmm) then 
